@@ -242,6 +242,7 @@ class DcatBasis(BaseModel):
     label: str = ""                              # DCAT 2014
     tr: str = ""
     cited_as: str = ""
+    cited_url: str = ""                          # the DCAT URL the release's own basis footnote cites
     dcat_status_at_release: str = ""             # W3C status of DCAT on the release date
     # What the release says about DCAT properties it does not list for a class:
     # "optional" (DCAT-AP 3.x: such a property is an optional field of the class) or "not_stated".

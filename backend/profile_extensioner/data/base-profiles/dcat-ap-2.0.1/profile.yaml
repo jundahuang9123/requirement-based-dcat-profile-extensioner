@@ -46,3 +46,4 @@ dcat_basis:
   notes:
   - Also cites the DCAT of 16 January 2014; DCAT 2 keeps the 2014 terms in the same namespace, so DCAT 2 is pinned.
   unlisted_dcat_properties: not_stated
+  cited_url: https://www.w3.org/TR/vocab-dcat-2/

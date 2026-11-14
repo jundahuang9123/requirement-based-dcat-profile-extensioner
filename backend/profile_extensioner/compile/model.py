@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from ..contracts import ELEMENT_KIND, Atom, ProfileChange, ProfileDelta, ProfileElement, Project
+from ..contracts import OBLIGATION_RANK, ELEMENT_KIND, Atom, ProfileChange, ProfileDelta, ProfileElement, Project
 from ..knowledge import KnowledgeBase
 
 
@@ -62,8 +62,11 @@ def build_delta(view: ProfileView) -> ProfileDelta:
         if kind is None:
             continue
         f = change.facets
-        base = kb.base.shape_facets(change.target_class, change.path or "")
+        base = kb.base.element(change.target_class, change.path or "")   # shape or specification-only element
         statuses = {j.status for j in change.facet_justifications}
+        if base is not None and OBLIGATION_RANK.get(f.obligation, 0) < OBLIGATION_RANK.get(base.facets.obligation, 0) \
+                and f.obligation != "unknown":
+            statuses.add("loosened")
         elements.append(ProfileElement(
             id=change.id, target_class=change.target_class, path=change.path, kind=kind,  # type: ignore[arg-type]
             obligation=f.obligation, min_count=f.min_count, max_count=f.max_count,

@@ -185,7 +185,7 @@ def retrieve_candidates(
             if note:
                 score *= factor
                 reasons.append(note)
-            deprecated = kb.base.deprecation(resource_class, term.iri) if resource_class else None
+            deprecated = kb.base_deprecation(resource_class, term.iri) if resource_class else None
             if deprecated and deprecated.get("kind") == "deprecated":
                 score *= REMOVED_DCAT_FACTOR
                 replacement = deprecated.get("replacement")

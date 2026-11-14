@@ -135,8 +135,9 @@ def compile_dsv(view: ProfileView) -> str:
         graph.add((profile, DCTERMS.conformsTo, URIRef(url)))
     if kb.base.info.homepage:
         graph.add((profile, DCTERMS.conformsTo, URIRef(kb.base.info.homepage)))
-    if kb.dcat.version.tr:
-        graph.add((profile, DCTERMS.conformsTo, URIRef(kb.dcat.version.tr)))
+    dcat_url = kb.dcat.basis.cited_url or kb.dcat.version.tr
+    if dcat_url:
+        graph.add((profile, DCTERMS.conformsTo, URIRef(dcat_url)))
     graph.add((profile, DCTERMS.description, Literal(
         f"Extends {kb.base.info.title} ({kb.base.info.release_date or 'release date not stated'}); "
         + kb.dcat.summary(kb.base.info.title), lang="en")))

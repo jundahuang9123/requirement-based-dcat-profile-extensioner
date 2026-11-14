@@ -140,7 +140,7 @@ def analyse_rebase(
                           choices=["keep", "manual"], default="keep",
                           message=f"The base constraint on {new.curie(path)} changed: {_facet_text(old_element.facets)} "
                                   f"-> {_facet_text(new_element.facets)}; the change is still a legal refinement.")
-            deprecated = new.base.deprecation(target, path)
+            deprecated = new.base_deprecation(target, path)
             if deprecated and deprecated.get("kind") == "deprecated":
                 replacement = deprecated.get("replacement") or None
                 _item(items, human=human, change_id=change.id, term=path, finding="deprecated_by_base", severity="error",

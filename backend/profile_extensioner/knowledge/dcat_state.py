@@ -159,25 +159,34 @@ class DcatState:
     def class_label(self, iri: str) -> str:
         return str((self._classes.get(iri) or {}).get("label") or "")
 
-    def superclasses(self, class_iri: str) -> list[str]:
-        """DCAT's own class hierarchy (from the specification's 'Sub class of' rows), nearest first."""
+    def _model_classes(self, version: str | None) -> dict[str, dict[str, Any]]:
+        if version is None or version == self.id:
+            return self._classes
+        return (self._models.get(version) or {}).get("classes") or {}
+
+    def superclasses(self, class_iri: str, version: str | None = None) -> list[str]:
+        """DCAT's own class hierarchy (from the specification's 'Sub class of' rows), nearest first;
+        of the pinned version unless ``version`` names another one."""
+        classes = self._model_classes(version)
         seen: list[str] = []
         frontier = [class_iri]
         while frontier:
             current = frontier.pop(0)
-            for parent in (self._classes.get(current) or {}).get("subclass_of") or []:
+            for parent in (classes.get(current) or {}).get("subclass_of") or []:
                 if parent not in seen and parent != class_iri:
                     seen.append(parent)
                     frontier.append(parent)
         return seen
 
-    def properties_for(self, class_iri: str | None) -> list[DcatProperty]:
-        """Every property the specification lists for the class or for one of its DCAT superclasses."""
+    def properties_for(self, class_iri: str | None, version: str | None = None) -> list[DcatProperty]:
+        """Every property the specification lists for the class or for one of its DCAT superclasses
+        (pinned version, or ``version``)."""
         if not class_iri:
             return []
+        classes = self._model_classes(version)
         result: dict[str, DcatProperty] = {}
-        for owner in [class_iri] + self.superclasses(class_iri):
-            for entry in (self._classes.get(owner) or {}).get("properties") or []:
+        for owner in [class_iri] + self.superclasses(class_iri, version):
+            for entry in (classes.get(owner) or {}).get("properties") or []:
                 if entry["path"] in result:
                     continue
                 result[entry["path"]] = DcatProperty(
@@ -187,12 +196,12 @@ class DcatState:
                 )
         return list(result.values())
 
-    def listed_for(self, class_iri: str | None, path: str) -> DcatProperty | None:
-        return next((prop for prop in self.properties_for(class_iri) if prop.path == path), None)
+    def listed_for(self, class_iri: str | None, path: str, version: str | None = None) -> DcatProperty | None:
+        return next((prop for prop in self.properties_for(class_iri, version) if prop.path == path), None)
 
-    def classes_listing(self, path: str) -> list[str]:
-        """The classes whose section lists ``path`` directly."""
-        return [iri for iri, entry in self._classes.items()
+    def classes_listing(self, path: str, version: str | None = None) -> list[str]:
+        """The classes whose section lists ``path`` directly (pinned version, or ``version``)."""
+        return [iri for iri, entry in self._model_classes(version).items()
                 if any(prop["path"] == path for prop in entry.get("properties") or [])]
 
     def inverse_canonical(self, path: str) -> str | None:

@@ -141,9 +141,24 @@ DCAT_CLASSES = {  # classes of each DCAT version (data/dcat/<id>/model.json), to
 }
 
 
+# The DCAT URL each release's own basis footnote cites (1.x: the dated 2014 REC; 2.0.0: the dated CR;
+# 2.0.1/2.1.x: the undated DCAT 2 URL; 3.x: [[vocab-dcat-3]], the undated DCAT 3 URL).
+CITED_URLS = {
+    "1.1": "http://www.w3.org/TR/2014/REC-vocab-dcat-20140116/",
+    "1.2": "http://www.w3.org/TR/2014/REC-vocab-dcat-20140116/",
+    "1.2.1": "http://www.w3.org/TR/2014/REC-vocab-dcat-20140116/",
+    "2.0.0": "https://www.w3.org/TR/2019/CR-vocab-dcat-2-20191003/",
+    "2.0.1": "https://www.w3.org/TR/vocab-dcat-2/",
+    "2.1.0": "https://www.w3.org/TR/vocab-dcat-2/",
+    "2.1.1": "https://www.w3.org/TR/vocab-dcat-2/",
+    "3.0.0": "https://www.w3.org/TR/vocab-dcat-3/",
+    "3.0.1": "https://www.w3.org/TR/vocab-dcat-3/",
+}
+
+
 def dcat_blocks(release: str) -> str:
     """The release/dcat_basis blocks of profile.yaml, as YAML text."""
-    basis = DCAT_BASIS[release]
+    basis = {**DCAT_BASIS[release], "dcat_basis": {**DCAT_BASIS[release]["dcat_basis"], "cited_url": CITED_URLS[release]}}
     return ("# The W3C DCAT state this release builds on (scripts/build_base_profile.py DCAT_BASIS).\n"
             + yaml.safe_dump({"release": basis["release"], "dcat_basis": basis["dcat_basis"]}, sort_keys=False,
                              allow_unicode=True, width=110))
@@ -217,6 +232,20 @@ TERM_ERRATA = {
     "http://purl.org/dc/terms/acrualPeriodicity": "http://purl.org/dc/terms/accrualPeriodicity",  # PDF: dct:accrualPeriodicity
     "http://purl.org/dc/terms/mediaType": "http://www.w3.org/ns/dcat#mediaType",               # PDF: dcat:mediaType
     "http://www.w3.org/ns/dcat#servesdataset": "http://www.w3.org/ns/dcat#servesDataset",      # PDF: dcat:servesDataset
+}
+
+
+# Obligations a release's PDF states but its RDF omits (no vann:usageNote), so they are added here, with
+# the section that states them. Checked in the 2.0.0, 2.0.1, 2.1.0 and 2.1.1 PDFs (sections 4.1.3 and 4.3.2,
+# and Annex I "Quick reference of classes and properties").
+OBLIGATION_SUPPLEMENTS = {
+    release: [
+        {"class": "dcat:Catalog", "property": "dct:creator", "obligation": "optional",
+         "source": "PDF 4.1.3 Optional properties for Catalogue; Annex I"},
+        {"class": "dcat:DataService", "property": "dcat:endpointDescription", "obligation": "recommended",
+         "source": "PDF 4.3.2 Recommended properties for Data Service; Annex I"},
+    ]
+    for release in ("2.0.0", "2.0.1", "2.1.0", "2.1.1")
 }
 
 
@@ -299,6 +328,13 @@ def main(argv: list[str] | None = None) -> int:
         spec_path = release_dir / "index.html"
         rows = read_quick_reference(spec_path.read_text(encoding="utf-8"))
     prefixes = Prefixes()
+    supplements = OBLIGATION_SUPPLEMENTS.get(args.release, [])
+    present = {(row["class_iri"], row["property_iri"]) for row in rows}
+    for item in supplements:
+        key = (prefixes.expand(item["class"]), prefixes.expand(item["property"]))
+        if key not in present:
+            rows.append({"class_label": item["class"], "class_iri": key[0], "obligation": item["obligation"],
+                         "property_label": item["property"], "property_iri": key[1]})
     classes: dict[str, dict] = {}
     for row in rows:
         entry = classes.setdefault(prefixes.compact(row["class_iri"]), {"label": row["class_label"], "properties": {}})
@@ -312,6 +348,8 @@ def main(argv: list[str] | None = None) -> int:
         f"# releases/{args.release}/{spec_path.name} (SEMICeu/DCAT-AP @ {commit[:12]}, sha256 {sha256(spec_path)[:16]}...).\n"
         f"# {counts['mandatory']} mandatory, {counts['recommended']} recommended, {counts['optional']} optional. Do not edit by hand.\n"
         + "".join(f"# corrected IRI ({item['class']}): {item['from']} -> {item['to']}\n" for item in corrections)
+        + "".join(f"# added from the PDF ({item['class']} {item['property']}: {item['obligation']}): {item['source']}\n"
+                  for item in supplements)
     )
     (target / "obligations.yaml").write_text(
         header + yaml.safe_dump({"classes": classes}, sort_keys=False, allow_unicode=True), encoding="utf-8"

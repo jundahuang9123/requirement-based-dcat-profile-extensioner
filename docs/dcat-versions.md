@@ -129,11 +129,23 @@ Notes:
     `dcat:Relationship`, so `dcat:hadRole` on `dcat:Dataset` is a domain error.
 - **Conformance C8.** Every DCAT term the extension uses is a term of the DCAT the base builds on.
   - A deprecated or removed term fails the check.
-  - A later term that a human accepted is a warning, and the report names its version.
+  - A later term (accepted by a human, or allowed by `later_dcat_terms: allow`) is a warning, and the
+    report names its version and who accepted it.
   - The summary reads "Conforms to DCAT-AP 1.1 (on DCAT 2014)".
+- **Placement and deprecation.**
+  - A later DCAT term is also checked for its class, against the DCAT version that introduced it. Under
+    DCAT 2014, `dcat:accessService` on `dcat:Dataset` is both "introduced in DCAT 2" and "DCAT 2 lists
+    it for dcat:Distribution".
+  - A base deprecation also applies to subclasses: `dct:hasVersion` is deprecated on `dcat:Dataset` in
+    3.x, so also on `dcat:Catalog` and `dcat:DatasetSeries`.
 - **Compiled output.**
-  - The SHACL delta carries `dcterms:conformsTo` the dated DCAT Recommendation and a comment naming
-    the DCAT state.
+  - The SHACL delta `owl:imports` the official shapes of the base as raw RDF at the pinned SEMIC commit.
+    1.1 and 1.2 publish their shapes only inside a zip, which is named with `rdfs:seeAlso`.
+  - The delta carries `dcterms:conformsTo` the release page (3.x) and the DCAT URL the release itself
+    cites: the dated 2014 REC, the dated DCAT 2 CR for 2.0.0, the undated DCAT 2 URL for 2.0.1/2.1.x, the
+    undated DCAT 3 URL for 3.x (`dcat_basis.cited_url`). A comment names the DCAT state.
+  - The DSV names the base release and its DCAT the same way, because Dataspecer's DSVs of DCAT-AP 2.1.1
+    and 3.0.1 share one IRI namespace.
   - The documentation has a "DCAT state" section with the release's own quote, and a "Base history"
     section after a rebase.
 
@@ -164,6 +176,12 @@ release's PDF writes and the shapes use:
 - `dcterms:mediaType` becomes `dcat:mediaType`;
 - `dcat:servesdataset` becomes `dcat:servesDataset`.
 
+**Obligations the RDF omits but the PDF states** (`OBLIGATION_SUPPLEMENTS`, recorded in the
+`obligations.yaml` header as "added from the PDF"). 2.0.0, 2.0.1, 2.1.0 and 2.1.1 do not give a usage
+note for two properties:
+- `dct:creator` on Catalogue: optional (§4.1.3 and Annex I);
+- `dcat:endpointDescription` on Data Service: recommended (§4.3.2 and Annex I).
+
 Effect on the pilots: without these corrections, DCAT-AP 1.1 lost the obligation of
 `dcat:contactPoint`, `dcterms:accrualPeriodicity` and `dcat:mediaType`. For example, the StatDCAT-AP
 pilot reported frequency as "obligation unknown → recommended", where the specification says optional.
@@ -184,27 +202,56 @@ release or DCAT version to `data/` (with `scripts/build_base_profile.py` and
 
 ## Rebase
 
-`POST /api/projects/{id}/rebase` (workbench: "Model & pipeline" → "Base profile") moves an extension
-onto another release, and so possibly onto another DCAT. `engine/rebase.py` compares every change
-under the old and the new base and its DCAT:
+An extension can be moved onto another release, and so possibly onto another DCAT. This works in three
+steps. On the workbench they are under "Model & pipeline", then "Base profile"; through the API:
 
-| Finding | Meaning | Default suggestion |
+1. `POST /api/projects/{id}/rebase/preview` computes a **plan** and changes nothing.
+2. `POST /api/projects/{id}/rebase/{plan_id}/apply` applies the plan with the human's choices
+   (the default for any item without a choice).
+3. `DELETE /api/projects/{id}/rebase/{plan_id}` cancels it.
+
+`POST /api/projects/{id}/rebase` previews and applies all defaults in one step, for scripts.
+
+While a plan is pending, sign-off waits. A plan computed on a state that has since changed is refused,
+and must be previewed again.
+
+`engine/rebase.py` compares every change and every atom under the old and the new base:
+
+| Finding | Meaning | Choices (default first) |
 |---|---|---|
-| `now_in_base` | the new base defines the element itself | `withdraw` if the change adds nothing beyond it, else `keep` |
-| `base_dropped` | the new base no longer defines the element | `keep` (the change becomes an addition) |
-| `base_changed` | the base constraint changed | `review` |
+| `now_in_base` | the new base defines the element itself | `withdraw` if the change adds nothing beyond it, else `keep`; `manual` |
+| `base_dropped` | the new base no longer defines the element | `keep` (the change becomes an addition), `withdraw` |
+| `base_changed` | the base constraint changed | still a legal refinement (V3 against the new base): `keep`; no longer legal: `manual`, `withdraw`. **Never `keep` by default.** |
 | `dcat_now_current` | a later-DCAT term is part of the new base's DCAT | `keep` |
-| `dcat_now_later` | the new base's (older) DCAT does not define the term | `review` |
-| `dcat_outdated` | the term is deprecated or removed in the new DCAT | `replace` |
-| `deprecated_by_base` | the new base deprecates the term | `replace`, with the replacement it names |
-| `mint_now_reusable` | a minted term has a counterpart in the new base or its DCAT | `replace` |
-| `class_not_in_base` | the target class is not a class of the new base | `review` |
-| `covered_claim_lost` | an atom covered by the old base is not covered by the new one | `repropose` |
+| `dcat_now_later` | the new base's (older) DCAT does not define the term | per `later_dcat_terms`: `manual`, `withdraw` or `keep` |
+| `dcat_outdated` | deprecated or removed in the new DCAT | `replace` (when a replacement is known), `keep`, `manual` |
+| `deprecated_by_base` | the new base deprecates the term | `replace` with the replacement it names, `keep`, `manual` |
+| `mint_now_reusable` | a minted term has a counterpart in the new base or its DCAT | `manual`, `replace`, `keep` |
+| `class_not_in_base` | the target class is not a class of the new base | `keep`, `manual` |
+| `intake_changed` | the atom's subject maps to another class (or to one at all) | `repropose`, `manual` |
+| `covered_claim_lost` / `covered_claim_weakened` | check B1 against the new base: the covering element is gone, or no longer strong enough (e.g. Catalogue `dcat:dataset`: mandatory in 2.1.1, recommended in 3.0.1) | `repropose`, `keep_claim`, `manual` |
 
-After the comparison:
-- Human decisions stay; a human-decided change gets the finding as a note.
-- A machine-decided change with a finding that needs a decision goes to `needs_review`.
-- Every change is verified again.
-- The profile is recompiled and checked for conformance to the new base.
-- The sign-off is withdrawn.
-- The report is kept on the project (`Project.rebases`) and in the blackboard log.
+What the choices do when the plan is applied:
+- `withdraw` rejects the change, by the applying human.
+- `manual` puts a machine-decided change in the review queue. It stays there, even through
+  consolidation, until a human decides.
+- `replace` creates a new version of the change with the replacement term, verified like any other.
+- `repropose` runs the proposer again for the atom.
+- `keep_claim` records the human's judgement that the base still covers the atom.
+
+Human decisions stay: on a human-decided change the default is `keep` or `manual`.
+
+After the choices:
+1. The base is switched.
+2. Intake runs again; machine assessments keep their disposition unless re-proposed.
+3. Retrieval and the chosen re-proposals run.
+4. Everything is verified again.
+5. The profile is consolidated, recompiled and checked for conformance to the new base.
+
+The report is kept on the project (`Project.rebases`) and in the blackboard log.
+
+The design follows Dataspecer's change-propagation review (see `docs/research/B3-dataspecer-update.md`,
+section 5) with three differences:
+- items are matched by vocabulary term, not by profile IRI;
+- requirement levels, datatypes, deprecations and the DCAT version are compared;
+- a value the new base makes illegal is never kept by default.

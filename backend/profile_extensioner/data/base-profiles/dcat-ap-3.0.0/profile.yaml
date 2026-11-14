@@ -50,3 +50,4 @@ dcat_basis:
   - releases/3.0.0/html/shacl/imports.ttl imports https://www.w3.org/ns/dcat2.ttl (the DCAT 2 RDF), although the
     text is based on DCAT 3.
   unlisted_dcat_properties: optional
+  cited_url: https://www.w3.org/TR/vocab-dcat-3/

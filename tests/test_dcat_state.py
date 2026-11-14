@@ -246,7 +246,8 @@ def test_compiled_outputs_name_the_base_release_and_its_dcat():
     from profile_extensioner.compile.linkml_dsv import compile_dsv
 
     for base, imports, dcat_tr in (
-        ("dcat-ap-2.1.1", "releases/2.1.1/dcat-ap_2.1.1_shacl_shapes.ttl", "REC-vocab-dcat-2-20200204"),
+        ("dcat-ap-2.1.1", "releases/2.1.1/dcat-ap_2.1.1_shacl_shapes.ttl", "https://www.w3.org/TR/vocab-dcat-2/"),
+        ("dcat-ap-2.0.0", "releases/2.0.0/dcat-ap_2.0.0_shacl_shapes.ttl", "CR-vocab-dcat-2-20191003"),  # built on the CR
         ("dcat-ap-1.1", None, "REC-vocab-dcat-20140116"),
     ):
         kb = kb_for(base)
@@ -261,3 +262,36 @@ def test_compiled_outputs_name_the_base_release_and_its_dcat():
         else:   # 1.1 publishes its shapes only inside a zip: named, not imported
             assert "owl:imports" not in shacl and "shacl-201706.zip" in shacl
         assert dcat_tr in shacl and dcat_tr in dsv
+
+
+def test_spec_only_obligations_count_in_conformance_and_delta():
+    # paper session NEW-3: DCAT-AP 1.1 lists dcat:keyword (recommended) without an official shape
+    from profile_extensioner.compile.model import build_delta
+
+    kb = kb_for("dcat-ap-1.1")
+    project = Project(id="p", name="p", base_profile_id="dcat-ap-1.1", profile_namespace="https://example.org/x#",
+                      profile_prefix="ext")
+    atoms = [Atom(id="a1", statement="Users can see keywords.", subject="dataset", modality="may")]
+    loosened = change("refine_property", DCAT + "Dataset", DCAT + "keyword", obligation="optional",
+                      decided_by="human:rev", status="accepted")
+    view = build_view(project, kb, atoms, [loosened])
+    c1 = next(c for c in check_conformance(view).checks if c.id == "C1")
+    assert not c1.passed
+    assert build_delta(view).elements[0].delta_status == "loosened"
+
+
+def test_later_terms_are_also_checked_for_placement():
+    # paper session NEW-6: under DCAT 2014, dcat:accessService on dcat:Dataset is later AND misplaced (DCAT 2: Distribution)
+    found = results(kb_for("dcat-ap-1.1"), change("reuse_property", DCAT + "Dataset", DCAT + "accessService",
+                                                  range_class=DCAT + "DataService"))
+    messages = [r.message for r in failed(found, "D1")]
+    assert any("introduced in DCAT 2" in m for m in messages)
+    assert any("DCAT 2 lists dcat:accessService for dcat:Distribution" in m for m in messages)
+
+
+def test_base_deprecations_apply_to_subclasses():
+    # paper session NEW-7: DCAT-AP 3.0.1 deprecates dct:hasVersion on dcat:Dataset, so also on dcat:Catalog
+    kb = kb_for("dcat-ap-3.0.1")
+    for cls in (DCAT + "Dataset", DCAT + "Catalog", DCAT + "DatasetSeries"):
+        d2 = failed(results(kb, change("reuse_property", cls, DCT + "hasVersion")), "D2")
+        assert d2 and "dcat:hasVersion" in d2[0].message, cls

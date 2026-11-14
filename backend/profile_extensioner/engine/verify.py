@@ -249,7 +249,7 @@ def check_dcat_state(change: ProfileChange, ctx: VerifyContext) -> list[CheckRes
                                        + (f"; use {kb.curie(replacement)}." if replacement else "."),
                                  term=iri, problem="deprecated_dcat_term", replacement=replacement or ""))
 
-    deprecated = kb.base.deprecation(change.target_class, change.path) if change.path else None
+    deprecated = kb.base_deprecation(change.target_class, change.path) if change.path else None
     if deprecated and deprecated.get("kind") == "deprecated":
         replacement = deprecated.get("replacement")
         results.append(_fail("D2", f"{base_title} deprecates {kb.curie(change.path)} on {kb.curie(change.target_class)}"
@@ -257,17 +257,22 @@ def check_dcat_state(change: ProfileChange, ctx: VerifyContext) -> list[CheckRes
                              term=change.path, problem="deprecated_by_base", replacement=replacement or ""))
 
     path = change.path
-    if path and not change.is_class_change and kb.dcat_status(path) in ("current", "adopted") \
+    status = kb.dcat_status(path) if path else ""
+    if path and not change.is_class_change and status in ("current", "adopted", "later") \
             and not kb.is_minted(change.target_class):
         term = kb.term(path)
-        listing = dcat.classes_listing(path)
+        # A later term is placed by the DCAT version that introduced it (DCAT 2 lists dcat:accessService
+        # for dcat:Distribution), a current one by the base's own DCAT version.
+        version = dcat.introduced_in(path) if status == "later" else None
+        label = dcat.version_info(version).label if version and dcat.version_info(version) else dcat.label
+        listing = dcat.classes_listing(path, version)
         placed = (kb.base.element(change.target_class, path) is not None
-                  or dcat.listed_for(change.target_class, path) is not None
+                  or dcat.listed_for(change.target_class, path, version) is not None
                   or any(kb.is_subclass_of(change.target_class, cls) for cls in listing))
         # A declared rdfs:domain is V2's business; this covers DCAT properties placed by the specification only.
         if dcat.is_dcat(path) and listing and not placed and not (term and term.domain):
             results.append(_fail(
-                "D1", f"{dcat.label} lists {kb.curie(path)} for {', '.join(kb.curie(cls) for cls in listing)}, "
+                "D1", f"{label} lists {kb.curie(path)} for {', '.join(kb.curie(cls) for cls in listing)}, "
                       f"not for {kb.curie(change.target_class)}.",
                 term=path, problem="dcat_placement", listed_for=listing,
             ))

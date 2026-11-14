@@ -17,6 +17,7 @@ shapes:
   constraints:
   - shacl/dcat-ap.shapes.ttl
   ranges: []
+  deprecated: []
 obligations: obligations.yaml
 main_classes:
 - dcat:Catalog
@@ -43,3 +44,4 @@ dcat_basis:
   - The class table of section 4 links the DCAT classes to the Working Draft of 12 March 2013 (http://www.w3.org/TR/2013/WD-vocab-dcat-20130312/),
     not to the Recommendation.
   unlisted_dcat_properties: not_stated
+  cited_url: http://www.w3.org/TR/2014/REC-vocab-dcat-20140116/

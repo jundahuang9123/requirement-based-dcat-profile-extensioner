@@ -40,8 +40,9 @@ def compile_shacl_graph(view: ProfileView, *, include_trace: bool = True) -> Gra
     if kb.base.info.homepage:
         graph.add((profile, DCTERMS.conformsTo, URIRef(kb.base.info.homepage)))
     # The DCAT state the base builds on (profile.yaml dcat_basis): the extension is a profile of THAT DCAT.
-    if kb.dcat.version.tr:
-        graph.add((profile, DCTERMS.conformsTo, URIRef(kb.dcat.version.tr)))
+    dcat_url = kb.dcat.basis.cited_url or kb.dcat.version.tr   # as the base release cites it (CR, PR or REC)
+    if dcat_url:
+        graph.add((profile, DCTERMS.conformsTo, URIRef(dcat_url)))
     graph.add((profile, RDFS.comment, Literal(kb.dcat.summary(kb.base.info.title), lang="en")))
 
     for target in view.target_classes():

@@ -60,6 +60,19 @@ class KnowledgeBase:
     def is_subclass_of(self, sub: str, sup: str) -> bool:
         return self.vocab.is_subclass_of(sub, sup)
 
+    def base_deprecation(self, target_class: str | None, path: str | None) -> dict[str, str] | None:
+        """The base's deprecation of ``path`` on ``target_class`` or on one of its superclasses
+        (DCAT-AP 3.x deprecates dct:hasVersion on dcat:Dataset, so also on dcat:Catalog and dcat:DatasetSeries)."""
+        if not path or not target_class:
+            return None
+        exact = self.base.deprecation(target_class, path)
+        if exact:
+            return exact
+        for (declared_on, used), info in self.base.deprecated.items():
+            if used == path and declared_on != target_class and self.is_subclass_of(target_class, declared_on):
+                return info
+        return None
+
     def dcat_status(self, iri: str | None) -> str:
         """``DcatState.status`` for this base: a later DCAT term the base itself already uses is
         ``adopted`` (the base made that choice; DCAT-AP 1.2.1's shapes use DCAT 2's dcat:startDate)."""

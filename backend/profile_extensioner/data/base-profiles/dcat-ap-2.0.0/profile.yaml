@@ -48,3 +48,4 @@ dcat_basis:
   - Built on the Candidate Recommendation of DCAT 2; data/dcat/dcat-2 holds the REC, whose DCAT term set and domains/ranges
     equal the CR-period RDF (see data/dcat/versions.yaml).
   unlisted_dcat_properties: not_stated
+  cited_url: https://www.w3.org/TR/2019/CR-vocab-dcat-2-20191003/

@@ -158,6 +158,7 @@ class BaseProfile:
                 label=dcat_info.label if dcat_info else "",
                 tr=dcat_info.tr if dcat_info else "",
                 cited_as=str(basis.get("cited_as") or ""),
+                cited_url=str(basis.get("cited_url") or ""),
                 dcat_status_at_release=str(basis.get("dcat_status_at_release") or ""),
                 unlisted_dcat_properties=basis.get("unlisted_dcat_properties") or "not_stated",
                 evidence=[{key: str(value) for key, value in item.items()} for item in basis.get("evidence") or []],

@@ -113,14 +113,17 @@ def static_checks(view: ProfileView) -> tuple[list[ConformanceCheck], dict[str, 
     loosened, conflicts, counts = [], [], {"added": 0, "tightened": 0, "unchanged": 0, "loosened": 0}
     for change in view.property_changes:
         base_shape = kb.base.shape_facets(change.target_class, change.path)
+        # The base element may exist in the specification only (an obligation, no official shape, DCAT-AP 1.x):
+        # its obligation still counts.
+        in_base = base_shape is not None or kb.base.element(change.target_class, change.path) is not None
         comparison = compare_facets(base_shape, ShapeFacets.from_facets(change.facets, change.severity),
                                     inherit_missing=True, is_subclass=kb.is_subclass_of, compare_severity=False)
         deltas = list(comparison.facets)
-        ob = compare_obligation(kb.base.obligation(change.target_class, change.path) if base_shape else None,
+        ob = compare_obligation(kb.base.obligation(change.target_class, change.path) if in_base else None,
                                 change.facets.obligation)
         if ob:
             deltas.append(ob)
-        status = "added" if base_shape is None else "tightened"
+        status = "added" if not in_base else "tightened"
         for delta in deltas:
             item = ConformanceItem(target_class=change.target_class, path=change.path, change_id=change.id,
                                    facet=delta.facet, base_value=delta.base_value, new_value=delta.new_value,
@@ -131,7 +134,8 @@ def static_checks(view: ProfileView) -> tuple[list[ConformanceCheck], dict[str, 
             elif delta.status == "conflict":
                 conflicts.append(item)
                 status = "loosened"
-        if base_shape is not None and not any(d.status in ("added", "tightened", "incomparable", "loosened", "conflict") for d in deltas):
+        if in_base and status != "loosened" and not any(
+                d.status in ("added", "tightened", "incomparable", "loosened", "conflict") for d in deltas):
             status = "unchanged"
         counts[status] += 1
 
