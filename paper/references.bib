@@ -670,3 +670,344 @@
   year         = {2027},
   note         = {Companion paper, under review (anonymized). PLACEHOLDER entry}
 }
+
+% --- Verified additions (scratchpad digests/references-additions.bib, 14 Nov 2026) ----------------------
+% [F] fetched, [L] local hash-matched copy, [S] search results only (those carry a printed "verify" note).
+% references-additions.bib -- verified additions for the RQ2 paper (ESWC 2027 research track).
+% Built 14 November 2026. Add these to the 62 entries of paper/inputs/rq1-bibliography.2026-11-11a.bib
+% (paper/references.bib = those 62 + the placeholder anon2027rq1). No key below collides with the 63.
+% Every field was checked in this task; bibliography.md gives the source of each entry.
+% How it was checked:
+%   [F] fetched: raw.githubusercontent.com (W3C metadata from the Specref database, which copies the
+%       W3C API; the SEMICeu, ec-jrc, mff-uk, dataspecer, linkml, RDFLib, openai, citiususc and
+%       acl-org repositories) and pypi.org.
+%   [L] local development-case copy whose hash matches the pinned SEMICeu file.
+%   [S] WebSearch results only. This session's network allows only GitHub and PyPI, so the
+%       publisher, arXiv, CEUR, dblp, Springer, w3.org and Zenodo pages could not be opened.
+
+% --- W3C vocabularies the extensioner emits, validates with or vendors -------------------
+
+% [F] Specref shacl/20170720; title and both editors also in w3c/data-shapes shacl/index.html.
+@techreport{w3cshacl,
+  author      = {Knublauch, Holger and Kontokostas, Dimitris},
+  title       = {Shapes Constraint Language ({SHACL})},
+  institution = {W3C},
+  type        = {W3C Recommendation},
+  year        = {2017},
+  month       = jul,
+  note        = {20 July 2017},
+  url         = {https://www.w3.org/TR/2017/REC-shacl-20170720/}
+}
+
+% [F] Specref prov-o/20130430.
+@techreport{w3cprovo,
+  author      = {Lebo, Timothy and Sahoo, Satya and McGuinness, Deborah},
+  title       = {{PROV-O}: The {PROV} Ontology},
+  institution = {W3C},
+  type        = {W3C Recommendation},
+  year        = {2013},
+  month       = apr,
+  note        = {30 April 2013},
+  url         = {https://www.w3.org/TR/2013/REC-prov-o-20130430/}
+}
+
+% [F] Specref skos-reference/20090818; the vendored skos.rdf names the same two creators.
+@techreport{w3cskos,
+  author      = {Miles, Alistair and Bechhofer, Sean},
+  title       = {{SKOS} Simple Knowledge Organization System Reference},
+  institution = {W3C},
+  type        = {W3C Recommendation},
+  year        = {2009},
+  month       = aug,
+  note        = {18 August 2009},
+  url         = {https://www.w3.org/TR/2009/REC-skos-reference-20090818/}
+}
+
+% [F] Specref vocab-dqv/20161215.
+@techreport{w3cdqv,
+  author      = {Albertoni, Riccardo and Isaac, Antoine},
+  title       = {Data on the Web Best Practices: Data Quality Vocabulary},
+  institution = {W3C},
+  type        = {W3C Working Group Note},
+  year        = {2016},
+  month       = dec,
+  note        = {15 December 2016},
+  url         = {https://www.w3.org/TR/2016/NOTE-vocab-dqv-20161215/}
+}
+
+% [F] Specref dx-prof-0.9/20191218 for title, status, date and URL. Editors: Specref lists only
+% Nicholas Car for this version. The Note header as rendered by WebSearch shows Rob Atkinson
+% (Metalinkage, OGC) and a second editor "SURROUND Australia Pty Ltd and before CSIRO" (Car), and the
+% 2020 announcement is signed by both. Check the header before submission.
+@techreport{w3cprof,
+  author      = {Atkinson, Rob and Car, Nicholas J.},
+  title       = {The Profiles Vocabulary},
+  institution = {W3C},
+  type        = {W3C Working Group Note},
+  year        = {2019},
+  month       = dec,
+  note        = {18 December 2019},
+  url         = {https://www.w3.org/TR/2019/NOTE-dx-prof-20191218/}
+}
+
+% [F] Specref vocab-adms/20130801 (Specref marks this Note as retired). The extensioner vendors
+% SEMIC ADMS 2.00 (semicadms2), so cite semicadms2 for the vocabulary actually used.
+@techreport{w3cadms,
+  author      = {Archer, Phil and Shukair, Gofran},
+  title       = {Asset Description Metadata Schema ({ADMS})},
+  institution = {W3C},
+  type        = {W3C Working Group Note},
+  year        = {2013},
+  month       = aug,
+  note        = {1 August 2013},
+  url         = {https://www.w3.org/TR/2013/NOTE-vocab-adms-20130801/}
+}
+
+% --- SEMIC and JRC specifications ---------------------------------------------------------
+
+% [L]+[F] The pinned PDF (sha256 dcbbb6d9...) is byte-identical to the JRC development-case copy.
+% Its cover is dated 2015-10-23; its metadata table says 2017-02-24 (later correction snapshot).
+@misc{dcatap11,
+  author       = {{European Commission, ISA Programme}},
+  title        = {{DCAT} Application Profile for Data Portals in {Europe}, Version 1.1},
+  year         = {2015},
+  note         = {Dated 23 October 2015; the PDF served today carries the document date 24 February 2017},
+  url          = {https://raw.githubusercontent.com/SEMICeu/DCAT-AP/4470b8ea907b7eb9ec55ab22befd1ecd2210ff32/releases/1.1/dcat-ap_1.1.pdf}
+}
+
+% [F] releases/3.0.1/index.html at SEMICeu/DCAT-AP 4470b8e (sha256 cfa6c5e3..., the file the
+% extensioner bundles) has publishDate 2025-07-10; the README at the same commit says
+% "SEMIC Recommendation v3.0.1". The Interoperable Europe listing says "published on 27/10/2025"
+% (seen in WebSearch only).
+@misc{semicdcatap301,
+  author       = {{SEMIC}},
+  title        = {{DCAT-AP} 3.0.1: {DCAT} Application Profile for Data Portals in {Europe}},
+  year         = {2025},
+  note         = {SEMIC Recommendation; release page dated 10 July 2025},
+  url          = {https://semiceu.github.io/DCAT-AP/releases/3.0.1/}
+}
+
+% [F] releases/2.00/index.html at SEMICeu/ADMS 7b0a1bf (publishDate 2024-02-01); the vendored adms.ttl
+% from the same commit (sha256 c79e7275..., as in MANIFEST.json) has dct:issued 2023-04-05.
+@misc{semicadms2,
+  author       = {{SEMIC}},
+  title        = {{ADMS} Vocabulary, Release 2.00},
+  year         = {2024},
+  note         = {Release page dated 1 February 2024},
+  url          = {https://semiceu.github.io/ADMS/releases/2.00/}
+}
+
+% [F] PDF fetched at the commit pinned by statdcatap (sha256 b2353d55..., identical on master and
+% gh-pages). The RQ1 development-case gold is version 1.0.0 (statdcatap), not this bug-fix release.
+@misc{statdcatap101,
+  author       = {Sofou, Natasa and Dragan, Adina},
+  title        = {{StatDCAT-AP} -- {DCAT} Application Profile for Description of Statistical Datasets, Version 1.0.1},
+  year         = {2019},
+  note         = {Release date 28 May 2019; bug-fix release built from version 1.0.0},
+  url          = {https://raw.githubusercontent.com/SEMICeu/StatDCAT-AP/12a2424312f615e31ee3f7db881f5f564851551f/Release%201.0.1/StatDCAT-AP_1.0.1.pdf}
+}
+
+% [F] ec-jrc/dcat-ap-jrc master, docs/1.0/config.js (publishDate, editor, authors) and docs/1.0/index.html.
+@misc{perego2019dcatapjrc,
+  author       = {Perego, Andrea and Friis-Christensen, Anders and Vaccari, Lorenzino and Tsinaraki, Chrisa},
+  title        = {{DCAT-AP-JRC} -- Version 1: An Extension to {DCAT-AP} for Multidisciplinary Research Data},
+  howpublished = {European Commission, Joint Research Centre},
+  year         = {2019},
+  note         = {Unofficial draft, 3 July 2019},
+  url          = {https://ec-jrc.github.io/dcat-ap-jrc/1.0/}
+}
+
+% [F] ec-jrc/dcat-ap-jrc master, docs/config.js and docs/index.html. The configuration sets no
+% publishDate; the page says "Copyright 2014-2024". The key carries the access year, as semicreuse2026 does.
+@misc{lowenthal2026dcatapjrc,
+  author       = {Lowenthal, Hagar and Friis-Christensen, Anders and Perego, Andrea},
+  title        = {{DCAT-AP-JRC} -- Version 2: An Extension to {DCAT-AP} for Multidisciplinary Research Data},
+  howpublished = {European Commission, Joint Research Centre},
+  year         = {n.d.},
+  note         = {Living document aligning DCAT-AP-JRC with DCAT-AP 3; no publication date. Accessed 14 November 2026},
+  url          = {https://ec-jrc.github.io/dcat-ap-jrc/}
+}
+
+% --- Dataspecer, DSV and LinkML ---------------------------------------------------------------
+
+% [S] CEUR Vol-3828 paper 33 (ISWC 2024 Posters, Demos and Industry Tracks); the title is also on the
+% project page dataspecer/dataspecer www/content/en/papers/iswc2024.md [F].
+@inproceedings{klimek2024dataspecer,
+  author    = {Kl{\'\i}mek, Jakub and Stenchl{\'a}k, {\v{S}}t{\v{e}}p{\'a}n and Polick{\'y}, Adam and {\v{S}}koda, Petr and Ne{\v{c}}ask{\'y}, Martin},
+  title     = {Towards Authoring of Vocabularies and Application Profiles using {Dataspecer}},
+  booktitle = {{ISWC} 2024 Posters, Demos and Industry Tracks: From Novel Ideas to Industrial Practice},
+  series    = {CEUR Workshop Proceedings},
+  volume    = {3828},
+  year      = {2024},
+  url       = {https://ceur-ws.org/Vol-3828/paper33.pdf},
+  note         = {verify: identifiers checked through search results only}
+}
+
+% [S] dblp conf/esws/StenchlakN0K22 and the Unpaywall DOI record: LNCS 13384, pp. 52-56.
+@inproceedings{stenchlak2022dataspecer,
+  author    = {Stenchl{\'a}k, {\v{S}}t{\v{e}}p{\'a}n and Ne{\v{c}}ask{\'y}, Martin and {\v{S}}koda, Petr and Kl{\'\i}mek, Jakub},
+  title     = {{Dataspecer}: A Model-Driven Approach to Managing Data Specifications},
+  booktitle = {The Semantic Web: ESWC 2022 Satellite Events},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {13384},
+  pages     = {52--56},
+  publisher = {Springer, Cham},
+  year      = {2022},
+  doi       = {10.1007/978-3-031-11609-4_10},
+  note         = {verify: identifiers checked through search results only}
+}
+
+% [S] The KSI publication page, a Czech research-registry record and the OUCI record give the authors and
+% pp. 235-253. The chapter URL link.springer.com/chapter/10.1007/978-3-031-75872-0_13 came back from an
+% extended search. LNCS 15238 = ER 2024 (Springer book page 978-3-031-75871-3). One search summary says
+% the Springer chapter metadata has datePublished 2025; the book is listed as 27 October 2024.
+@inproceedings{prokop2024assistant,
+  author    = {Prokop, Dominik and Stenchl{\'a}k, {\v{S}}t{\v{e}}p{\'a}n and {\v{S}}koda, Petr and Kl{\'\i}mek, Jakub and Ne{\v{c}}ask{\'y}, Martin},
+  title     = {Enhancing Domain Modeling with Pre-trained Large Language Models: An Automated Assistant for Domain Modelers},
+  booktitle = {Conceptual Modeling -- ER 2024},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {15238},
+  pages     = {235--253},
+  publisher = {Springer, Cham},
+  year      = {2024},
+  doi       = {10.1007/978-3-031-75872-0_13},
+  note         = {verify: identifiers checked through search results only}
+}
+
+% [F] mff-uk/data-specification-vocabulary dsv/model.owl.ttl, identical at 5c1d655 and main
+% (dct:title, owl:versionInfo 1.0.1, dct:issued 2024-10-01, dct:modified 2026-04-02,
+% dct:bibliographicCitation "Klimek, J., Stenchlak, S., & Skoda, P. (2026). Data Specification
+% Vocabulary (Version 1.0.1)"). The README names https://w3id.org/dsv/ as the persistent URL of the document.
+@misc{klimek2026dsv,
+  author       = {Kl{\'\i}mek, Jakub and Stenchl{\'a}k, {\v{S}}t{\v{e}}p{\'a}n and {\v{S}}koda, Petr},
+  title        = {Data Specification Vocabulary ({DSV}), Version 1.0.1},
+  howpublished = {Faculty of Mathematics and Physics, Charles University},
+  year         = {2026},
+  note         = {Issued 1 October 2024; version 1.0.1 last modified 2 April 2026},
+  url          = {https://w3id.org/dsv/}
+}
+
+% [S] dblp/researchr conf/icbo/MoxonSUJBBVDHMB21 and the CEUR file Vol-3073/paper24.pdf; 14 authors,
+% shortened as in wilkinson2016fair. Given names as in LinkML's CITATION.cff.
+@inproceedings{moxon2021linkml,
+  author    = {Moxon, Sierra A. T. and Solbrig, Harold and Unni, Deepak R. and others},
+  title     = {The {Linked Data Modeling Language} ({LinkML}): A General-Purpose Data Modeling Framework Grounded in Machine-Readable Semantics},
+  booktitle = {International Conference on Biomedical Ontologies ({ICBO} 2021)},
+  series    = {CEUR Workshop Proceedings},
+  volume    = {3073},
+  pages     = {148--151},
+  year      = {2021},
+  url       = {https://ceur-ws.org/Vol-3073/paper24.pdf},
+  note         = {verify: identifiers checked through search results only}
+}
+
+% [F] linkml/linkml CITATION.cff preferred-citation (lines 113-226); [S] PubMed 41384800 (2026 Jan 21;
+% 15:giaf152). The eScholarship copy says "Published: 12 December 2025".
+@article{moxon2026linkml,
+  author  = {Moxon, Sierra A. T. and Solbrig, Harold and Harris, Nomi L. and others},
+  title   = {{LinkML}: An Open Data Modeling Framework},
+  journal = {GigaScience},
+  volume  = {15},
+  pages   = {giaf152},
+  year    = {2026},
+  doi     = {10.1093/gigascience/giaf152}
+}
+
+% --- Tools, model and methods -------------------------------------------------------------------
+
+% [F] RDFLib/pySHACL CITATION.cff (authors, version 0.40.2, concept DOI) and README ("For all
+% versions/latest version"); pypi.org lists 0.40.2 as uploaded on 28 October 2026. 0.40.2 is the
+% version installed in the project's virtual environment; pyproject.toml asks for pyshacl>=0.26.
+@misc{sommer2026pyshacl,
+  author       = {Sommer, Ashley and Car, Nicholas},
+  title        = {{pySHACL}},
+  howpublished = {Python SHACL validator, version 0.40.2},
+  year         = {2026},
+  doi          = {10.5281/zenodo.4750840},
+  url          = {https://github.com/RDFLib/pySHACL}
+}
+
+% [S] now publishers INR-019 page and the IR Anthology record: vol. 3, no. 4, pp. 333-389.
+@article{robertson2009bm25,
+  author  = {Robertson, Stephen and Zaragoza, Hugo},
+  title   = {The Probabilistic Relevance Framework: {BM25} and Beyond},
+  journal = {Foundations and Trends in Information Retrieval},
+  volume  = {3},
+  number  = {4},
+  pages   = {333--389},
+  year    = {2009},
+  doi     = {10.1561/1500000019},
+  note         = {verify: identifiers checked through search results only}
+}
+
+% [F] The openai/gpt-oss README links "Model card" to arXiv:2508.10925 (line 5) and gives this
+% citation (lines 584-596). [S] arXiv lists "Submitted on 8 Aug 2025".
+@misc{openai2025gptoss,
+  author        = {{OpenAI}},
+  title         = {{gpt-oss-120b} \& {gpt-oss-20b} Model Card},
+  year          = {2025},
+  eprint        = {2508.10925},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.CL},
+  note          = {arXiv:2508.10925, 8 August 2025},
+  url           = {https://arxiv.org/abs/2508.10925}
+}
+
+% [S] arXiv PDF 2608.07530 (title and authors, TU Munich). The plan page's "240 pairs" and
+% "DCAT-AP subset" were not confirmed.
+@misc{zhou2026nl2shacl,
+  author       = {Zhou, Yuchen and Bobet, Niels and Acosta, Maribel},
+  title        = {{NL2SHACL-Bench}: A Benchmark Suite for Natural Language to {SHACL} Translation},
+  year         = {2026},
+  howpublished = {arXiv:2608.07530},
+  url          = {https://arxiv.org/abs/2608.07530},
+  note         = {verify: identifiers checked through search results only}
+}
+
+% [F] ACL Anthology data/xml/2025.findings.xml, paper 671 (also arXiv:2506.04512).
+@inproceedings{zhang2025schema,
+  author    = {Zhang, Bohui and He, Yuan and Pintscher, Lydia and Mero{\~n}o-Pe{\~n}uela, Albert and Simperl, Elena},
+  title     = {Schema Generation for Large Knowledge Graphs Using Large Language Models},
+  booktitle = {Findings of the Association for Computational Linguistics: EMNLP 2025},
+  pages     = {12561--12580},
+  year      = {2025},
+  doi       = {10.18653/v1/2025.findings-emnlp.671}
+}
+
+% [F] citiususc/text2shacl README (title, authors, Apache-2.0 LICENSE). The year comes from the Zenodo
+% record 20082915, "citiususc/text2shacl v1.0", published 8 May 2026, the version submitted to
+% ISWC 2026 [S]. Its DOI was not seen, so none is given.
+@misc{martinez2026text2shacl,
+  author       = {Mart{\'\i}nez Balea, Adri{\'a}n and Chaves Fraga, David},
+  title        = {text2shacl: An Ontology-Driven Multi-Agent System for Extracting {SHACL} from {ERA} Business Rules},
+  howpublished = {Software, GitHub repository},
+  year         = {2026},
+  note         = {CiTIUS, Universidade de Santiago de Compostela; Apache-2.0 licence},
+  url          = {https://github.com/citiususc/text2shacl}
+}
+
+% [F] ACL Anthology data/xml/2024.naacl.xml, volume long, paper 102.
+@inproceedings{wu2024reciting,
+  author    = {Wu, Zhaofeng and Qiu, Linlu and Ross, Alexis and Aky{\"u}rek, Ekin and Chen, Boyuan and Wang, Bailin and Kim, Najoung and Andreas, Jacob and Kim, Yoon},
+  title     = {Reasoning or Reciting? {Exploring} the Capabilities and Limitations of Language Models Through Counterfactual Tasks},
+  booktitle = {Proceedings of the 2024 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies (Volume 1: Long Papers)},
+  pages     = {1819--1862},
+  year      = {2024},
+  doi       = {10.18653/v1/2024.naacl-long.102}
+}
+
+% --- Optional extra (not on the candidate list; metadata checked, content NOT read) ----------------
+
+% [F] Specref shacl12-profiling/20260702 (First Public Working Draft). Read it before citing:
+% only the title suggests it is related to profiling SHACL shapes.
+@techreport{w3cshacl12profiling,
+  author      = {Car, Nicholas and Henninger, Scott and Taghzouti, Yousouf and Nelson, Alexander and Goldberg, Matt},
+  title       = {{SHACL} 1.2 Profiling},
+  institution = {W3C},
+  type        = {W3C First Public Working Draft},
+  year        = {2026},
+  month       = jul,
+  note        = {2 July 2026},
+  url         = {https://www.w3.org/TR/2026/WD-shacl12-profiling-20260702/}
+}
+
