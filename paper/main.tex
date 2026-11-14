@@ -17,11 +17,13 @@
 \usepackage{acronym}
 \usepackage[hidelinks]{hyperref}
 
-% Draft markers, in the style of the RQ1 draft ("[TODO: ...]"). Search the source for \todo and \verify.
-\newcommand{\todo}[1]{\textcolor{red}{\textbf{[TODO: #1]}}}
-\newcommand{\verify}[1]{\textcolor{red}{\textbf{[verify: #1]}}}
+% Draft markers, in the style of the RQ1 draft: bold "[TODO: topic: slots]" in dark red (#a50000),
+% placed after a complete sentence. Search the source for \todo, \verify and \tbd.
+\definecolor{todored}{HTML}{A50000}
+\newcommand{\todo}[1]{\textcolor{todored}{\textbf{[TODO: #1]}}}
+\newcommand{\verify}[1]{\textcolor{todored}{\textbf{[verify: #1]}}}
 % A result cell that does not exist yet (main evaluation pending).
-\newcommand{\tbd}{\textcolor{red}{\textbf{?}}}
+\newcommand{\tbd}{\textcolor{todored}{\textbf{?}}}
 % Vocabulary terms and identifiers (prefixed names, check ids).
 \newcommand{\term}[1]{\texttt{#1}}
 
