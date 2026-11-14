@@ -8,12 +8,12 @@
 The benchmark adds to the five cases of the companion study \cite{anon2027rq1} what each published extension adds
 to its base: a \emph{reference delta}, the published profile minus its base (Table~\ref{tab:cases}).
 Appendix~\ref{app:benchmark} gives the cases in full and follows one reference from the published profile to the
-measure (Fig.~\ref{fig:reference}). Each case runs against one pinned base release and the \ac{DCAT} version that
-release builds on, because a reference delta exists only relative to one release: the data service, a class that
+measure (Fig.~\ref{fig:reference}). Each case runs against one pinned base release and the \ac{DCAT} version it
+builds on, because a reference delta exists only relative to one release: the data service, a class that
 \ac{DCAT-AP}~2.0.0 profiles, is an addition against \ac{DCAT-AP}~1.1, which builds on DCAT~2014, a version without
 data services. % src: @5ffd56e B/data/base-profiles/dcat-ap-2.0.0/profile.yaml:25-30; B/data/base-profiles/dcat-ap-1.1/profile.yaml:21-25; B/data/dcat/history.json:30-38 (dcat:DataService introduced in dcat-2)
-The tool holds the nine \ac{DCAT-AP} releases from 1.1 to 3.0.1 with their official \ac{SHACL} shapes, each pinned
-to the \ac{DCAT} version it names (Sect.~\ref{sec:impl}). % src: FACTS5:15-23 (nine bases); DCS §1.2, §3
+The tool holds the nine releases from 1.1 to 3.0.1 with their official \ac{SHACL} shapes
+(Sect.~\ref{sec:impl}). % src: FACTS5:15-23 (nine bases); DCS §3
 \todo{base release and reference profile version per case: author decides (Q3); the companion's bases are in
 Table~\ref{tab:cases}} Every reference delta is partial (shape constructs the comparison does not handle,
 profiles that publish no shapes).
@@ -28,7 +28,7 @@ for, the denominator. Bases, references and alignments are fixed before any eval
 \centering\scriptsize
 % Atoms and the companion's bases: RQ1 Table 1 (RQ1 L381-388). Base and Reference: the author decides (Q3).
 % Elements and Aligned (N): written by the RQ2 evaluator (\res prints \tbd until then).
-\begin{tabular}{@{}l l l l r r r@{}}
+\begin{tabular}{@{}l l@{\hspace{16pt}}l l r r r@{}}
 \toprule
 Case & Base in~\cite{anon2027rq1} & Base & Reference (version) & Atoms & Elements & Aligned ($N$) \\
 \midrule
@@ -55,54 +55,54 @@ these are cited through the guidance they restate. % src: LIT:74-98 (25 G3 rows;
 alignments are frozen before any case is scored. \todo{freeze: commit and tag of the reference deltas and the
 pipeline} No part of the pipeline was written for one case. \verify{the 1.1 base, the reference importer and the
 normalization of a recommended minimum were added while the development cases ran}
-% The plan freezes the reference deltas, atoms, alignments and counterfactual variants as one git tag (PLAN:19-20).
+% The plan freezes reference deltas, atoms, alignments and counterfactual variants as one git tag (PLAN:19-20).
 
 \paragraph{Inputs.} The input of each case is \emph{A-gold}: every content atom the companion benchmark scores for
 it, not only those its corpus states, because the pipeline reads no corpus (Table~\ref{tab:cases}). An importer
-copies each atom's identifier, its statement in the companion's standard form, its subject, its modality and a
-reference to its source, and drops the evaluator fields (the relation to the base, the anchor quotations and the
-evidence labels), so that the modeling step is measured apart from extraction. % src: @5ffd56e scripts/import_rq1_reference.py:1-16, 47-59; RQ1 L403-410
-The companion's reference sets record what kind of statement a source makes rather than must, should or may. The
-importer reads explicit requirements and mandatory items as must, recommendations as should and optional items as
-may, and leaves every other atom unspecified, which licenses at most recommended (Sect.~\ref{sec:problem}).
+copies each atom's identifier, statement, subject, modality and source reference and drops the evaluator fields
+(the relation to the base, anchor quotations, evidence labels), so that the modeling step is measured apart from
+extraction. % src: @5ffd56e scripts/import_rq1_reference.py:1-16, 47-59; RQ1 L403-410
+The reference sets record what kind of statement a source makes, not must, should or may; the importer maps
+explicit requirements and mandatory items to must, recommendations to should and optional items to may, and leaves
+the rest unspecified, which licenses at most recommended (Sect.~\ref{sec:problem}).
 % src: @5ffd56e scripts/import_rq1_reference.py:12-14, 26-32, 56; @5ffd56e B/contracts.py:713-715; PILOT:4-5
 \verify{share of unspecified modalities per case} \todo{carry the reference's obligation into the modality? leak
-against fidelity (Q20)} The atom counts of Table~\ref{tab:cases} are those the companion study reports.
-\todo{author: print test-case atom counts from RQ1 Table 1 (Q11)} A second input, \emph{A-rq1}, turns the needs
-that a run of the companion workflow retained (it accepted none) into atoms and shows how extraction errors carry
-into the profile. % src: RQ1 L474-475; PLAN:24-25
+against fidelity (Q20)} The atom counts are those the companion study reports. \todo{author: print test-case atom
+counts from RQ1 Table 1 (Q11)} A second input, \emph{A-rq1}, turns the needs that a run of the companion workflow
+retained (it accepted none) into atoms and shows how extraction errors carry into the profile.
+% src: RQ1 L474-475; PLAN:24-25
 \todo{A-rq1: which run, conversion, in or out (Q21)}
 
-\paragraph{Reference deltas.} Each reference delta compares the published profile with its base per class and
-property, the shapes and the obligation levels of the specification alike, after the merging of shapes that the
-pipeline applies to the base (Sect.~\ref{sec:problem}). An element is \emph{added} where the base states nothing,
-\emph{tightened} where the profile is stricter on at least one facet and \emph{loosened} where it is weaker.
-Loosened elements are kept and reported apart; unchanged ones are dropped, because a constraint inherited from the
-base earns no credit. % src: PLAN:13-15; PE:1-28, :127-128 (DeltaStatus); the delta spike's docstring (Q23)
-Class additions are kept, usage notes are not scored, and several constraints on one class and path fold into one
-element. Constructs the comparison does not handle are listed, never scored. A profile that publishes no shapes is
-extracted by hand from its tables, and a second person checks a sample. \todo{reference source per case (shapes or
-tables); delta tool and DCAT-AP 1.1's implicit class targets; obligation tables of the published profiles; profiles
-of profiles (Q23)} Each element is labeled with its kind, its facets and the atoms that ask for it. Elements that
-no atom asks for stay outside the denominator, the \emph{aligned reference elements}~$N$
-(Sect.~\ref{sec:problem}), which are fixed before any output is matched. \todo{alignment: who, how, agreement;
-second person on hand-extracted references (Q9)}
+\paragraph{Reference deltas.} Each reference delta compares the published profile's shapes and specified
+obligations with those of its base per class and property, after the merging of shapes that the pipeline applies
+to the base (Sect.~\ref{sec:problem}). An element is \emph{added} where the base states nothing, \emph{tightened}
+where the profile is stricter on a facet and \emph{loosened} where it is weaker; loosened elements are kept and
+reported apart, and unchanged ones are dropped, because an inherited constraint earns no credit.
+% src: PLAN:13-15; PE:1-28, :127-128 (DeltaStatus); the delta spike's docstring (Q23)
+Class additions are kept, usage notes are not scored, and the constraints on one class and path fold into one
+element. Constructs the comparison does not handle are listed, never scored; a profile without shapes is extracted
+by hand from its tables, and a second person checks a sample. \todo{reference source per case (shapes or tables);
+delta tool and DCAT-AP 1.1's implicit class targets; obligation tables of the published profiles; profiles of
+profiles (Q23)} Each element is labeled with its kind, its facets and the atoms that ask for it. Elements that no
+atom asks for stay outside the denominator, the \emph{aligned reference elements}~$N$ (Sect.~\ref{sec:problem}),
+which are fixed before any output is matched. \todo{alignment: who, how, agreement; second person on
+hand-extracted references (Q9)}
 
-\paragraph{Matching.} Generated and reference deltas share one contract, the ProfileDelta of
-Sect.~\ref{sec:problem}, so that like is compared with like. A generated element matches a reference element
-\emph{strictly} when the class and path \acp{IRI} agree, and in the \emph{relaxed} sense when its path is a sub- or
-super-property of the reference path under RDFS and an adjudicator confirms the pair; a minted element matches
-\emph{by meaning}, on its class and definition, never by \ac{IRI}. % src: PLAN:67-68; EXP:24-26; PE:3-28
+\paragraph{Matching.} Generated and reference deltas share one contract, the ProfileDelta
+(Sect.~\ref{sec:problem}). A generated element matches a reference element \emph{strictly} when the class and path
+\acp{IRI} agree, and in the \emph{relaxed} sense when its path is a sub- or super-property of the reference path
+under RDFS and an adjudicator confirms the pair; a minted element matches \emph{by meaning}, on its class and
+definition, never by \ac{IRI}. % src: PLAN:67-68; EXP:24-26; PE:3-28
 A reference element is credited once, by its best match in that order. Matched pairs are compared on obligation,
 minimum, maximum, range and value list, not on severity, which the generated delta derives from the obligation.
 % src: PLAN:69; KCU §8 item 12; ISS K12 (@5ffd56e B/compile/shacl.py:76; B/engine/propose.py:295)
-\emph{Recovery} counts the aligned reference elements with a match of any kind, an element recall over~$N$, and
-\emph{Strict} those with a strict match. Recovery is thus the share of the aligned reference elements that a run
-matches, not the share of correct changes or of the published profile. We lead with Recovery and report Strict
-beside every figure: a relaxed match or a match by meaning rests on a judgment that a strict match does not need,
-and for a reviewer of the output it still points to the element. Included changes that match no reference element
-are adjudicated as an alternative modeling of an aligned atom, as going beyond the reference, or as wrong, not
-counted as errors. The included changes of all runs of a case are pooled, each distinct element once under a random
-identifier, so that the adjudicators see neither run nor condition. % src: PLAN:65-69 (design)
+\emph{Recovery} counts the aligned reference elements with a match of any kind, and \emph{Strict} those with a
+strict match. Recovery is thus a recall: the share of the aligned reference elements that a run matches, not the
+share of correct changes or of the published profile. We lead with Recovery and report Strict beside every figure:
+relaxed matches and matches by meaning rest on a judgment, and for a reviewer of the output they still point to the
+element. Included changes that match no reference element are adjudicated as an alternative modeling of an aligned
+atom, as going beyond the reference, or as wrong. The included changes of all runs of a case are pooled, each
+distinct element once under a random identifier, so that the adjudicators see neither run nor condition.
+% src: PLAN:65-69 (design)
 \todo{adjudicator: person or model family, blind to the condition; agreement (Q9)} \todo{evaluator:
 scripts/evaluate\_rq2.py not built}
