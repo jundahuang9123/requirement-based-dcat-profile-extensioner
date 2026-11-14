@@ -4,81 +4,76 @@
 % Source shorthand in the % src: comments: outline-final.md Sect. 0.1 (B = backend/profile_extensioner/).
 \section{Experimental Setup}\label{sec:setup}
 
-\paragraph{Conditions.} The \textbf{full pipeline (FP)} is the main condition, with the defaults of
-Sect.~\ref{sec:pipeline} (eight candidate properties, at most three repair rounds, the judge, one vote, auto-acceptance
-from a confidence of 0.5, later-\acs{DCAT} terms to a person), the target namespace hidden and no prompt naming the
-case. % src: @5ffd56e B/contracts.py:592-606; B/engine/retrieve.py:101, 263
-\todo{leak fix: see Leakage controls} In the \textbf{rules baseline (RB)}, offline lexical rules take the model's
-three roles and mint at a confidence of 0.45, so RB never auto-accepts a mint. % src: @5ffd56e B/llm/mock.py:34-35, 199; KCU §5.1
-The \textbf{closed book (CB)} measures what the same model reproduces of a reference delta without atoms, from its
-training knowledge \cite{sainz2023contamination,mai2024adapt}. \todo{probe script; author: the companion's variant
-(domain and base only) or the plan's (the extension's name)} \textbf{$-$RET} runs without retrieval: the model
-still sees the base's elements and can reuse any indexed term from memory, which V1 accepts, so it sets retrieval
-against memory, not against no reuse.
+\paragraph{Conditions.} The \textbf{full pipeline (FP)}, the main condition, runs with the settings of
+Sect.~\ref{sec:pipeline}, eight candidate properties per atom, one vote and the answer held out (L2, below). % src: @5ffd56e B/contracts.py:592-606 (top_k 8, votes 1, repair_rounds 3, attribution_check on, auto_accept_min_confidence 0.5, later_dcat_terms "review"); B/engine/retrieve.py:101, 263
+In the \textbf{rules baseline (RB)}, offline lexical rules take the model's three roles and mint at a confidence of
+0.45, so RB never auto-accepts a mint. % src: @5ffd56e B/llm/mock.py:34-35, 199; KCU §5.1
+The \textbf{closed book (CB)} gives the same model no atoms, so what it reproduces of a reference delta comes from
+its training \cite{sainz2023contamination,mai2024adapt}. \todo{closed book: probe script and variant (Q7)}
+% CB variant open: the companion's (domain and base only) or the plan's (the extension's name).
+\textbf{$-$RET} runs without retrieval: the model still sees the base's elements and can reuse any indexed term from
+memory, which V1 accepts, so it sets retrieval against memory, not against no reuse.
 % src: @5ffd56e B/engine/prompts.py:179-188; B/engine/verify.py:130-141 (the outside-the-candidates warning needs retrieval); B/engine/pipeline.py:158-159
-\textbf{$-$REP} runs without repair and \textbf{$-$T2} without the judge, so that a change without a symbolic error
-needs no verdict to be auto-accepted. % src: @5ffd56e B/engine/pipeline.py:222-223, 246-267, 298
-Three planned conditions cannot be run yet: \textbf{SX}, where the model writes \ac{SHACL}, is not implemented, and
-\textbf{TC} and \textbf{TR}, typed changes compiled unchecked, without and with retrieval, need a
-verification switch that is defined but never read. % src: @5ffd56e B/contracts.py:594 (PipelineConfig.verify; grep finds no reader); ISS E7.7; PLAN:54-63
-\todo{conditions SX, TC, TR: implement or drop} \textbf{HR} adds a person's review on some cases.
-\todo{HR: in or out} \todo{names of the conditions: author to confirm (Q7); the plan's ids: RB C0, SX C1, TC C2,
-TR C3, FP C4, HR C5} Other runs stop at the review queue, so all measures concern changes the machine included.
-Comparisons are between whole configurations; only an ablation removes a single component.
+\textbf{$-$REP} drops repair and \textbf{$-$T2} the judge, so a change without a symbolic error is decided without
+a verdict. % src: @5ffd56e B/engine/pipeline.py:222-223, 246-267, 298
+Three planned conditions cannot run yet. \textbf{SX}, where the model writes \ac{SHACL}, is not implemented;
+\textbf{TC} and \textbf{TR}, typed changes compiled unchecked, without and with retrieval, need a verification
+switch that is defined but never read. % src: @5ffd56e B/contracts.py:594 (PipelineConfig.verify; grep finds no reader); ISS E7.7; PLAN:54-63
+\textbf{HR} adds a person's review on some cases. \todo{conditions: names; SX, TC, TR, HR (Q7)}
+% The plan's ids (ADD §D): RB C0, SX C1, TC C2, TR C3, FP C4, HR C5.
+Other runs stop at the review queue, so all measures concern changes the machine included. Comparisons are between
+whole configurations; only an ablation removes a single component.
 
 \paragraph{Models, repetitions and reproducibility.} All model steps use gpt-oss-120b, the companion study's
-open-weight model, through an OpenAI-compatible endpoint; the provider sends no reasoning effort, no output limit
-and no temperature unless one is set, so the endpoint's defaults apply. % src: RQ1 L482-483 (model); @5ffd56e B/llm/openai_compatible.py:82-91; ENG §7.8; ISS E7.8
-\verify{which defaults} \todo{tool: send effort and limit, or state (Q22)} Hosted models answer identical requests
-differently \cite{atil2025nondeterminism}, so each condition runs three times per case, end to end, each run on a
-fresh store, since the replay cache serves identical requests across a store's projects and, under an unchanged
-prompt version such as the judge's, across code versions. % src: three runs: outline-final 6.6 (design), RQ1 L487-488; @5ffd56e B/llm/client.py:70-72, 85-95; B/store/blackboard.py:341-351; B/engine/prompts.py:20-22; KCU §5.4-5.5; ISS E7.9
-\todo{fresh store per run: the run script still shares one store} Every measure is the median with its range, and
-two conditions separate only where their ranges do not overlap, a descriptive rule for three runs, not a
-significance test. Code commit, prompt versions and base hashes are frozen before the first run.
-\todo{second model, repetitions, budget, run dates (Q8)}
+open-weight model, through an OpenAI-compatible endpoint. The provider sends no reasoning effort, no output limit
+and, by default, no temperature, so the endpoint's defaults apply. % src: RQ1 L482-483 (model); @5ffd56e B/llm/openai_compatible.py:82-91; B/contracts.py:582 (temperature None by default); ENG §7.8; ISS E7.8
+\verify{endpoint defaults} \todo{provider: effort and output limit (Q22)} Hosted models answer identical requests
+differently \cite{atil2025nondeterminism}, so every condition has three complete runs per case. Each run gets a
+fresh store: the replay cache answers identical requests across a store's projects and, under an unchanged prompt
+version, across code versions. % src: three runs: outline-final 6.6 (design), RQ1 L487-488; @5ffd56e B/llm/client.py:70-72, 85-95; B/store/blackboard.py:341-351; B/engine/prompts.py:20-22 (judge-v1 unchanged); KCU §5.4-5.5; ISS E7.9
+\todo{fresh store per run (Q22)} Every measure is the median with its range, and two conditions separate only
+where their ranges do not overlap, a descriptive rule for three runs, not a significance test. Code commit, prompt
+versions and base hashes are frozen before the first run. \todo{second model, repetitions, budget, dates (Q8)}
 
-\paragraph{Leakage controls.} L1 is the closed book. L2 holds the answer out: intake turns away atoms with an
-\ac{IRI} or a prefixed name, the index hides the target profile's namespace, and no prompt carries an atom's source
-reference or a case-naming title or identifier.
+\paragraph{Leakage controls.} L1 is the closed book. L2 holds the answer out: atoms carry no \acp{IRI} or prefixed
+names (Sect.~\ref{sec:read}), the index hides the target profile's namespace, and no prompt carries an atom's
+source reference or a case-naming title or identifier.
 % src: L1-L4: PLAN:75-82, EXP:34-40; @5ffd56e B/engine/intake.py:39-51; B/engine/pipeline.py:184-185; B/knowledge/vocab_index.py:202-216; B/engine/prompts.py:108, 113-115, 174
-\todo{namespaces hidden per case} In the development runs, every proposer, repairer and judge prompt named the case
-and the section of the published profile behind the atom (Sect.~\ref{sec:discussion}).
-% src: @5ffd56e B/engine/prompts.py:113-115, 174, 177; @5ffd56e scripts/import_rq1_reference.py:57-58; paper/inputs/run_reference_case.py:32-33; ADD §C
-\todo{remove the source reference, the case-naming title and case-naming identifiers (neutral ids in the importer)
-from every prompt before the evaluation; verify the fix commit (Q5)} A plain-word leak remains: A-gold atoms are
-worded from the companion's reference documents, for GeoDCAT-AP, StatDCAT-AP and DCAT-AP-JRC the profile's own
-specification or paper \cite{anon2027rq1}; A-rq1 lacks this advantage. % src: RQ1 L383, L386-387 (Table 1 references), L396-403
-L3 adds an unseen case. \todo{L3: in or out; anonymity (Q12)} L4 rewords a few atoms so that the right answer
-departs from the publication, after counterfactual tasks \verify{new bib entry: Wu et al., NAACL 2024}: output that
-still follows the publication follows the model's memory, not the atoms. The atom contract records the reworded
-atom and the expected change (a synthetic one: Table~\ref{tab:criteria} in the appendix).
-% src: @5ffd56e B/contracts.py:147-148; ATOMS:109-118 (lab-02-cf)
+\todo{namespaces hidden per case} In the development runs every proposer, repairer and judge prompt printed the
+atom's source reference, naming the case and the published profile's section (Sect.~\ref{sec:discussion}).
+% src: @5ffd56e B/engine/prompts.py:113-115 (source line), 177, 231, 265 (proposer, repairer, judge); :174 (case-naming title, proposer prompt only); @5ffd56e scripts/import_rq1_reference.py:57-58; paper/inputs/run_reference_case.py:32-33; ADD §C
+\todo{leak fix and its commit (Q5)} A plain-word leak remains: the reference atoms are worded from the companion's
+reference documents, for GeoDCAT-AP, StatDCAT-AP and DCAT-AP-JRC the profile's own specification or paper
+\cite{anon2027rq1}; the extracted atoms lack this advantage. % src: RQ1 L383, L386-387 (Table 1 references), L396-403
+L3 adds an unseen case. \todo{unseen case: in or out (Q12)} L4 rewords some atoms so that the right answer departs
+from the publication, after counterfactual tasks \cite{wu2024reciting}. The atom contract names the atom a
+counterfactual rewords and its expected change (a synthetic one in Table~\ref{tab:criteria}).
+% src: @5ffd56e B/contracts.py:147-148 (counterfactual_of, expected_change); ATOMS:109-118 (lab-02-cf)
 \todo{L4 atoms per case}
 
 \paragraph{Checks of model judgments.} A person blind to the model's answers checks samples of the judge's
 verdicts and of the dispositions covered by the base and out of scope in each test case. \todo{audit: who,
-sample size, agreement statistic (Q9)} B1 confirms only that the named base elements exist and are at least as strong
-as the licensed obligation, not that they carry what the atom asks, and nothing checks an out-of-scope decision.
+sample, agreement (Q9)} B1 tests only the existence and strength of the named base elements, and nothing tests an
+out-of-scope decision (Sect.~\ref{sec:discussion}).
 % src: @5ffd56e B/engine/verify.py:513-533; ENG §3 B1, §7.11
 The companion's labels of each atom's relation to its base (41 of its 196 scored atoms restate it
 \cite{anon2027rq1}) check the covered-by-base dispositions independently where a case keeps the companion's base.
 % src: RQ1 L407-408, L412-414
-\todo{relation labels: join them back at scoring time; valid only for the companion's bases} No person has yet
-audited sampled traces, so whether the cited atoms support a change rests on T2. \todo{trace audit: what was
-done}
+\todo{relation labels: join at scoring} Until a person audits sampled traces, T2 alone judges whether the cited
+atoms support a change. \todo{trace audit (Q9)}
 
-\paragraph{Measures.} We report two views of every run. From the reference: Recovery and Strict over~$N$
-(Sect.~\ref{sec:benchmark}) and the facet agreement of matched pairs. From the output: the included changes by kind
-and the share that match a reference element, a precision against one published modeling, not the share of valid
-changes; unmatched changes are adjudicated from pooled outputs \cite{buckley2004incomplete,zobel1998reliable}. Per
-criterion: E1, the extension rate (minted properties over included property-level changes) beside the reference
-delta's, unjustified mints (where the reference reuses or refines) and Recovery by element kind; % src: @5ffd56e B/engine/pipeline.py:463, 473; NOTES 4; PLAN:70
-E2, trace failures and the judge's verdicts; E3, auto-accepted changes, decisions by who made them and the
-\emph{review load}, the changes queued and conflicts open at the end of a run, a count, not a measure of effort;
-unclear or unaddressed atoms, which never enter the queue, are counted apart; % src: ENG §5, §7.11; @5ffd56e B/engine/pipeline.py:430-449
-E4, conformance verdicts, failing and warning rules, C7 warnings by cause and terms of a later \acs{DCAT} sent to a
-person. Also reported are atom coverage by the tool's own count (\emph{addressed} is the model's own claim of full
-coverage), stability (ranges, elements credited in every run and in at least one, mean pairwise Jaccard
-overlap) and cost (calls without cached replays, input tokens, hours). Sums over cases take each case's median run. \todo{behavior on test
-records (plan metric): in or out (Q27)}
+\paragraph{Measures.} Each run is measured two ways. From the reference: Recovery and Strict over~$N$
+(Sect.~\ref{sec:benchmark}) and the facet agreement of matched pairs. From the output: the included changes by
+kind and the share that match a reference element, a precision against one published modeling, not the share of
+valid changes; unmatched changes are adjudicated (Sect.~\ref{sec:benchmark})
+\cite{buckley2004incomplete,zobel1998reliable}. For E1: the extension rate, minted properties over included
+property-level changes, beside the reference delta's; unjustified mints, where the reference reuses or refines;
+and Recovery by element kind. % src: @5ffd56e B/engine/pipeline.py:463, 473; NOTES 4; PLAN:70
+For E2: trace failures and the judge's verdicts. For E3: auto-accepted changes, decisions by who made them, and the
+\emph{review load}, changes queued and conflicts open when a run ends, a count, not a measure of effort. Unclear
+or unaddressed atoms are counted apart. % src: ENG §5, §7.11; @5ffd56e B/engine/pipeline.py:430-449
+For E4: conformance verdicts, failing and warning rules, C7 warnings by cause and terms of a later \acs{DCAT} sent
+to a person. Also reported is atom coverage by the tool's own count (\emph{addressed} is the model's claim of full
+coverage). Stability covers ranges, elements credited by all three runs and by at least one, and mean pairwise
+Jaccard overlap. Cost counts calls without cached replays, input tokens and hours. Sums use each case's median run.
+\todo{behavior on test records: in or out (Q27)}

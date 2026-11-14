@@ -3,111 +3,106 @@
 % delta, minting, model judgments), internal (judgments, ablations, contamination), external (scope).
 % No development-run number appears here (contaminated: Appendix C.1 only) and no atom identifier (examples only in
 % the local file of Appendix C.2). Code anchors: @5ffd56e B/ = backend/profile_extensioner/ at commit 5ffd56e.
+% What another section states in full is referred to, not restated here: loosened elements and hand extraction
+% (Sect. 5), the rules baseline's mint confidence, the closed book, B1 and the defaults (Sect. 6), the judge's input
+% and verdicts (Sect. 4.2), the owl:imports caveat (Sect. 4.3), the conditions of each check and rule (Table 4).
+% Markers are short labels; the open questions (Qn) and the tool-issue table are in paper/README.md.
 \section{Discussion and Threats to Validity}\label{sec:discussion}
 
 \paragraph{The reference delta as one modeling, partly outside the atoms.}
-A published profile records one team's modeling against one base release, and several modelings can meet an atom,
-so relaxed matching and adjudication carry weight; Strict beside Recovery bounds the effect of that judgment.
-Reference elements no atom asks for are beyond an atom-driven step and do not count as misses
-(Sect.~\ref{sec:problem}); loosened elements are kept apart, and references extracted by hand add judgment.
-Where a published profile mints nothing, every mint departs from it, although it may model its atom validly.
+A published profile records one team's modeling against one base release, and several modelings can meet an atom;
+relaxed matches and adjudication therefore carry weight, and Strict beside Recovery bounds their effect.
+Elements no atom asks for do not count as misses (Sect.~\ref{sec:problem}), and references extracted by hand add % loosened elements kept apart, second person on hand-extracted references: sections/05-benchmark.tex (Reference deltas)
+judgment of their own.
+Where a published profile mints nothing, every mint departs from it, though it may model its atom validly.
 
 \paragraph{From extracted needs to a profile.}
-The reference atoms, each reviewed by the companion study's curator, isolate the modeling step \cite{anon2027rq1}.
-The extracted atoms come from needs the companion workflow retained and no person accepted, far more than the
-reference has atoms; runs on them show how extraction errors reach the profile.
+The reference atoms, each reviewed by the companion study's curator, isolate the modeling step \cite{anon2027rq1}. % src: RQ1 L404-405 (the curator reviewed every scored atom)
+The extracted atoms come from needs that far outnumber them and that no person accepted, so they add the errors of % src: RQ1 L641-642 (far more needs than the reference has atoms); sections/05-benchmark.tex (Inputs: none accepted)
+extraction (Sect.~\ref{sec:benchmark}).
 \todo{extracted atoms: results (Q21)}
 The pair would then divide the work: one step drafts candidate needs with their passages, the other an extension
 that a team reviews change by change; the modeling decision stays with the team.
-\todo{after results: keep or drop the previous sentence}
+\todo{after results: keep or drop this sentence}
 
 \paragraph{Minting and review cost.}
 The extension rate shows how often the pipeline mints.
-A term outside the index fails V1, so where a domain's vocabularies are missing, the model must mint or pick another
-term; the rules baseline mints below the confidence threshold, so each of its mints waits for a person.
-\todo{after results: extension rates of the test cases against the reference deltas; unjustified mints}
-Each mint costs a reviewer decision, queued or not, so the extension rate is a cost in use, not only a measure of
-reuse.
+A term outside the index fails V1, so where a domain's vocabularies are missing, the model mints or picks another % src: @5ffd56e B/engine/verify.py:96-158 (V1: a term not in the index is an error)
+term.
+\todo{after results: extension rates, unjustified mints}
+Every mint needs a reviewer's decision, queued or not, so the extension rate measures a cost in use, not only reuse.
 
 \paragraph{Retrieval and the vocabularies within reach.}
 Retrieval is lexical: an atom in plain words can miss a term documented in other words, and the closed candidate list
-then pushes the model toward a mint; class retrieval, cutting its raw hits before boosting base classes, dropped a
-base class in a synthetic probe.
-Like the companion study's corpus \cite{anon2027rq1}, the index (the base's terms, all \ac{DCAT} terms and 12 other % src: paper/inputs/tool-facts-main-5ffd56e.txt:2-3; digests/dcat-state.md:122 (all 60 DCAT terms); main-wt README.md:122-126
-vocabularies) is a choice that bounds the outcome.
+then pushes the model toward a mint.
+Class retrieval also truncates its hits before it boosts base classes, which can drop one. % src: KCU §2.6, §8 item 8 (a probe on a synthetic atom); ISS K8; @5ffd56e B/engine/retrieve.py:215-230
+Like the companion study's corpus \cite{anon2027rq1}, the vocabulary index is a choice that bounds the outcome. % src: paper/inputs/tool-facts-main-5ffd56e.txt:2-3; digests/dcat-state.md:122 (all 60 DCAT terms); main-wt README.md:122-126
 It lacks the RDF Data Cube vocabulary \cite{w3cdatacube} and \ac{DQV} \cite{w3cdqv}, whereas StatDCAT-AP
 gives two of the four properties it mints Data Cube ranges and reuses \ac{DQV} for quality annotations % src: statdcatap PDF (references.bib:55), Annex II, p. 52: stat:attribute, stat:dimension (Data Cube ranges), stat:numSeries, stat:statUnitMeasure; dqv:hasQualityAnnotation; digests/pilot.md:369-386
 \cite{statdcatap}; the pipeline can do neither.
-\verify{StatDCAT-AP checked in version 1.0.0 only: recheck for the chosen reference version (Q3)} % src: references.bib:52
-$-$RET sets retrieval against the model's memory (Sect.~\ref{sec:setup}): its Recovery is
-\res{test}{noRET}{recovery}, FP's \res{test}{FP}{recovery}.
+\verify{StatDCAT-AP 1.0.0 only: recheck the reference version (Q3)} % src: references.bib:52
+$-$RET sets retrieval against the model's memory: its Recovery is \res{test}{noRET}{recovery}, FP's % src: sections/06-setup.tex (Conditions: -RET)
+\res{test}{FP}{recovery}.
 Appendix~\ref{app:examples} gives examples from the development runs.
 
 \paragraph{Machine judgments and the final say.}
-Dispositions, attribution verdicts and confidence are model judgments: none has been verified, and none is a
-person's acceptance.
-The judge is the proposer's model, hence not independent of it, and \ac{LLM} judges are biased and
+Dispositions, attribution verdicts and confidence are model judgments, unverified and distinct from a person's
+acceptance.
+The judge shares the proposer's model, so it is not independent of it, and \ac{LLM} judges are biased and
 inconsistent \cite{zheng2023judge,wang2024fair,stureborg2024inconsistent,liu2023geval}.
-It sees only changes without a symbolic error, blocks only for an unsupported verdict or facet and is not rerun % src: @5ffd56e B/engine/pipeline.py:239-243, 279, 363
-after consolidation, although it alone reads facets beyond the obligation against the atoms. % src: @5ffd56e B/engine/verify.py:442-475 (T1: obligation only)
-B1 checks that named base elements exist and are strong enough, not what they mean; nothing checks out-of-scope
-decisions; the confidence threshold is our setting.
+It is not rerun after consolidation (Sect.~\ref{sec:check}), although it alone weighs facets beyond the obligation % src: @5ffd56e B/engine/pipeline.py:239-243, 279, 359-366 (consolidation keeps the earlier T2 result)
+against the atoms. % src: @5ffd56e B/engine/verify.py:442-475 (T1: obligation only)
+B1 checks existence and strength, not meaning, and nothing checks out-of-scope decisions (Sect.~\ref{sec:setup}). % src: @5ffd56e B/engine/verify.py:513-533; ENG §3 B1, §7.11
 \todo{audit: result (Q9)}
-The design accepts these limits: every judgment is stored with its prompt, answer and reason, so a person can find
-a wrong one and overrule it.
+Every judgment is stored with its prompt, answer and reason, so a person can find a wrong one and overrule it.
 No run, development or evaluation, includes a person's decision, so the final say is a property of the design, not
 a measured effect.
-\todo{tool: sign-off ignores unclear and unaddressed atoms: fix or state (Q22)}
-Whether the queue and its evidence help a reviewer or mislead one, as wrong suggestions can
-\cite{lippolis2025oeassist}, remains untested; acceptance in use, which IDEA2 measures \cite{alharbi2027idea2}, would
-be the complementary test.
+\todo{tool: sign-off ignores unresolved atoms (Q22)}
+% unresolved: unclear and unaddressed atoms (README tool issue A9)
+Whether the queue and its evidence help reviewers or mislead them, as wrong suggestions can
+\cite{lippolis2025oeassist}, is untested, and so is acceptance in use, which IDEA2 measures \cite{alharbi2027idea2}.
 \verify{OE-Assist finding: from the authors' slides}
 
 \paragraph{The contribution of verification and repair.}
-The ablations remove retrieval, repair and the judge, but not verification, whose switch is never read, so what the
+The ablations remove retrieval, repair and the judge but not verification, whose switch is never read, so what the % src: @5ffd56e B/contracts.py:594 (PipelineConfig.verify; grep finds no reader); ISS E7.7
 symbolic checks contribute is not measured.
-\todo{conditions SX, TC, TR: implement or drop (Q7)}
-Repair can lose a legitimate change: changes that different atoms ask for on one class and property each get a
-duplicate error and go to repair, where they may be withdrawn, before consolidation would merge them.
-One vote, eight candidate properties, three repair rounds and the threshold of 0.5 are not varied. % src: @5ffd56e B/contracts.py:593, 595, 597, 599
+\todo{conditions SX, TC, TR (Q7)}
+Repair can lose a legitimate change: when different atoms ask for changes on one class and property, each gets a % src: ENG §7.2; ISS E7.2; @5ffd56e B/engine/verify.py:493-510
+duplicate error and may be withdrawn before consolidation would merge them.
+Votes, candidate count, repair rounds and the threshold are not varied (Sect.~\ref{sec:setup}). % src: @5ffd56e B/contracts.py:593, 595, 597, 599
 
 \paragraph{What conformance shows.}
 Validated with the official shapes, the delta cannot relax them (Sect.~\ref{sec:problem}); the rules test what
 this leaves open.
-C7 is a satisfiability witness, not a proof of conformance: it validates one positive instance per class without
-inference, its branch for data only the base rejects cannot fire, and it warns on legal refinements (a subclass
-range, a minimum of two on a literal, an unsampled datatype) and at its depth limit, so a % src: digests/issues-at-main.md:49-50 (K1, K2; probe P11); digests/knowledge-compile-ui.md:466-490; @5ffd56e B/conformance/check.py:195, 218-245
-warning is a lead, not a defect.
+C7 is a satisfiability witness, not a proof of conformance (Table~\ref{tab:checks}), and it also warns on legal % src: digests/issues-at-main.md:49-50 (K1, K2; probe P11); digests/knowledge-compile-ui.md:466-490; @5ffd56e B/conformance/check.py:195, 218-245
+refinements and at its depth limit, so a warning is a lead, not a defect.
 No negative witness is built, and controlled-vocabulary usage levels are not modeled.
-Ranges narrow only through subclass axioms the index knows; an incomparable one counts as tightened. % src: digests/knowledge-compile-ui.md:492-497; digests/issues-at-main.md:51 (K3)
-C1 compares obligations only where the base has a shape, V3 also where it has none, and some obligations of the 1.2.1 % src: paper/inputs/tool-facts-main-5ffd56e.txt:17-21 (unknown obligations); digests/issues-at-main.md:112-121 (NEW-3, NEW-4)
-to 2.1.1 bases are unknown, so their loosening goes unseen. % src: paper/inputs/tool-facts-main-5ffd56e.txt:17-21
+Ranges narrow only through subclass axioms the index knows, and an incomparable range counts as tightened. % src: digests/knowledge-compile-ui.md:492-497; digests/issues-at-main.md:51 (K3)
+C1 compares obligations only where the base has a shape, and some obligations of the 1.2.1 to 2.1.1 bases are % src: digests/issues-at-main.md:112-121 (NEW-3, NEW-4); @5ffd56e B/conformance/check.py:119-120
+unknown; in both cases conformance can miss a loosening. % src: paper/inputs/tool-facts-main-5ffd56e.txt:17-21 (unknown obligations)
 \todo{tool: align C1 with V3 (Q22)}
-C8 ignores placement, base deprecations and inverses, which D1--D3 check, and the pinning covers only \term{dcat:}
-terms.
-The delta's \term{owl:imports} names a release page for the 3.0.x bases and nothing for the others. % src: @5ffd56e B/compile/shacl.py:33-34; digests/issues-at-main.md:55-56 (K10, K11)
+C8 is narrower than D1--D3, and the pinning covers only \term{dcat:} terms. % src: DCS §7 items 18, 20; @5ffd56e B/conformance/check.py:64-99
 
 \paragraph{Contamination.}
-Training data may have included the published profiles and their documents \cite{sainz2023contamination}.
-The closed book shows what the model produces without atoms, which neither proves nor excludes that it saw them;
-counterfactual atoms test whether the output follows the atoms or the publication \cite{wu2024reciting}.
+Training data may have included the published profiles and the documents behind them \cite{sainz2023contamination}.
+The closed book can neither prove nor exclude this; counterfactual atoms test whether the output follows the atoms
+or the publication \cite{wu2024reciting}.
 \todo{counterfactual atoms: results (L4)}
 Reference atoms may also restate a publication in plain words (Sect.~\ref{sec:setup}).
-In the development runs every prompt printed the atom's source reference, naming the case and the section of the
-published profile, and the proposer's prompt a title naming the case; intake lints the statement, not the source
-reference.
-Reading the prompts stored on the blackboard revealed this leak, and removing it, with case-naming identifiers, is a
+In the development runs every prompt printed the atom's source reference, naming the case and the section of the % src: @5ffd56e B/engine/prompts.py:113-115 (source line), used at :177, :231, :265 (propose, repair, judge); ADD §C
+published profile, and the proposer's prompt a title naming the case. % src: @5ffd56e B/engine/prompts.py:174 (project title, proposer prompt only); paper/inputs/run_reference_case.py:32-33
+Intake lints the statement, not the source reference. % src: @5ffd56e B/engine/intake.py:32-90 (lint_atom: statement, subject, modality); ENG §7.6
+Reading the prompts stored on the blackboard revealed this leak; removing it, with case-naming identifiers, is a
 precondition of the evaluation.
-\verify{how the leak was found: stored prompts or code reading} \todo{leak fix: verify the fix commit (Q5)}
-Memorized content may raise Recovery but cannot supply the trace: each included change quotes its atoms and carries
-an obligation their wording licenses, which a reviewer can check whatever the model learned.
+\verify{how the leak was found: stored prompts or code} \todo{leak fix commit (Q5)}
+Memorized content may raise Recovery but cannot produce the trace: each included change quotes its atoms and
+carries an obligation their wording licenses, which a reviewer can check whatever the model memorized.
 
 \paragraph{Scope and security.}
-The atoms keep the companion study's scope, content for finding and access \cite{anon2027rq1}.
-All five cases are European extensions of \ac{DCAT-AP} with English atoms, and one model runs every step. % src: RQ1 L711-712; outline-final.md sect. 6.5 (five cases)
+The atoms are English content atoms for finding and access in five European extensions of \ac{DCAT-AP} % src: RQ1 L711-712; outline-final.md sect. 6.5 (five cases)
+\cite{anon2027rq1}, and one model runs every step.
 \todo{second model: in or out (Q8)}
-A project has one base, so profiles of profiles are out of reach, and the \ac{DSV} export maps every bound onto % src: @5ffd56e B/contracts.py:656, B/compile/linkml_dsv.py:113-116; DSV cardinality/cardinality.ttl at mff-uk/data-specification-vocabulary 5c1d655 (01, 0n, 11, 1n)
+A project has one base, so profiles of profiles are out of reach, and the \ac{DSV} export maps every bound onto % src: @5ffd56e B/contracts.py:656, B/compile/linkml_dsv.py:113-116; cardinality/cardinality.ttl of the DSV specification repository at 5c1d655 (01, 0n, 11, 1n)
 its four cardinalities \cite{klimek2026dsv}.
-The workbench is a local research prototype: its \ac{API} has no authentication, the reviewer's name is
-self-asserted, and anyone who reaches the server can use the key entered there, so the final say is organizational,
-not enforced.
+The workbench is a local research prototype without authentication: the reviewer's name is self-asserted and % src: README.md:97-99 at 5ffd56e; KCU §6; ISS K20
+anyone who reaches the server can use the key entered there, so the final say is organizational, not enforced.

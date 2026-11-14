@@ -17,19 +17,16 @@
 
 \section{Results in Full}\label{app:results}
 
-Table~\ref{tab:results-full} breaks the sums of Fig.~\ref{fig:results} down by test case and adds the two
-development cases, with the range of each value over the three runs, the review queue and the model calls. % src: three runs per condition and case: sections/06-setup.tex (Models, repetitions and reproducibility)
-Fig.~\ref{fig:results} and the sums in the text take each test case's median run, so they need not equal the sums
-of the medians given here. % src: sections/06-setup.tex (Measures: "Sums over cases take each case's median run")
-\todo{after results: largest difference between the two kinds of sums, per measure}
+Table~\ref{tab:results-full} breaks Fig.~\ref{fig:results} down by test case and adds the development cases, % src: three runs per condition and case: sections/06-setup.tex (Models, repetitions and reproducibility)
+the range over three runs, the review queue and the model calls. Fig.~\ref{fig:results} and the text sum each % src: sections/06-setup.tex (Measures: "Sums over cases take each case's median run"); sections/07-results.tex (Fig. 2 caption)
+case's median run, not the medians of this table. \todo{after results: largest gap between the two sums}
 
 \begin{table}[tp]
-  \caption{Results by case and condition, the development cases below the test cases. Each cell gives the median of
-    the three runs and, in brackets, the lowest and the highest run where they differ. Changes: included changes % src: three runs: sections/06-setup.tex
-    (for CB, the changes it states); matched: those that match a reference element. Recovery and Strict: aligned
-    reference elements with a match and with a strict match (Sect.~\ref{sec:benchmark}). Ext.: extension rate, below
-    the case name the reference delta's. Queue: changes waiting for review at the end of the run. Calls: model calls
-    per run, cached replays not counted. --: not applicable.}
+  \caption{Results by case and condition, the development cases last. Cells give medians over three runs, with the % src: three runs: sections/06-setup.tex
+    range in brackets unless all three agree. Changes: included changes (for CB, the changes it states); matched: those
+    matching a reference element. Recovery and Strict as in Sect.~\ref{sec:benchmark}. Ext.: extension rate, the
+    reference delta's under the case name. Queue: changes waiting for review at the end of a run. Calls: model calls without
+    cached replays. --: not applicable.}
   \label{tab:results-full}
   \centering\scriptsize
   \setlength{\tabcolsep}{3.5pt}
@@ -83,22 +80,22 @@ of the medians given here. % src: sections/06-setup.tex (Measures: "Sums over ca
 
 \subsection{Development runs before the fixes: a debugging history}\label{app:devruns}
 
-Before the fixes of Sect.~\ref{sec:results}, the pipeline ran three times with the model and once with the offline % src: PILOT:23-27, 31-38 (runs 1, 2 and the rules runs); RUN3:1-3, 25-28 (run 3)
-rules on each development case. These pilot runs are contaminated and are not results; Table~\ref{tab:pilot} keeps
-their counts as a record of what the pipeline did.
+Table~\ref{tab:pilot} keeps the counts of the contaminated runs made before the fixes of Sect.~\ref{sec:results}. % src: ADD Sect. C (contaminated; a debugging history, never results)
+% src: three model runs and one rules run per development case (the table's columns): PILOT:23-27, 31-38 (runs 1, 2 and the rules runs); RUN3:1-3, 25-28 (run 3)
 
+% Table 7 caption. The engine of these runs (PILOT:24-25, 27; RUN3:14-15): run 1 at about commit a52df71 (PILOT:24
+% marks it "verify"), runs 2 and 3 and the rules runs at 2b92d77; the hashes stay out of print (anonymity).
+% Rejected = withdrawn by the model repairer, no person (RUN3:35; digests/pilot.md 1(c)); extension rate as the code
+% computes it (digests/pilot.md 1(c): pipeline.py:458, 468 at 2b92d77; @5ffd56e B/engine/pipeline.py:473).
 \begin{table}[tp]
-  \caption{Development runs on the two development cases before the fixes, a debugging history and not results:
-    every prompt named the case and the section of the published profile each atom came from. Base % src: RUN3:4-7; ADD Sect. C; @5ffd56e B/engine/prompts.py:112-114
-    \acs{DCAT-AP}~1.1, engine before \acs{DCAT}-state pinning (run~1 at about commit a52df71 \verify{run 1 commit}, % src: PILOT:14, 24 ("about commit a52df71, verify")
-    runs~2 and~3 and the rules runs at 2b92d77); gpt-oss-120b through an OpenAI-compatible endpoint, one vote, judge % src: PILOT:25, 27; RUN3:14-15; PILOT:15, 21; RUN3:16, 18
-    on, at most three repair rounds; rules: the offline rules provider. No person reviewed anything, so every % src: PILOT:20-22, 27; RUN3:18; PILOT:3-4; RUN3:35-36
-    included change is a machine decision. Atoms: by the tool's own count; addressed: an included change claims full
-    coverage. Withdrawn by the repairer: changes the repairer withdrew, the only rejections in these runs. Extension % src: RUN3:35; digests/pilot.md 1(c) (rejected = repairer withdrawal without a person)
-    rate: minted properties over included property-level changes. Conformance: elements added and tightened, and % src: digests/pilot.md 1(c) (pipeline.py:458, 468 at 2b92d77); @5ffd56e B/engine/pipeline.py:473
-    warnings; every warning came from C7. Calls: in parentheses those answered from the cache; run~2 replayed % src: PILOT:50-51; RUN3:36-38
-    cached answers to prompts that had not changed, run~3 used a fresh store. Wall time: one call at a time. Rules % src: PILOT:26; RUN3:19; PILOT:19; RUN3:18 (max_parallel_calls 1)
-    runs: kinds not recorded (--).} % src: PILOT:46 ("reuse or refine only")
+  \caption{Contaminated development runs before the fixes, a debugging history, not results: every proposer, % src: RUN3:4-7; ADD Sect. C; @5ffd56e B/engine/prompts.py:113-115 (source line), used at :177, :231, :265; the case-naming title only in the proposer prompt (:174)
+    repairer and judge prompt printed each atom's source reference, the case and the section of the published
+    profile. Base \acs{DCAT-AP}~1.1; the engine before \acs{DCAT}-state pinning (two code versions, an earlier % src: PILOT:14, 24-25, 27; RUN3:14-15
+    one for run~1). Runs 1--3: gpt-oss-120b, judge on, one vote, at most three repair rounds, one call at a time; % src: PILOT:15, 18-22; RUN3:16, 18 (max_parallel_calls 1)
+    rules: the offline rules provider. % src: PILOT:27
+    No person reviewed anything: every included change is a machine decision. Atoms and % src: PILOT:3-4; RUN3:35-36
+    extension rate as in Sect.~\ref{sec:setup}; all warnings from C7. Calls: in parentheses, cached answers; % src: sections/06-setup.tex (Measures); PILOT:50-51; RUN3:36-38 (C7)
+    run~2 replayed unchanged prompts, run~3 had a fresh store. Rules runs: kinds not recorded (--).} % src: PILOT:26; RUN3:19; PILOT:46 ("reuse or refine only")
   \label{tab:pilot}
   \centering\scriptsize
   \input{tables/pilot-runs}
@@ -106,37 +103,31 @@ their counts as a record of what the pipeline did.
 
 \subsection{Examples}\label{app:examples}
 
-Examples of atoms and the changes generated for them restate reference content, so they are kept out of the
-distributed draft.
+Examples of atoms with their generated changes restate reference content and stay out of the distributed draft.
 \IfFileExists{sections/local/qualitative-examples.tex}{\input{sections/local/qualitative-examples}}{\todo{qualitative examples: reference-derived (atom identifier and generated change), in a local, uncommitted file}}
 
 \section{Steps Taken from the Literature}\label{app:steps}
 
-Table~\ref{tab:steps} lists the 99 steps of Sect.~\ref{sec:impl} by operation of Fig.~\ref{fig:pipeline}. % src: LIT:6
-\verify{assignment of steps to operations (literature digest 1.4)}
-The statuses are those the tool's documentation records; the nine starred ones hold for the described tool only
-with a qualification. % src: outline-final.md 7.3 (nine steps: G1-S07, G1-S14, G1-S17, G1-S23, G3-S09, G3-S10, G3-S16, G3-S23, G4-S10)
-\mbox{G1-S07}: a term outside the candidate list only warns, and only with retrieval on. % src: LIT:18; @5ffd56e B/engine/verify.py:135-142
-\mbox{G1-S14} and \mbox{G4-S10}: the judge sees only changes without a symbolic error, answers with the verdict before the % src: LIT:25, 113; @5ffd56e B/engine/pipeline.py:221-244, 279; B/engine/schemas.py:100-105
-explanation, and a partial verdict does not block.
-\mbox{G1-S17}: the prompt section for a person's feedback is never filled. % src: LIT:28; @5ffd56e B/engine/prompts.py:190; B/engine/pipeline.py:188-191 (no feedback passed)
-\mbox{G1-S23}: intake turns away atoms that name vocabulary terms and the index can hide the target namespace, but the % src: LIT:34; @5ffd56e B/engine/intake.py:39-51; B/knowledge/vocab_index.py:202-216
-development runs named the case in every prompt (Sect.~\ref{sec:setup}). % src: @5ffd56e B/engine/prompts.py:112-114; RUN3:4-7
-\mbox{G3-S09}: the delta holds what the extension adds or tightens but does not import the base shapes. % src: LIT:82; @5ffd56e B/compile/shacl.py:30-34; ISS K10, K11
-\mbox{G3-S10}: C7's base-only branch cannot fire and it warns on some legal refinements; the described tool has C1--C8. % src: LIT:83 ("implemented: C1-C7"); KCU 4.4; ISS K1; CONF5:41-51
-\mbox{G3-S16} and \mbox{G3-S23}, recorded as planned, are realized in part by the rebase findings and by D3. % src: LIT:89, 96; outline-final.md 7.3
-\verify{G3-S16 and G3-S23 at the described commit; the documentation's statuses predate it}
-\verify{chmielewski2026blackboard: known from its released code only; no DOI}
+Table~\ref{tab:steps} lists the 99 steps of Sect.~\ref{sec:impl} by operation of Fig.~\ref{fig:pipeline}; the nine % src: LIT:6; outline-final.md 7.3 (nine steps: G1-S07, G1-S14, G1-S17, G1-S23, G3-S09, G3-S10, G3-S16, G3-S23, G4-S10)
+starred statuses need a qualification. \verify{step-to-operation assignment (literature digest 1.4)}
+\mbox{G1-S07}: a term outside the candidates only warns, and only with retrieval on. % src: LIT:18; @5ffd56e B/engine/verify.py:135-142
+\mbox{G1-S14}, \mbox{G4-S10}: the judge answers verdict first, with the limits stated in % src: LIT:25, 113; @5ffd56e B/engine/schemas.py:100-105 (verdict before explanation); limits (T2 only without an error, partially supported only warns): @5ffd56e B/engine/pipeline.py:221-244, 279
+Sects.~\ref{sec:check} and~\ref{sec:discussion}.
+\mbox{G1-S17}: the prompt's feedback section is never filled. % src: LIT:28; @5ffd56e B/engine/prompts.py:190; B/engine/pipeline.py:188-191 (no feedback passed)
+\mbox{G1-S23}: the development runs printed each atom's source reference (Sect.~\ref{sec:discussion}). % src: LIT:34 (implemented: term-free lint, namespace hiding: @5ffd56e B/engine/intake.py:39-51; B/knowledge/vocab_index.py:202-216); @5ffd56e B/engine/prompts.py:113-115; RUN3:4-7
+\mbox{G3-S09}: the delta does not import the base shapes (Sect.~\ref{sec:compile}). % src: LIT:82; @5ffd56e B/compile/shacl.py:30-34; ISS K10, K11
+\mbox{G3-S10}: C7's branch for data only the base rejects cannot fire (Sect.~\ref{sec:discussion}). % src: LIT:83 ("implemented: C1-C7"; the described tool has C1-C8: CONF5:41-51); KCU 4.4; ISS K1 (C7 also warns on legal refinements)
+\mbox{G3-S16}, \mbox{G3-S23}: planned, but realized in part by the rebase findings and D3. % src: LIT:89, 96; outline-final.md 7.3
+\verify{G3-S16, G3-S23 in part at the described commit}
+\verify{no DOI for chmielewski2026blackboard, cited from its code}
 
 \begin{table}[tp]
-  \caption{The 99 steps taken from the literature, by operation of Fig.~\ref{fig:pipeline}, with the evaluation % src: LIT:6
-    design and the architecture apart, as recorded in the tool's documentation. I/P/N: steps implemented, in part
-    and planned. G1--G4: ontology generation with \acsp{LLM}, requirements engineering, application-profile
-    practice and the reliability of \acs{LLM} decisions; each cell lists the group's steps by status (I, P, N),
-    numbered as in the documentation (7 under G1 is G1-S07). $^{*}$: status qualified in the text. $^\dagger$: the
-    step also drew on the publication practice of test-case profiles and is cited through the guidance it restates.
-    Below each operation: the works its steps come from, the test-case specifications left out. The assignment of
-    steps to operations is ours.}
+  \caption{The 99 steps taken from the literature by operation of Fig.~\ref{fig:pipeline}, plus the evaluation design % src: LIT:6
+    and the architecture, with the statuses the tool's documentation records: I implemented, P in part, N planned.
+    Cells give the group's step numbers by status (7 under G1 is G1-S07). $^{*}$: qualified in the text.
+    $^\dagger$: the step also drew on the publication practice of test-case profiles and is cited through the
+    guidance it restates. Below each operation: the works its steps come from, test-case specifications left out.
+    The assignment of steps to operations is ours.}
   \label{tab:steps}
   \centering\scriptsize
   \setlength{\tabcolsep}{2pt}
