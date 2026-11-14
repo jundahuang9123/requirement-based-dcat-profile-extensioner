@@ -1,0 +1,662 @@
+% bibliography.bib for the RQ1 paper (ESWC 2027). 54 entries; the paper cites 51 keys, all present.
+% Assembled 4 November 2026 from: the 23 October file (entries checked against primary sources on
+% 19-20 October 2026: publisher, DOI record, arXiv, ACL Anthology, PMLR, NeurIPS, CEUR, W3C, SEMIC,
+% Zenodo, ISO), four entries added on 2 November (suarez2009orsd, coyle2009dcap, glinz2007nfr,
+% alharbi2027idea2) and twelve entries reconstructed and verified on 2 November (gervasi2013tacit,
+% sutcliffe2013unknown, davis2006elicitation, ouyang2025nondeterminism, atil2025nondeterminism,
+% stureborg2024inconsistent, yuan2024batcheval, zobel1998reliable, voorhees2000variations,
+% buckley2004incomplete, alharbi2026cq, w3cdatacube). Identical to references.bib.
+
+% --- DCAT, DCAT-AP and extensions -------------------------------------------
+
+@techreport{w3cdcat3,
+  author      = {Albertoni, Riccardo and Browning, David and Cox, Simon J. D. and Gonzalez Beltran, Alejandra and Perego, Andrea and Winstanley, Peter},
+  title       = {Data Catalog Vocabulary ({DCAT}) -- Version 3},
+  institution = {W3C},
+  type        = {W3C Recommendation},
+  year        = {2024},
+  month       = aug,
+  note        = {22 August 2024},
+  url         = {https://www.w3.org/TR/2024/REC-vocab-dcat-3-20240822/}
+}
+
+@misc{semicdcatap,
+  author       = {{SEMIC}},
+  title        = {{DCAT-AP} 3.0.0: {DCAT} Application Profile for Data Portals in {Europe}},
+  year         = {2024},
+  note         = {SEMIC Recommendation, 14 June 2024},
+  url          = {https://semiceu.github.io/DCAT-AP/releases/3.0.0/}
+}
+
+% Page shows no version or date, only "Copyright 2026".
+@misc{semicreuse2026,
+  author       = {{SEMIC}},
+  title        = {How to Create Your {DCAT-AP} Profile},
+  year         = {n.d.},
+  note         = {DCAT-AP reuse guidelines. Accessed 6 November 2026},
+  url          = {https://semiceu.github.io/DCAT-AP-reuse-guidelines/}
+}
+
+% Title and date from the specification PDF itself.
+@misc{geodcatap10,
+  author       = {{SEMIC}},
+  title        = {{GeoDCAT-AP}: A Geospatial Extension for the {DCAT} Application Profile for Data Portals in {Europe}, Version 1.0},
+  year         = {2015},
+  note         = {23 December 2015},
+  url          = {https://semiceu.github.io/GeoDCAT-AP/releases/1.0.0/geodcat-ap_1.0.pdf}
+}
+
+% Date from the benchmark manifest (pinned PDF in the SEMICeu/StatDCAT-AP repository).
+@misc{statdcatap,
+  author       = {{SEMIC}},
+  title        = {{StatDCAT-AP}, Version 1.0.0},
+  year         = {2016},
+  note         = {15 December 2016},
+  url          = {https://raw.githubusercontent.com/SEMICeu/StatDCAT-AP/12a2424312f615e31ee3f7db881f5f564851551f/Release%201.0/statdcat-ap_version_1.0.0_0.pdf}
+}
+
+@misc{mobilitydcatspec,
+  author       = {{NAPCORE}},
+  title        = {{mobilityDCAT-AP}, Version 1.1.0},
+  year         = {2025},
+  note         = {Release of 17 January 2025; extends DCAT-AP 2.0.1},
+  url          = {https://w3id.org/mobilitydcat-ap/releases/1.1.0/}
+}
+
+% Published in the ESWC 2025 Resources track.
+@inproceedings{scrocca2025mobilitydcat,
+  author    = {Scrocca, Mario and Molinas Comet, Lina and Witsch, Benjamin and Mohammed Mustafa, Daham and Lange, Christoph and Comerio, Marco and Lubrich, Peter},
+  title     = {{mobilityDCAT-AP}: A Metadata Specification for Enhanced Cross-Border Mobility Data Sharing},
+  booktitle = {The Semantic Web -- ESWC 2025},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {15719},
+  pages     = {226--243},
+  publisher = {Springer, Cham},
+  year      = {2025},
+  doi       = {10.1007/978-3-031-94578-6_13}
+}
+
+@inproceedings{scrocca2022napdcat,
+  author    = {Scrocca, Mario and Azzini, Antonia and Bure{\v{s}}, Petr and Comerio, Marco and Lubrich, Peter},
+  title     = {Towards {napDCAT-AP}: Roadmap and Requirements for a Transportation Metadata Specification},
+  booktitle = {Proceedings of Poster and Demo Track and Workshop Track of the 18th International Conference on Semantic Systems (SEMANTiCS 2022)},
+  series    = {CEUR Workshop Proceedings},
+  volume    = {3235},
+  year      = {2022},
+  url       = {https://ceur-ws.org/Vol-3235/paper22.pdf}
+}
+
+% Authors from the report's document information table (checked 21 Oct 2026); the table prints
+% "Chrystomonos", the rest of the report "Chrysostomos".
+@techreport{bures2022napcore,
+  author      = {Bure{\v{s}}, Petr and Lubrich, Peter and Azzini, Antonia and Comerio, Marco and Scrocca, Mario and Mylonas, Chrysostomos},
+  title       = {Requirements Analysis for a New Metadata Specification},
+  institution = {NAPCORE, SubWG 4.4: NAP Metadata},
+  type        = {Technical Report},
+  number      = {4.4.2.1, Version 1.0},
+  year        = {2022},
+  url         = {https://napcore.eu/wp-content/uploads/2022/08/NAPCORE-4.4.2.1-Requirement-analysis_v1.0.pdf}
+}
+
+@inproceedings{derycke2025healthdcat,
+  author    = {Derycke, Pascal and Barros, Beatriz J. and Schutte, Nienke M. and Vande Catsyne, Charles-Andrew and Bargeman Fonseca, Martina},
+  title     = {Designing {DCAT-AP} Extensions for Common {European} Data Spaces: The {EHDS} {HealthDCAT-AP} Case Study},
+  booktitle = {NeXt-generation Data Governance Workshop (NXDG 2025) at SEMANTiCS 2025},
+  series    = {CEUR Workshop Proceedings},
+  volume    = {4064},
+  year      = {2025},
+  url       = {https://ceur-ws.org/Vol-4064/NXDG25-paper5.pdf}
+}
+
+% Zenodo lists Health Data Hub as creator; manuscript dated 30 Sep 2024, deposited 25 Mar 2025.
+@techreport{healthdataeu2024d62,
+  author      = {{Health Data Hub}},
+  title       = {{HealthData@EU} Pilot -- Deliverable 6.2: {HealthDCAT-AP}. Recommendations on Further Development and Deployment for Possible {EU}-Wide Uptake},
+  institution = {HealthData@EU Pilot project},
+  year        = {2024},
+  note        = {Manuscript dated 30 September 2024; deposited 25 March 2025},
+  doi         = {10.5281/zenodo.15085025}
+}
+
+@inproceedings{perego2016jrc,
+  author    = {Perego, Andrea and Friis-Christensen, Anders and Vaccari, Lorenzino and Tsinaraki, Chrisa},
+  title     = {Using {DCAT-AP} for Research Data},
+  booktitle = {W3C Workshop on Smart Descriptions \& Smarter Vocabularies (SDSVoc)},
+  address   = {Amsterdam},
+  year      = {2016},
+  url       = {https://www.w3.org/2016/11/sdsvoc/SDSVoc16_paper_27}
+}
+
+@techreport{w3cdcatucr,
+  author      = {Pullmann, Jaroslav and Atkinson, Rob and Isaac, Antoine and Faniel, Ixchel},
+  title       = {Dataset Exchange Use Cases and Requirements},
+  institution = {W3C},
+  type        = {W3C Working Group Note},
+  year        = {2019},
+  month       = jan,
+  note        = {17 January 2019},
+  url         = {https://www.w3.org/TR/2019/NOTE-dcat-ucr-20190117/}
+}
+
+@misc{nilsson2008singapore,
+  author       = {Nilsson, Mikael and Baker, Thomas and Johnston, Pete},
+  title        = {The {Singapore} Framework for {Dublin Core} Application Profiles},
+  howpublished = {Dublin Core Metadata Initiative},
+  year         = {2008},
+  note         = {14 January 2008},
+  url          = {https://www.dublincore.org/specifications/dublin-core/singapore-framework/}
+}
+
+% --- FAIR and data search ------------------------------------------------------
+
+@article{wilkinson2016fair,
+  author  = {Wilkinson, Mark D. and Dumontier, Michel and Aalbersberg, IJsbrand Jan and others},
+  title   = {The {FAIR} Guiding Principles for Scientific Data Management and Stewardship},
+  journal = {Scientific Data},
+  volume  = {3},
+  pages   = {160018},
+  year    = {2016},
+  doi     = {10.1038/sdata.2016.18}
+}
+
+@article{gregory2020search,
+  author  = {Gregory, Kathleen M. and Cousijn, Helena and Groth, Paul and Scharnhorst, Andrea and Wyatt, Sally},
+  title   = {Understanding Data Search as a Socio-technical Practice},
+  journal = {Journal of Information Science},
+  volume  = {46},
+  number  = {4},
+  pages   = {459--475},
+  year    = {2020},
+  doi     = {10.1177/0165551519837182}
+}
+
+@article{koesten2020reuse,
+  author  = {Koesten, Laura and Vougiouklis, Pavlos and Simperl, Elena and Groth, Paul},
+  title   = {Dataset Reuse: Toward Translating Principles to Practice},
+  journal = {Patterns},
+  volume  = {1},
+  number  = {8},
+  pages   = {100136},
+  year    = {2020},
+  doi     = {10.1016/j.patter.2020.100136}
+}
+
+@article{chapman2020search,
+  author  = {Chapman, Adriane and Simperl, Elena and Koesten, Laura and Konstantinidis, George and Ib{\'a}{\~n}ez, Luis-Daniel and Kacprzak, Emilia and Groth, Paul},
+  title   = {Dataset Search: A Survey},
+  journal = {The VLDB Journal},
+  volume  = {29},
+  number  = {1},
+  pages   = {251--272},
+  year    = {2020},
+  doi     = {10.1007/s00778-019-00564-x}
+}
+
+% --- Requirements and ontology engineering ---------------------------------------
+
+@incollection{suarez2012neon,
+  author    = {Su{\'a}rez-Figueroa, Mari Carmen and G{\'o}mez-P{\'e}rez, Asunci{\'o}n and Fern{\'a}ndez-L{\'o}pez, Mariano},
+  title     = {The {NeOn} Methodology for Ontology Engineering},
+  booktitle = {Ontology Engineering in a Networked World},
+  editor    = {Su{\'a}rez-Figueroa, Mari Carmen and G{\'o}mez-P{\'e}rez, Asunci{\'o}n and Motta, Enrico and Gangemi, Aldo},
+  publisher = {Springer, Berlin, Heidelberg},
+  year      = {2012},
+  pages     = {9--34},
+  doi       = {10.1007/978-3-642-24794-1_2}
+}
+
+@article{poveda2022lot,
+  author  = {Poveda-Villal{\'o}n, Mar{\'\i}a and Fern{\'a}ndez-Izquierdo, Alba and Fern{\'a}ndez-L{\'o}pez, Mariano and Garc{\'\i}a-Castro, Ra{\'u}l},
+  title   = {{LOT}: An Industrial Oriented Ontology Engineering Framework},
+  journal = {Engineering Applications of Artificial Intelligence},
+  volume  = {111},
+  pages   = {104755},
+  year    = {2022},
+  doi     = {10.1016/j.engappai.2022.104755}
+}
+
+@inproceedings{monfardini2023,
+  author    = {Monfardini, Glaice Kelly Q. and Salamon, Jordana S. and Barcellos, Monalessa P.},
+  title     = {Use of Competency Questions in Ontology Engineering: A Survey},
+  booktitle = {Conceptual Modeling -- ER 2023},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {14320},
+  pages     = {45--64},
+  publisher = {Springer, Cham},
+  year      = {2023},
+  doi       = {10.1007/978-3-031-47262-6_3}
+}
+
+@misc{iso29148,
+  author       = {{ISO/IEC/IEEE}},
+  title        = {{ISO/IEC/IEEE} 29148:2018: Systems and Software Engineering -- Life Cycle Processes -- Requirements Engineering},
+  year         = {2018},
+  note         = {Edition 2, November 2018},
+  url          = {https://www.iso.org/standard/72089.html}
+}
+
+% --- LLMs for requirements, ontologies and catalogs ----------------------------------
+
+% Still an arXiv preprint as of October 2026; recheck for a journal version before submission.
+@misc{zadenoori2025slr,
+  author        = {Zadenoori, Mohammad Amin and D{\k{a}}browski, Jacek and Alhoshan, Waad and Zhao, Liping and Ferrari, Alessio},
+  title         = {Large Language Models ({LLMs}) for Requirements Engineering ({RE}): A Systematic Literature Review},
+  year          = {2025},
+  howpublished  = {arXiv:2509.11446},
+  url           = {https://arxiv.org/abs/2509.11446}
+}
+
+% Presented in the ESWC 2024 special track on LLMs for knowledge engineering; cited as the arXiv version.
+@inproceedings{zhang2024ontochat,
+  author       = {Zhang, Bohui and Carriero, Valentina Anita and Schreiberhuber, Katrin and Tsaneva, Stefani and S{\'a}nchez Gonz{\'a}lez, Luc{\'\i}a and Kim, Jongmo and de Berardinis, Jacopo},
+  title        = {{OntoChat}: A Framework for Conversational Ontology Engineering Using Language Models},
+  booktitle    = {The Semantic Web: ESWC 2024 Satellite Events},
+  series       = {Lecture Notes in Computer Science},
+  volume       = {15344},
+  pages        = {102--121},
+  publisher    = {Springer, Cham},
+  year         = {2025},
+  doi          = {10.1007/978-3-031-78952-6_10}
+}
+
+@inproceedings{lippolis2025bench4ke,
+  author       = {Ciancarini, Paolo and Lippolis, Anna Sofia and Nuzzolese, Andrea Giovanni and Presutti, Valentina and Ragagni, Minh Davide},
+  title        = {{Bench4KE}: Benchmarking Automated Competency Question Generation},
+  booktitle    = {The Semantic Web -- ESWC 2026},
+  series       = {Lecture Notes in Computer Science},
+  volume       = {16550},
+  pages        = {212--231},
+  publisher    = {Springer, Cham},
+  year         = {2026},
+  doi          = {10.1007/978-3-032-25159-6_12}
+}
+
+@inproceedings{lippolis2025ontology,
+  author    = {Lippolis, Anna Sofia and Saeedizade, Mohammad Javad and Keskis{\"a}rkk{\"a}, Robin and Zuppiroli, Sara and Ceriani, Miguel and Gangemi, Aldo and Blomqvist, Eva and Nuzzolese, Andrea Giovanni},
+  title     = {Ontology Generation Using Large Language Models},
+  booktitle = {The Semantic Web -- ESWC 2025},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {15718},
+  pages     = {321--341},
+  publisher = {Springer, Cham},
+  year      = {2025},
+  doi       = {10.1007/978-3-031-94575-5_18}
+}
+
+% Author order of arXiv v2 (v1 differs); acceptance at ISWC 2026 is stated in the arXiv comment.
+@misc{fathallah2026rigor,
+  author       = {Fathallah, Nadeen and Nayyeri, Mojtaba and Yogi, Athish A. and Thapa, Ratan Bahadur and Tautenhahn, Hans-Michael and Schnurpel, Anton and Staab, Steffen},
+  title        = {Retrieval-Augmented Generation of Ontologies from Relational Databases},
+  year         = {2026},
+  howpublished = {arXiv:2506.01232v2},
+  note         = {Accepted at ISWC 2026},
+  url          = {https://arxiv.org/abs/2506.01232}
+}
+
+@misc{busch2025dcat,
+  author       = {Busch, Lennart and Tebernum, Daniel and Velarde, Gissel},
+  title        = {Exploring {LLM} Capabilities in Extracting {DCAT}-Compatible Metadata for Data Cataloging},
+  year         = {2025},
+  howpublished = {arXiv:2507.05282},
+  url          = {https://arxiv.org/abs/2507.05282}
+}
+
+% --- Debate, judges, attribution and contamination -------------------------------------
+
+@inproceedings{du2024debate,
+  author    = {Du, Yilun and Li, Shuang and Torralba, Antonio and Tenenbaum, Joshua B. and Mordatch, Igor},
+  title     = {Improving Factuality and Reasoning in Language Models through Multiagent Debate},
+  booktitle = {Proceedings of the 41st International Conference on Machine Learning},
+  series    = {Proceedings of Machine Learning Research},
+  volume    = {235},
+  pages     = {11733--11763},
+  year      = {2024},
+  url       = {https://proceedings.mlr.press/v235/du24e.html}
+}
+
+@inproceedings{smit2024mad,
+  author    = {Smit, Andries Petrus and Grinsztajn, Nathan and Duckworth, Paul and Barrett, Thomas D. and Pretorius, Arnu},
+  title     = {Should We Be Going {MAD}? {A} Look at Multi-Agent Debate Strategies for {LLMs}},
+  booktitle = {Proceedings of the 41st International Conference on Machine Learning},
+  series    = {Proceedings of Machine Learning Research},
+  volume    = {235},
+  pages     = {45883--45905},
+  year      = {2024},
+  url       = {https://proceedings.mlr.press/v235/smit24a.html}
+}
+
+% NeurIPS 2025 spotlight poster; proceedings pages not checked on the primary page.
+@inproceedings{choi2025debate,
+  author    = {Choi, Hyeong Kyu and Zhu, Xiaojin and Li, Sharon},
+  title     = {Debate or Vote: Which Yields Better Decisions in Multi-Agent Large Language Models?},
+  booktitle = {Advances in Neural Information Processing Systems},
+  volume    = {38},
+  year      = {2025},
+  url       = {https://arxiv.org/abs/2508.17536}
+}
+
+@inproceedings{zheng2023judge,
+  author    = {Zheng, Lianmin and Chiang, Wei-Lin and Sheng, Ying and Zhuang, Siyuan and Wu, Zhanghao and Zhuang, Yonghao and Lin, Zi and Li, Zhuohan and Li, Dacheng and Xing, Eric P. and Zhang, Hao and Gonzalez, Joseph E. and Stoica, Ion},
+  title     = {Judging {LLM}-as-a-Judge with {MT-Bench} and {Chatbot Arena}},
+  booktitle = {Advances in Neural Information Processing Systems},
+  volume    = {36},
+  year      = {2023},
+  url       = {https://proceedings.neurips.cc/paper_files/paper/2023/hash/91f18a1287b398d378ef22505bf41832-Abstract-Datasets_and_Benchmarks.html}
+}
+
+@inproceedings{liu2023geval,
+  author    = {Liu, Yang and Iter, Dan and Xu, Yichong and Wang, Shuohang and Xu, Ruochen and Zhu, Chenguang},
+  title     = {{G-Eval}: {NLG} Evaluation using {GPT-4} with Better Human Alignment},
+  booktitle = {Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing},
+  pages     = {2511--2522},
+  year      = {2023},
+  doi       = {10.18653/v1/2023.emnlp-main.153}
+}
+
+@inproceedings{wang2024fair,
+  author    = {Wang, Peiyi and Li, Lei and Chen, Liang and Cai, Zefan and Zhu, Dawei and Lin, Binghuai and Cao, Yunbo and Kong, Lingpeng and Liu, Qi and Liu, Tianyu and Sui, Zhifang},
+  title     = {Large Language Models are not Fair Evaluators},
+  booktitle = {Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)},
+  pages     = {9440--9450},
+  year      = {2024},
+  doi       = {10.18653/v1/2024.acl-long.511}
+}
+
+@article{rashkin2023ais,
+  author  = {Rashkin, Hannah and Nikolaev, Vitaly and Lamm, Matthew and Aroyo, Lora and Collins, Michael and Das, Dipanjan and Petrov, Slav and Tomar, Gaurav Singh and Turc, Iulia and Reitter, David},
+  title   = {Measuring Attribution in Natural Language Generation Models},
+  journal = {Computational Linguistics},
+  volume  = {49},
+  number  = {4},
+  pages   = {777--840},
+  year    = {2023},
+  doi     = {10.1162/coli_a_00486}
+}
+
+@inproceedings{gao2023alce,
+  author    = {Gao, Tianyu and Yen, Howard and Yu, Jiatong and Chen, Danqi},
+  title     = {Enabling Large Language Models to Generate Text with Citations},
+  booktitle = {Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing},
+  pages     = {6465--6488},
+  year      = {2023},
+  doi       = {10.18653/v1/2023.emnlp-main.398}
+}
+
+@inproceedings{sainz2023contamination,
+  author    = {Sainz, Oscar and Campos, Jon and Garc{\'\i}a-Ferrero, Iker and Etxaniz, Julen and Lopez de Lacalle, Oier and Agirre, Eneko},
+  title     = {{NLP} Evaluation in Trouble: On the Need to Measure {LLM} Data Contamination for each Benchmark},
+  booktitle = {Findings of the Association for Computational Linguistics: EMNLP 2023},
+  pages     = {10776--10787},
+  year      = {2023},
+  doi       = {10.18653/v1/2023.findings-emnlp.722}
+}
+
+% Entries added on 2 November 2026 for the requirement types (Sect. 3) and the IDEA2 sentence (Sect. 2).
+% Merge into references.bib.
+
+@inproceedings{suarez2009orsd,
+  author    = {Su{\'a}rez-Figueroa, Mari Carmen and G{\'o}mez-P{\'e}rez, Asunci{\'o}n and Villaz{\'o}n-Terrazas, Boris},
+  title     = {How to Write and Use the Ontology Requirements Specification Document},
+  booktitle = {On the Move to Meaningful Internet Systems: {OTM} 2009},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {5871},
+  pages     = {966--982},
+  publisher = {Springer, Berlin, Heidelberg},
+  year      = {2009},
+  doi       = {10.1007/978-3-642-05151-7_16}
+}
+
+@misc{coyle2009dcap,
+  author       = {Coyle, Karen and Baker, Thomas},
+  title        = {Guidelines for {Dublin Core} Application Profiles},
+  howpublished = {Dublin Core Metadata Initiative, Recommended Resource},
+  year         = {2009},
+  note         = {18 May 2009},
+  url          = {https://www.dublincore.org/specifications/dublin-core/profile-guidelines/}
+}
+
+@inproceedings{glinz2007nfr,
+  author    = {Glinz, Martin},
+  title     = {On Non-Functional Requirements},
+  booktitle = {15th {IEEE} International Requirements Engineering Conference ({RE} 2007)},
+  pages     = {21--26},
+  publisher = {IEEE},
+  year      = {2007},
+  doi       = {10.1109/RE.2007.45}
+}
+
+% From claude/rq1-related-work-idea2.md (read from the ISWC 2026 volume, LNCS 17128, on 29 Oct 2026).
+@inproceedings{alharbi2027idea2,
+  author    = {Alharbi, Reham and Hannah, George and Watkiss-Leek, Elliott and Morlidge, Wilf and de Berardinis, Jacopo and Payne, Terry R.},
+  title     = {A Collaborative Human-{AI} Workflow for Ontology Requirement Engineering in Use},
+  booktitle = {The Semantic Web -- {ISWC} 2026},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {17128},
+  pages     = {423--444},
+  publisher = {Springer},
+  year      = {2027},
+  doi       = {10.1007/978-3-032-42029-9_22}
+}
+
+% Entries cited by the 24 Oct draft but absent from the 23 Oct references.bib; reconstructed and checked against
+% Crossref, arXiv and W3C on 2 November 2026.
+
+@incollection{gervasi2013tacit,
+  author    = {Gervasi, Vincenzo and Gacitua, Ricardo and Rouncefield, Mark and Sawyer, Pete and Kof, Leonid and Ma, Lin and Piwek, Paul and de Roeck, Anne and Willis, Alistair and Yang, Hui and Nuseibeh, Bashar},
+  title     = {Unpacking Tacit Knowledge for Requirements Engineering},
+  booktitle = {Managing Requirements Knowledge},
+  editor    = {Maalej, Walid and Thurimella, Anil Kumar},
+  publisher = {Springer, Berlin, Heidelberg},
+  pages     = {23--47},
+  year      = {2013},
+  doi       = {10.1007/978-3-642-34419-0_2}
+}
+
+@inproceedings{sutcliffe2013unknown,
+  author    = {Sutcliffe, Alistair and Sawyer, Pete},
+  title     = {Requirements Elicitation: Towards the Unknown Unknowns},
+  booktitle = {21st {IEEE} International Requirements Engineering Conference ({RE} 2013)},
+  pages     = {92--104},
+  publisher = {IEEE},
+  year      = {2013},
+  doi       = {10.1109/RE.2013.6636709}
+}
+
+@inproceedings{davis2006elicitation,
+  author    = {Davis, Alan and Dieste, Oscar and Hickey, Ann and Juristo, Natalia and Moreno, Ana M.},
+  title     = {Effectiveness of Requirements Elicitation Techniques: Empirical Results Derived from a Systematic Review},
+  booktitle = {14th {IEEE} International Requirements Engineering Conference ({RE} 2006)},
+  pages     = {179--188},
+  publisher = {IEEE},
+  year      = {2006},
+  doi       = {10.1109/RE.2006.17}
+}
+
+@article{ouyang2025nondeterminism,
+  author    = {Ouyang, Shuyin and Zhang, Jie M. and Harman, Mark and Wang, Meng},
+  title     = {An Empirical Study of the Non-Determinism of {ChatGPT} in Code Generation},
+  journal   = {ACM Transactions on Software Engineering and Methodology},
+  volume    = {34},
+  number    = {2},
+  pages     = {1--28},
+  year      = {2025},
+  doi       = {10.1145/3697010}
+}
+
+@misc{atil2025nondeterminism,
+  author        = {Atil, Berk and Aykent, Sarp and Chittams, Alexa and Fu, Lisheng and Passonneau, Rebecca J. and Radcliffe, Evan and Rajagopal, Guru Rajan and Sloan, Adam and Tudrej, Tomasz and Ture, Ferhan and Wu, Zhe and Xu, Lixinyu and Baldwin, Breck},
+  title         = {Non-Determinism of ``Deterministic'' {LLM} Settings},
+  year          = {2025},
+  eprint        = {2408.04667},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.CL},
+  note          = {arXiv:2408.04667v5, 2 April 2025},
+  url           = {https://arxiv.org/abs/2408.04667}
+}
+
+@misc{stureborg2024inconsistent,
+  author        = {Stureborg, Rickard and Alikaniotis, Dimitris and Suhara, Yoshi},
+  title         = {Large Language Models are Inconsistent and Biased Evaluators},
+  year          = {2024},
+  eprint        = {2405.01724},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.CL},
+  note          = {arXiv:2405.01724, 2 May 2024},
+  url           = {https://arxiv.org/abs/2405.01724}
+}
+
+@inproceedings{yuan2024batcheval,
+  author    = {Yuan, Peiwen and Feng, Shaoxiong and Li, Yiwei and Wang, Xinglin and Pan, Boyuan and Wang, Heda and Hu, Yao and Li, Kan},
+  title     = {{BatchEval}: Towards Human-like Text Evaluation},
+  booktitle = {Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)},
+  pages     = {15940--15958},
+  publisher = {Association for Computational Linguistics},
+  year      = {2024},
+  doi       = {10.18653/v1/2024.acl-long.846}
+}
+
+@inproceedings{zobel1998reliable,
+  author    = {Zobel, Justin},
+  title     = {How Reliable Are the Results of Large-Scale Information Retrieval Experiments?},
+  booktitle = {Proceedings of the 21st Annual International {ACM} {SIGIR} Conference on Research and Development in Information Retrieval},
+  pages     = {307--314},
+  publisher = {ACM},
+  year      = {1998},
+  doi       = {10.1145/290941.291014}
+}
+
+@article{voorhees2000variations,
+  author    = {Voorhees, Ellen M.},
+  title     = {Variations in Relevance Judgments and the Measurement of Retrieval Effectiveness},
+  journal   = {Information Processing \& Management},
+  volume    = {36},
+  number    = {5},
+  pages     = {697--716},
+  year      = {2000},
+  doi       = {10.1016/S0306-4573(00)00010-8}
+}
+
+@inproceedings{buckley2004incomplete,
+  author    = {Buckley, Chris and Voorhees, Ellen M.},
+  title     = {Retrieval Evaluation with Incomplete Information},
+  booktitle = {Proceedings of the 27th Annual International {ACM} {SIGIR} Conference on Research and Development in Information Retrieval},
+  pages     = {25--32},
+  publisher = {ACM},
+  year      = {2004},
+  doi       = {10.1145/1008992.1009000}
+}
+
+@inproceedings{alharbi2026cq,
+  author       = {Alharbi, Reham and Tamma, Valentina and Payne, Terry R. and de Berardinis, Jacopo},
+  title        = {A Comparative Study of Competency Question Elicitation Methods from Ontology Requirements},
+  booktitle    = {The Semantic Web -- ESWC 2026},
+  series       = {Lecture Notes in Computer Science},
+  volume       = {16549},
+  pages        = {63--81},
+  publisher    = {Springer, Cham},
+  year         = {2026},
+  doi          = {10.1007/978-3-032-25156-5_4}
+}
+
+@misc{w3cdatacube,
+  author       = {Cyganiak, Richard and Reynolds, Dave},
+  title        = {The {RDF} Data Cube Vocabulary},
+  howpublished = {W3C Recommendation},
+  year         = {2014},
+  note         = {16 January 2014},
+  url          = {https://www.w3.org/TR/vocab-data-cube/}
+}
+
+% Maintenance context: metadata verified against the official report, 6 November 2026.
+@misc{dragan2019maintenance,
+  author       = {Dragan, Adina},
+  title        = {D02.02 Report on the Maintenance of {DCAT-AP}},
+  year         = {2019},
+  note         = {Version 1.00, 23 July 2019},
+  url          = {https://interoperable-europe.ec.europa.eu/sites/default/files/document/2019-07/Report%20on%20the%20Maintenance%20of%20DCAT-AP_201907_v1.00.pdf}
+}
+
+@article{erman1980hearsay,
+  author       = {Erman, Lee D. and Hayes-Roth, Frederick and Lesser, Victor R. and Reddy, D. Raj},
+  title        = {The {Hearsay-II} Speech-Understanding System: Integrating Knowledge to Resolve Uncertainty},
+  journal      = {ACM Computing Surveys},
+  volume       = {12},
+  number       = {2},
+  pages        = {213--253},
+  year         = {1980},
+  doi          = {10.1145/356810.356816}
+}
+
+@article{nii1986blackboard,
+  author       = {Nii, H. Penny},
+  title        = {The Blackboard Model of Problem Solving and the Evolution of Blackboard Architectures},
+  journal      = {AI Magazine},
+  volume       = {7},
+  number       = {2},
+  pages        = {38--53},
+  year         = {1986},
+  doi          = {10.1609/aimag.v7i2.537}
+}
+
+@inproceedings{chmielewski2026blackboard,
+  author       = {Chmielewski, Sebastian and Schindler, Jan and Fernandes, Ryan and Meisen, Tobias and Pomp, Andr{\'e}},
+  title        = {Signal-Aware Semantic Typing of Tables via Blackboard-Orchestrated Large Language Models},
+  booktitle    = {Proceedings of the Fourth International Workshop on Semantics in Dataspaces ({SDS} 2026), co-located with {ESWC} 2026},
+  year         = {2026},
+  note         = {{CEUR} Workshop Proceedings, to appear}
+}
+
+@inproceedings{mai2024adapt,
+  author       = {Mai, Huu Tan and Chu, Cuong Xuan and Paulheim, Heiko},
+  title        = {Do {LLMs} Really Adapt to Domains? {An} Ontology Learning Perspective},
+  booktitle    = {The Semantic Web -- {ISWC} 2024},
+  series       = {LNCS},
+  publisher    = {Springer},
+  pages        = {126--143},
+  year         = {2024},
+  doi          = {10.1007/978-3-031-77844-5_7}
+}
+
+@inproceedings{lippolis2025oeassist,
+  author       = {Lippolis, Anna Sofia and Saeedizade, Mohammad Javad and Keskis{\"a}rkk{\"a}, Robin and Gangemi, Aldo and Blomqvist, Eva and Nuzzolese, Andrea Giovanni},
+  title        = {Large Language Models Assisting Ontology Evaluation},
+  booktitle    = {The Semantic Web -- {ISWC} 2025},
+  series       = {LNCS},
+  publisher    = {Springer},
+  pages        = {502--520},
+  year         = {2025},
+  doi          = {10.1007/978-3-032-09527-5_27}
+}
+
+@inproceedings{sadruddin2025schema,
+  author       = {Sadruddin, Sameer and D'Souza, Jennifer and Poupaki, Eleni and Watkins, Alex and Babaei Giglou, Hamed and Rula, Anisa and Karasulu, Bora and Auer, S{\"o}ren and Mackus, Adrie and Kessels, Erwin},
+  title        = {{LLMs4SchemaDiscovery}: A Human-in-the-Loop Workflow for Scientific Schema Mining with Large Language Models},
+  booktitle    = {The Semantic Web -- {ESWC} 2025},
+  series       = {LNCS},
+  publisher    = {Springer},
+  pages        = {244--261},
+  year         = {2025},
+  doi          = {10.1007/978-3-031-94578-6_14}
+}
+
+@article{ataei2025elicitron,
+  author       = {Ataei, Mohammadmehdi and Cheong, Hyunmin and Grandi, Daniele and Wang, Ye and Morris, Nigel and Tessier, Alexander},
+  title        = {Elicitron: A Large Language Model Agent-Based Simulation Framework for Design Requirements Elicitation},
+  journal      = {Journal of Computing and Information Science in Engineering},
+  volume       = {25},
+  number       = {2},
+  pages        = {021012},
+  year         = {2025},
+  doi          = {10.1115/1.4067388}
+}
+
+@article{bandi2026agents,
+  author       = {Bandi, Niraali Deepak and Demir, Kadir Alpaslan},
+  title        = {Requirements Engineering with Generative {AI}: A Systematic Literature Review of Using {AI} Agents for Requirements Engineering Automation},
+  journal      = {Automation},
+  volume       = {7},
+  number       = {5},
+  pages        = {169},
+  year         = {2026},
+  doi          = {10.3390/automation7050169}
+}
