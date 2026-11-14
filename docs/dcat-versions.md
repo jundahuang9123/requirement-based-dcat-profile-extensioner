@@ -139,8 +139,10 @@ Notes:
   - A base deprecation also applies to subclasses: `dct:hasVersion` is deprecated on `dcat:Dataset` in
     3.x, so also on `dcat:Catalog` and `dcat:DatasetSeries`.
 - **Compiled output.**
-  - The SHACL delta `owl:imports` the official shapes of the base as raw RDF at the pinned SEMIC commit.
-    1.1 and 1.2 publish their shapes only inside a zip, which is named with `rdfs:seeAlso`.
+  - The SHACL delta `owl:imports` the official shapes of the base as raw RDF at the pinned commit (2.1.x: the
+    shapes and the range shapes). 1.1's shapes are published only inside a zip; SEMIC's `dcat-ap_shacl`
+    repository holds the same file byte for byte, which is imported (checked with `--verify-mirrors`). 1.2
+    has no plain copy anywhere, so its zip is named with `rdfs:seeAlso`.
   - The delta carries `dcterms:conformsTo` the release page (3.x) and the DCAT URL the release itself
     cites: the dated 2014 REC, the dated DCAT 2 CR for 2.0.0, the undated DCAT 2 URL for 2.0.1/2.1.x, the
     undated DCAT 3 URL for 3.x (`dcat_basis.cited_url`). A comment names the DCAT state.
@@ -156,7 +158,7 @@ Notes:
 | 1.1, 1.2 | `dcat-ap.shapes.ttl` from the release zip (implicit class targets) | release RDF usage notes | none |
 | 1.2.1, 2.0.0, 2.0.1 | `dcat-ap_<r>_shacl_shapes.ttl` | release RDF usage notes | 2.0.x: `..._deprecateduris.ttl` |
 | 2.1.0, 2.1.1 | `..._shacl_shapes.ttl` (+ `..._shacl_range.ttl`) | release RDF usage notes | `..._deprecateduris.ttl` |
-| 3.0.0, 3.0.1 | `shacl/dcat-ap-SHACL.ttl` (+ `ranges.ttl` for 3.0.1) | quick-reference table of `index.html` | `html/shacl/deprecateduris.ttl` |
+| 3.0.0, 3.0.1 | `shacl/dcat-ap-SHACL.ttl` (3.0.1 `ranges.ttl` is vendored but not loaded: 206 property shapes without `sh:path`) | quick-reference table of `index.html` | `html/shacl/deprecateduris.ttl` |
 
 **Properties a specification lists without an official shape.** 1.1 and 1.2 have 14 such pairs, for
 example `dcat:keyword` on `dcat:Dataset` (recommended) and `foaf:name` on `foaf:Agent` (mandatory).
@@ -255,3 +257,9 @@ section 5) with three differences:
 - items are matched by vocabulary term, not by profile IRI;
 - requirement levels, datatypes, deprecations and the DCAT version are compared;
 - a value the new base makes illegal is never kept by default.
+
+**In-memory repairs of the official shapes** (`BaseProfileInfo.shape_fixes`; the vendored files stay
+byte-identical): `sh:property` links that point to no property shape are dropped when a base is loaded, because
+a SHACL engine rejects them. 2.1.0's range file has an empty `sh:property [ ]` (1 link); 3.0.1's
+`dcat:DataServiceShape` links two property shapes that do not exist (2 links). A test validates a bare instance
+of every target class of every base with pySHACL.

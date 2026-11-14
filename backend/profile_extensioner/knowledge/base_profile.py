@@ -103,6 +103,16 @@ class BaseProfile:
             for shape in set(shapes.subjects(RDF.type, SH.NodeShape)):
                 if isinstance(shape, URIRef) and (shape, SH.property, None) in shapes and (shape, SH.targetClass, None) not in shapes:
                     shapes.add((shape, RDF.type, RDFS.Class))
+        # Official files with property links a SHACL engine rejects (DCAT-AP 3.0.1 dcat:DataServiceShape links to
+        # two property shapes that do not exist; 2.1.0's range file has an empty `sh:property [ ]`). They are
+        # dropped in memory only; the vendored files stay byte-identical.
+        from rdflib.namespace import SH as _SH
+
+        dangling = [(shape, prop) for shape, prop in shapes.subject_objects(_SH.property)
+                    if (prop, _SH.path, None) not in shapes]
+        for shape, prop in dangling:
+            shapes.remove((shape, _SH.property, prop))
+        shape_fixes = [f"dropped {len(dangling)} sh:property link(s) without a property shape (sh:path)"] if dangling else []
         index = read_shapes(shapes)
 
         obligations: dict[tuple[str, str], str] = {}
@@ -167,6 +177,7 @@ class BaseProfile:
             shape_urls=shape_urls,
             shape_archives=shape_archives,
             release_url=release_url,
+            shape_fixes=shape_fixes,
             release_status=str(release.get("status") or ""),
             dcat=DcatBasis(
                 dcat=str(basis["dcat"]),
@@ -355,9 +366,8 @@ class BaseProfile:
                     property_type="datatype" if facets.datatypes or facets.node_kind == "Literal" else
                     ("object" if facets.classes else "unknown"),
                 )
-            for value in sorted(facets.classes | facets.datatypes):
-                if value not in term.range:
-                    term.range.append(value)
+            # The class-specific ranges of the base stay with the base (shape_facets per class): they are not
+            # the term's declared range, which V2 takes from the vocabulary's own rdfs:range.
         return list(terms.values())
 
     # -- shapes for validation ----------------------------------------------

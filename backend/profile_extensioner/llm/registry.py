@@ -23,47 +23,59 @@ from .base import LLMUnavailable, Provider
 PROVIDERS: tuple[str, ...] = ("mock", "anthropic", "openai-compatible")
 
 
-def _host(url: str | None) -> str:
+def _origin(url: str | None) -> str:
+    """scheme://host:port of a URL ('' when it has no scheme or host)."""
     from urllib.parse import urlparse
 
-    return (urlparse(url or "").hostname or "").lower()
+    parsed = urlparse(url or "")
+    if not parsed.scheme or not parsed.hostname:
+        return ""
+    port = parsed.port or {"https": 443, "http": 80}.get(parsed.scheme.lower(), 0)
+    return f"{parsed.scheme.lower()}://{parsed.hostname.lower()}:{port}"
 
 
 class Credentials:
-    """In-memory API keys, one per provider. A key for an OpenAI-compatible endpoint is bound to the host it
-    was entered for, so it is never sent to another endpoint a project names."""
+    """In-memory API keys, one per provider. A key for an OpenAI-compatible endpoint is bound to the origin
+    (scheme, host and port) it was entered for and is never sent anywhere else; the environment key
+    (RBDPE_LLM_API_KEY) is bound to the origin of RBDPE_LLM_BASE_URL."""
 
     def __init__(self) -> None:
         self._lock = threading.Lock()
         self._keys: dict[str, str] = {}
-        self._hosts: dict[str, str] = {}
+        self._origins: dict[str, str] = {}
 
     def set(self, provider: str, api_key: str, base_url: str | None = None) -> None:
         if provider not in PROVIDERS:
             raise ValueError(f"unknown provider: {provider}")
+        origin = _origin(base_url)
+        if api_key and provider == "openai-compatible" and not origin:
+            raise ValueError("A key for an OpenAI-compatible endpoint needs the endpoint's absolute base URL "
+                             "(https://host/...), so that it is sent to that endpoint only.")
         with self._lock:
             if api_key:
                 self._keys[provider] = api_key
-                self._hosts[provider] = _host(base_url)
+                self._origins[provider] = origin
             else:
                 self._keys.pop(provider, None)
-                self._hosts.pop(provider, None)
+                self._origins.pop(provider, None)
 
     def clear(self, provider: str) -> None:
         with self._lock:
             self._keys.pop(provider, None)
-            self._hosts.pop(provider, None)
+            self._origins.pop(provider, None)
 
     def get(self, provider: str, base_url: str | None = None) -> str | None:
-        """The key for ``provider`` at ``base_url``: a key bound to another host is not given out."""
+        """The key for ``provider`` at ``base_url``; None when no key is bound to that endpoint."""
         with self._lock:
-            key, bound = self._keys.get(provider), self._hosts.get(provider, "")
-        if key and (not bound or base_url is None or _host(base_url) == bound):
+            key, bound = self._keys.get(provider), self._origins.get(provider, "")
+        if provider != "openai-compatible":
             return key
-        if provider == "openai-compatible":
-            env_host = _host(os.environ.get("RBDPE_LLM_BASE_URL"))
-            if not env_host or base_url is None or _host(base_url) == env_host:
-                return os.environ.get("RBDPE_LLM_API_KEY") or None
+        target = _origin(base_url)
+        if key:
+            return key if bound and target == bound else None      # a withheld key never falls back to another
+        env_origin = _origin(os.environ.get("RBDPE_LLM_BASE_URL"))
+        if env_origin and target == env_origin:
+            return os.environ.get("RBDPE_LLM_API_KEY") or None
         return None
 
     def source(self, provider: str) -> str:

@@ -22,9 +22,22 @@ def _range(change: ProfileChange) -> str | None:
     return change.facets.range_class or change.facets.range_datatype
 
 
+def _ready(change: ProfileChange) -> bool:
+    """Only a change without failures of its own is merged. One with an error of its own (or a judge
+    rejection) is repaired first; a later pass merges it once it is valid. Otherwise a valid change could
+    be folded into a failing one and lost when the repairer withdraws that one."""
+    return not any(not r.passed and r.severity == "error" and not r.details.get("set_level") for r in change.verification)
+
+
+def _rank(change: ProfileChange) -> tuple:
+    """The keeper: judged supported first, then the strongest obligation, then the most confident."""
+    judged_ok = any(r.check == "T2" and r.passed for r in change.verification)
+    return (0 if judged_ok else 1, -OBLIGATION_RANK[change.facets.obligation], -change.confidence)
+
+
 def consolidate(changes: list[ProfileChange]) -> tuple[list[ProfileChange], list[Conflict]]:
     """Returns the full list (merged-away changes are marked ``superseded``) and the open conflicts."""
-    live = [c for c in changes if c.decision.status not in ("rejected", "superseded")]
+    live = [c for c in changes if c.decision.status not in ("rejected", "superseded") and _ready(c)]
     groups: dict[tuple[str, str, str], list[ProfileChange]] = {}
     for change in live:
         key = _key(change)
@@ -44,8 +57,8 @@ def consolidate(changes: list[ProfileChange]) -> tuple[list[ProfileChange], list
                 description=f"{len(group)} changes constrain the same element differently ({problem}); a person must decide.",
             ))
             continue
-        # The strongest, most confident machine change is kept; the others fold into it.
-        group.sort(key=lambda c: (-OBLIGATION_RANK[c.facets.obligation], -c.confidence))
+        # The judged-supported, strongest, most confident change is kept; the others fold into it.
+        group.sort(key=_rank)
         keeper, others = group[0], group[1:]
         for other in others:
             for link in other.covers:
@@ -86,6 +99,8 @@ def _incompatible(group: list[ProfileChange]) -> str:
     """Why the changes cannot be merged by rule; empty when they can."""
     if any(c.decision.decided_by.startswith("human:") for c in group):
         return "a person already decided on one of them"
+    if any(c.decision.decided_by == "rule:rebase" and c.decision.status == "needs_review" for c in group):
+        return "one of them waits for a person after a rebase"
     checks = {
         "range": {_range(c) for c in group if _range(c)},
         "value list": {tuple(sorted(c.facets.controlled_vocabulary)) for c in group if c.facets.controlled_vocabulary},

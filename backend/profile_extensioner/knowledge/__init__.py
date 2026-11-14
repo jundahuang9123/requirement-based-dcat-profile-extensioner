@@ -4,7 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
-from typing import Sequence
+from typing import Any, Sequence
 
 from ..contracts import DcatBasis, Term
 from ..iri import MINT_PREFIX, Prefixes, is_absolute_iri, is_valid_local_name
@@ -34,6 +34,26 @@ class KnowledgeBase:
 
     def curie(self, iri: str | None) -> str:
         return self.prefixes.compact(iri)
+
+    def for_model(self) -> "KnowledgeBase":
+        """The same knowledge base for text a model reads: minted terms are written ``NEW:localName``, so a
+        project's own prefix and namespace (which may name a benchmark case) never reach a prompt."""
+        from dataclasses import replace
+
+        prefixes = Prefixes({prefix: namespace for prefix, namespace in self.prefixes.as_dict().items()
+                             if namespace != self.profile_namespace and prefix != self.profile_prefix})
+        prefixes.bind(MINT_PREFIX, self.profile_namespace)
+        return replace(self, prefixes=prefixes)
+
+    def neutral(self, value: Any) -> Any:
+        """``value`` (text or JSON-like data) with the project's namespace and prefix replaced by ``NEW:``."""
+        import json
+        import re
+
+        text = json.dumps(value) if not isinstance(value, str) else value
+        text = text.replace(self.profile_namespace, f"{MINT_PREFIX}:")
+        text = re.sub(rf"(?<![\w/#:-]){re.escape(self.profile_prefix)}:(?=[A-Za-z_])", f"{MINT_PREFIX}:", text)
+        return text if isinstance(value, str) else json.loads(text)
 
     def expand(self, value: str | None) -> str | None:
         """Expand a CURIE or a ``NEW:localName`` marker; absolute IRIs pass through; None if not expandable."""

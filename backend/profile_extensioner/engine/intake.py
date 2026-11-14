@@ -27,8 +27,10 @@ MODAL_WORDS = {
 }
 # Names of published DCAT application profiles and close identifiers. An atom statement that names one
 # hints at the answer of a benchmark case; the lint only flags it (a requirement may legitimately say so).
+# Bare "DCAT-AP" is the base profile itself (the model is told the base anyway); its extensions are flagged.
 PROFILE_NAMES = re.compile(
-    r"\b(DCAT-AP(?:[- ]?[A-Z][A-Za-z]+)?|StatDCAT|GeoDCAT|HealthDCAT|mobilityDCAT|BRegDCAT|NAPCORE|HVD)\b", re.IGNORECASE)
+    r"\b(?:DCAT[- ]AP[- ](?:[A-Z]{2,}|[A-Z][a-z]+)\b"
+    r"|(?i:(?:StatDCAT|GeoDCAT|HealthDCAT|mobilityDCAT|BRegDCAT|NAPCORE)(?:-AP)?)(?![\w-]))")
 VAGUE_WORDS = ("appropriate", "adequate", "as needed", "if possible", "where possible", "etc", "and so on",
                "user-friendly", "sufficient", "relevant information", "as appropriate")
 

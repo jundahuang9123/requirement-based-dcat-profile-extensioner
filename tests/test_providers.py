@@ -81,23 +81,34 @@ def test_openai_compatible_falls_back_to_json_object(monkeypatch):
 def test_a_key_goes_only_to_the_endpoint_it_was_entered_for():
     from profile_extensioner.llm.registry import Credentials
 
+    import pytest
+
     credentials = Credentials()
     credentials.set("openai-compatible", "secret", "https://chat.example.org/api/v1")
-    assert credentials.get("openai-compatible", "https://chat.example.org/api/v1") == "secret"
-    assert credentials.get("openai-compatible", "https://elsewhere.example.com/v1") in (None, "")
+    assert credentials.get("openai-compatible", "https://chat.example.org/other/path") == "secret"   # same origin
+    assert credentials.get("openai-compatible", "https://elsewhere.example.com/v1") is None
+    assert credentials.get("openai-compatible", "http://chat.example.org/api/v1") is None           # not over http
+    assert credentials.get("openai-compatible", "https://chat.example.org:8443/api/v1") is None     # nor another port
+    with pytest.raises(ValueError):
+        credentials.set("openai-compatible", "secret", None)                                       # no unbound keys
 
 
 def test_changing_settings_after_a_run_marks_stages_stale():
-    from profile_extensioner.api.app import _mark_settings_stale
     from profile_extensioner.contracts import Project, SignOff
+    from profile_extensioner.engine.pipeline import Pipeline
+    from profile_extensioner.llm.registry import Credentials
+    from profile_extensioner.store.blackboard import Store
 
-    before = Project(id="p", name="p", stage_states={s: "done" for s in ("intake", "retrieve", "propose", "verify", "conformance")},
-                     signoff=SignOff(by="rev"))
-    after = before.model_copy(deep=True)
-    after.config.top_k = 3
-    _mark_settings_stale(before, after)
-    assert after.stage_states["intake"] == "done" and after.stage_states["retrieve"] == "stale" and after.signoff is None
-    again = before.model_copy(deep=True)
-    again.config.attribution_check = False
-    _mark_settings_stale(before, again)
-    assert again.stage_states["propose"] == "done" and again.stage_states["verify"] == "stale"
+    store = Store()
+    states = {s: "done" for s in ("intake", "retrieve", "propose", "verify", "consolidate", "repair", "compile", "conformance")}
+    store.save_project(Project(id="p", name="p", stage_states=dict(states), signoff=SignOff(by="rev")))
+    before = store.get_project("p")
+    changed = before.model_copy(deep=True)
+    changed.config.top_k = 3
+    store.save_project(changed)
+    pipe = Pipeline(store, Credentials(), "p")
+    pipe.settings_changed(before)
+    project = store.get_project("p")
+    assert project.stage_states["intake"] == "done" and project.stage_states["retrieve"] == "stale"
+    assert project.signoff is None
+    assert any("retrieval settings changed" in e.summary for e in store.list_entries("p"))

@@ -165,6 +165,13 @@ def compare_facets(
         else:
             add("range_datatype", base.datatypes, new.datatypes, "conflict", "a literal cannot have two different datatypes")
 
+    # -- range kind: a class range and a literal range cannot both hold ---------
+    literal_kinds = {"Literal"}
+    if (base.classes and (new.datatypes or new.node_kind in literal_kinds)) or \
+            (new.classes and (base.datatypes or base.node_kind in literal_kinds)):
+        add("range_kind", "class" if base.classes else "literal", "literal" if base.classes else "class", "conflict",
+            "the base and the extension disagree on whether the values are resources or literals")
+
     # -- node kind -----------------------------------------------------------
     base_kinds = NODE_KIND_SETS.get(base.node_kind or "", ANY_NODE_KIND)
     if new.node_kind is None:

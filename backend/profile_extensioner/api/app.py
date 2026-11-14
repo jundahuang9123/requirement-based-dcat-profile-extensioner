@@ -210,7 +210,10 @@ def set_key(request: KeyRequest) -> list[dict[str, Any]]:
     """Keeps the key in server memory only. It is never stored, logged or returned."""
     if request.provider not in PROVIDERS:
         raise HTTPException(400, "unknown provider")
-    credentials.set(request.provider, request.api_key.strip(), request.base_url)
+    try:
+        credentials.set(request.provider, request.api_key.strip(), request.base_url)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
     return provider_status(credentials)
 
 
@@ -262,10 +265,19 @@ def create_project(request: ProjectCreate) -> dict[str, Any]:
         profile_namespace=request.profile_namespace, profile_prefix=request.profile_prefix,
         llm=default_settings(),
     )
+    # Validate everything that can fail BEFORE anything is saved (no unopenable projects).
+    if not project.profile_prefix or not project.profile_namespace or \
+            not project.profile_namespace.startswith(("http://", "https://")) or \
+            project.profile_namespace[-1] not in "#/":
+        raise HTTPException(400, "The namespace must be an http(s) IRI ending in # or /, and the prefix must not be empty.")
+    try:
+        load_knowledge_base(project.base_profile_id, profile_namespace=project.profile_namespace,
+                            profile_prefix=project.profile_prefix)
+    except (KeyError, ValueError) as exc:
+        raise HTTPException(400, f"Cannot create the project: {exc}") from exc
     store.save_project(project)
     if atom_set:
         store.replace_atoms(project.id, atom_set.atoms)
-    _pipeline(project.id)  # validates the base profile id
     return project.model_dump()
 
 
@@ -290,31 +302,10 @@ def update_project(project_id: str, request: ProjectUpdate) -> dict[str, Any]:
             value = getattr(request, field)
             if value is not None:
                 setattr(project, field, value)
-        _mark_settings_stale(before, project)
         store.save_project(project)
-        return project.model_dump()
-
-
-RETRIEVAL_FIELDS = ("retrieval", "top_k", "use_hints", "exclude_namespaces")
-DECISION_FIELDS = ("verify", "repair_rounds", "attribution_check", "votes", "auto_accept", "auto_accept_min_confidence",
-                   "later_dcat_terms", "require_human_signoff", "replay_cache")
-
-
-def _mark_settings_stale(before: Project, after: Project) -> None:
-    """A run made under other settings is stale from the first stage those settings feed (and unreleased)."""
-    old, new = before.config, after.config
-    if any(getattr(old, f) != getattr(new, f) for f in RETRIEVAL_FIELDS):
-        first = "retrieve"
-    elif before.llm != after.llm or old.votes != new.votes:
-        first = "propose"
-    elif any(getattr(old, f) != getattr(new, f) for f in DECISION_FIELDS):
-        first = "verify"
-    else:
-        return
-    for stage in STAGE_ORDER[STAGE_ORDER.index(first):]:
-        if after.stage_states.get(stage) == "done":
-            after.stage_states[stage] = "stale"
-    after.signoff = None
+        pipeline = _pipeline(project_id)
+        pipeline.settings_changed(before)
+        return pipeline.project.model_dump()
 
 
 @app.delete("/api/projects/{project_id}")
@@ -331,6 +322,7 @@ def replace_atoms(project_id: str, request: AtomsUpload) -> list[dict[str, Any]]
         raise HTTPException(400, str(exc)) from exc
     with _Exclusive(project_id):
         store.replace_atoms(project_id, atom_set.atoms)
+        _pipeline(project_id).atoms_changed()
     return [a.model_dump() for a in atom_set.atoms]
 
 
@@ -339,6 +331,7 @@ def save_atom(project_id: str, atom_id: str, atom: Atom) -> dict[str, Any]:
     atom.id = atom_id
     with _Exclusive(project_id):
         store.save_atom(project_id, atom)
+        _pipeline(project_id).atoms_changed()
     return {"atom": atom.model_dump(), "lint": [i.model_dump() for i in lint_atom(atom)]}
 
 
@@ -500,8 +493,20 @@ def artifact(project_id: str, name: str) -> Response:
 
 @app.get("/api/projects/{project_id}/export")
 def export(project_id: str) -> dict[str, Any]:
-    """The full record of a project: state, blackboard log and model calls. Contains no API keys."""
-    return store.export_project(project_id)
+    """The full record of a project: state, blackboard log and model calls. Contains no API keys. In a blind
+    project, the atoms' sources and counterfactual markers are left out (they are kept for the evaluator)."""
+    project = store.get_project(project_id)
+    if project is None:
+        raise HTTPException(404, "unknown project")
+    record = store.export_project(project_id)
+    if project.config.blind:
+        for atom in record.get("atoms") or []:
+            for field in BLIND_FIELDS:
+                atom.pop(field, None)
+    return record
+
+
+BLIND_FIELDS = ("source_reference", "expected_change", "counterfactual_of", "hints")
 
 
 @app.get("/api/terms")

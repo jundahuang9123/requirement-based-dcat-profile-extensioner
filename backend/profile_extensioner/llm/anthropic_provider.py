@@ -75,6 +75,8 @@ class AnthropicProvider:
             raise LLMUnavailable(f"Anthropic API error {exc.status_code}: {exc.message}") from exc
         except anthropic.APIConnectionError as exc:
             raise LLMUnavailable("Could not reach the Anthropic API.") from exc
+        except TypeError as exc:     # the SDK found no credentials at all (no key entered, none in the environment)
+            raise LLMUnavailable(f"No Anthropic API key is available: {exc}") from exc
 
         if response.stop_reason == "refusal":
             details = getattr(response, "stop_details", None)

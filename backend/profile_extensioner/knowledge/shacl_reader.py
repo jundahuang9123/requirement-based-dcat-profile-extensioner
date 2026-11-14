@@ -68,12 +68,15 @@ class ShapeFacets:
     names: list[str] = field(default_factory=list)
     descriptions: list[str] = field(default_factory=list)
     shape_ids: list[str] = field(default_factory=list)
+    # classes a value may have when the property shape uses sh:node of an sh:or of sh:class alternatives
+    # (DCAT-AP :DcatResource_Shape); informative, used by the conformance witness generator
+    or_classes: set[str] = field(default_factory=set)
 
     def copy(self) -> "ShapeFacets":
         return ShapeFacets(
             self.min_count, self.max_count, set(self.classes), set(self.datatypes), self.node_kind,
             self.in_values, self.pattern, self.severity, list(self.names), list(self.descriptions),
-            list(self.shape_ids),
+            list(self.shape_ids), set(self.or_classes),
         )
 
     def merge(self, other: "ShapeFacets") -> None:
@@ -93,6 +96,7 @@ class ShapeFacets:
             self.in_values = other.in_values if self.in_values is None else self.in_values & other.in_values
         if other.pattern and not self.pattern:
             self.pattern = other.pattern
+        self.or_classes |= other.or_classes
         if SEVERITY_RANK.get(other.severity, 2) > SEVERITY_RANK.get(self.severity, 2):
             self.severity = other.severity
         for value in other.names:
@@ -250,6 +254,14 @@ def read_shapes(graph: Graph) -> ShapeIndex:
             pattern = graph.value(prop, SH.pattern)
             if isinstance(pattern, Literal):
                 facets.pattern = str(pattern)
+            for node in graph.objects(prop, SH.node):
+                for alternatives in graph.objects(node, SH["or"]):
+                    try:
+                        for member in Collection(graph, alternatives):
+                            facets.or_classes |= {str(value) for value in graph.objects(member, SH["class"])
+                                                  if isinstance(value, URIRef)}
+                    except Exception:   # a malformed list: no alternatives
+                        continue
             severity = graph.value(prop, SH.severity) or shape_severity
             if severity is not None and _local(severity) in SEVERITY_RANK:
                 facets.severity = _local(severity)

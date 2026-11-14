@@ -41,11 +41,25 @@ def test_verification_off_keeps_the_judge_when_it_is_on():
     assert any(r.check == "T2" for c in live(pipe) for r in c.verification)
 
 
-def test_full_pipeline_differs_from_the_ablation():
-    full, ablated = run(), run(verify=False, attribution_check=False)
-    fingerprint = lambda pipe: sorted((c.kind, c.path or c.target_class, c.decision.status) for c in live(pipe))  # noqa: E731
-    assert fingerprint(full) != fingerprint(ablated) or \
-        {r.check for c in live(full) for r in c.verification} != {r.check for c in live(ablated) for r in c.verification}
+def test_the_ablation_changes_a_decision_a_symbolic_check_would_block():
+    """An invented term: full verification sends it to a person (V1); the ablation does not check it."""
+    from profile_extensioner.contracts import CoverageLink, Facets, ProfileChange
+
+    outcomes = {}
+    for verify in (True, False):
+        store = Store()
+        store.save_project(Project(id="p", name="Lab", profile_namespace="https://example.org/lab#", profile_prefix="lab",
+                                   config=PipelineConfig(verify=verify, attribution_check=False)))
+        store.replace_atoms("p", parse_atom_set(DEMO.read_text(encoding="utf-8")).atoms[:1])
+        pipe = Pipeline(store, Credentials(), "p")
+        atom_id = store.list_atoms("p")[0].id
+        store.save_change("p", ProfileChange(
+            id="invented", kind="reuse_property", target_class="http://www.w3.org/ns/dcat#Dataset",
+            path="http://example.org/not-a-vocabulary#madeUp", facets=Facets(obligation="recommended"),
+            covers=[CoverageLink(atom_id=atom_id, reason="r", evidence_quote="x")], confidence=0.9))
+        pipe.run_verify()
+        outcomes[verify] = store.get_change("p", "invented").decision.status
+    assert outcomes[True] == "needs_review" and outcomes[False] == "auto_accepted"
 
 
 def test_release_without_a_human_only_when_the_condition_says_so():

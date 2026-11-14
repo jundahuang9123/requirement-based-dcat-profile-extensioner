@@ -89,11 +89,14 @@ def test_judge_rejection_is_not_discarded_by_merging(config):
     pipe.run_intake(); pipe.run_retrieve()
     pipe.store.save_change("p1", mint_class("chg-A", "a1", "each tensile specimen batch", 0.9))
     pipe.store.save_change("p1", mint_class("chg-B", "a2", "the colour of the packaging", 0.6))
-    pipe.run_verify(); pipe.run_repair(); pipe.run_consolidate()
+    pipe.run_all(from_stage="verify")                       # the pipeline's own order: verify, consolidate, repair
     live = [c for c in pipe.changes() if c.decision.status not in ("superseded", "rejected")]
+    assert any("a1" in c.atom_ids for c in live), "the valid claim (a1) must survive"
     covering_a2 = [c for c in live if "a2" in c.atom_ids]
     assert all(c.decision.status != "auto_accepted" for c in covering_a2), \
         [(c.id, c.decision.status, c.decision.note) for c in covering_a2]
+    accepted = [c for c in live if c.decision.status == "auto_accepted"]
+    assert all("a2" not in c.atom_ids for c in accepted)
 
 
 def test_policy_requires_a_t2_verdict_when_the_check_is_on():

@@ -39,7 +39,8 @@ from profile_extensioner.iri import Prefixes  # noqa: E402
 RELEASE_FILES = {
     "1.1": {"zip": "shacl-201706.zip", "constraints": ["shacl-201706/dcat-ap.shapes.ttl"], "ranges": [],
             "obligations": "rdf", "implicit": True,
-            # the same file, byte for byte, as resolvable RDF (SEMIC's own SHACL repository; sha256 checked)
+            # the same file, byte for byte, as resolvable RDF (SEMIC's own SHACL repository); checked with
+            # --verify-mirrors (sha256 equal to the zip member, 2026-11-14)
             "mirrors": [{"repository": "https://github.com/SEMICeu/dcat-ap_shacl",
                          "commit": "c9683b174edab5933bf8f9ef48bde2c4c29b8fbc", "path": "shacl/dcat-ap.shapes.ttl",
                          "same_as": "shacl-201706/dcat-ap.shapes.ttl"}]},
@@ -293,6 +294,8 @@ def sha256(path: Path) -> str:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--semic-repo", type=Path, help="checkout of github.com/SEMICeu/DCAT-AP")
+    parser.add_argument("--verify-mirrors", action="store_true",
+                        help="download every mirror and fail when it differs from the vendored file")
     parser.add_argument("--dcat-basis-only", action="store_true",
                         help="only rewrite the DCAT basis (release, dcat_basis, main_classes) of an existing profile.yaml")
     parser.add_argument("--release", required=True, choices=sorted(RELEASE_FILES))
@@ -390,7 +393,17 @@ def main(argv: list[str] | None = None) -> int:
     mirrors = []
     for mirror in files.get("mirrors", []):
         vendored = target / "shacl" / Path(mirror["same_as"]).name
-        mirrors.append({**mirror, "sha256": sha256(vendored)})
+        entry = {**mirror, "sha256": sha256(vendored)}
+        if args.verify_mirrors:
+            import urllib.request
+
+            url = (mirror["repository"].replace("https://github.com/", "https://raw.githubusercontent.com/")
+                   + f"/{mirror['commit']}/{mirror['path']}")
+            remote = hashlib.sha256(urllib.request.urlopen(url, timeout=60).read()).hexdigest()
+            if remote != entry["sha256"]:
+                raise SystemExit(f"mirror {url} differs from the vendored {vendored.name}")
+            entry["verified"] = True
+        mirrors.append(entry)
     if mirrors:
         profile["source"]["mirrors"] = mirrors
     if (target / "dsv-index.json").exists():

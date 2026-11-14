@@ -30,8 +30,8 @@ def compile_shacl_graph(view: ProfileView, *, include_trace: bool = True) -> Gra
     graph.add((profile, DCTERMS.description, Literal(
         f"Constraints this extension adds to or tightens on {kb.base.info.title}. "
         "Validate data against these shapes together with the base shapes.", lang="en")))
-    # Import the official shapes of the base as resolvable RDF at the pinned source commit. Releases that
-    # publish their shapes only inside an archive (DCAT-AP 1.1, 1.2) get the archive as rdfs:seeAlso.
+    # Import the official shapes of the base as resolvable RDF at the pinned source commit (1.1 through a
+    # byte-identical mirror). A release with no plain copy anywhere (DCAT-AP 1.2) gets its archive as rdfs:seeAlso.
     for url in kb.base.info.shape_urls:
         graph.add((profile, OWL.imports, URIRef(url)))
     if not kb.base.info.shape_urls:

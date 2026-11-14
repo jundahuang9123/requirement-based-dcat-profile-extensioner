@@ -127,12 +127,14 @@ function ModelPanel({ project, onSaved, notify }: { project: Project; onSaved: (
         <select value={settings.provider} onChange={(e) => setSettings({ ...settings, provider: e.target.value as LLMSettings['provider'], model: null })}>
           {providers.map((x) => <option key={x.provider} value={x.provider}>{x.label}</option>)}</select></label>
       {status && <p className="muted">{status.note} Key: <b>{status.key_source}</b></p>}
+      {settings.provider === 'openai-compatible' && <label>Base URL <input value={settings.base_url ?? ''} onChange={(e) => setSettings({ ...settings, base_url: e.target.value || null })} placeholder="https://host/v1" /></label>}
       {settings.provider !== 'mock' && (<>
         <label>API key <input type="password" value={key} onChange={(e) => setKey(e.target.value)} placeholder={status?.key_source !== 'none' ? '(a key is set)' : 'paste key'} /></label>
-        <button type="button" onClick={async () => { setProviders(await api.setKey(settings.provider, key, settings.base_url)); setKey(''); notify('Key set for this server session'); }}>
+        <button type="button" disabled={settings.provider === 'openai-compatible' && !settings.base_url}
+          title={settings.provider === 'openai-compatible' ? 'The key is sent to this base URL only' : ''}
+          onClick={async () => { try { setProviders(await api.setKey(settings.provider, key, settings.base_url)); setKey(''); notify('Key set for this server session'); } catch (e) { notify(String(e)); } }}>
           <KeyRound size={15} /> Use key</button>
       </>)}
-      {settings.provider === 'openai-compatible' && <label>Base URL <input value={settings.base_url ?? ''} onChange={(e) => setSettings({ ...settings, base_url: e.target.value || null })} placeholder="http://localhost:11434/v1" /></label>}
       <label>Model
         <div className="row"><input value={settings.model ?? ''} placeholder={status?.default_model ?? ''} list="models" onChange={(e) => setSettings({ ...settings, model: e.target.value || null })} />
           {settings.provider !== 'mock' && <button type="button" onClick={async () => { try { setModels(await api.models(settings)); } catch (e) { notify(String(e)); } }}>List</button>}</div>

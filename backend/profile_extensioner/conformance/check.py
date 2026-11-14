@@ -46,6 +46,16 @@ SAMPLE_LITERALS = {
     str(XSD.anyURI): Literal("https://example.org/x", datatype=XSD.anyURI),
     str(XSD.duration): Literal("P1Y", datatype=XSD.duration),
     str(XSD.gYear): Literal("2026", datatype=XSD.gYear),
+    str(XSD.gYearMonth): Literal("2026-01", datatype=XSD.gYearMonth),
+    str(XSD.hexBinary): Literal("00ff", datatype=XSD.hexBinary),
+    str(XSD.base64Binary): Literal("AA==", datatype=XSD.base64Binary),
+    str(XSD.time): Literal("12:00:00", datatype=XSD.time),
+    str(XSD.dateTimeStamp): Literal("2026-01-01T00:00:00Z", datatype=XSD.dateTimeStamp),
+    str(XSD.int): Literal(1, datatype=XSD.int),
+    str(XSD.long): Literal(1, datatype=XSD.long),
+    str(XSD.float): Literal("1.0", datatype=XSD.float),
+    str(XSD.language): Literal("en", datatype=XSD.language),
+    str(XSD.token): Literal("example", datatype=XSD.token),
     "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString": Literal("example", lang="en"),
 }
 SOURCES = {
@@ -193,11 +203,24 @@ def _value_for(facets: ShapeFacets, graph: Graph, depth: int, all_shapes, counte
         return Literal("example") if datatype == str(XSD.string) else Literal("example", datatype=URIRef(datatype))
     if facets.classes:
         cls = sorted(facets.classes)[0]
+        if depth >= 3:
+            # At the depth limit close a cycle with an instance of the class made earlier (self-referential ranges
+            # such as dct:hasPart on dcat:Catalog) instead of leaving a fresh, unfilled node.
+            existing = sorted(graph.subjects(RDF.type, URIRef(cls)))
+            if existing:
+                return existing[0]
         counter[0] += 1
         node = URIRef(f"https://example.org/witness/{counter[0]}")
         graph.add((node, RDF.type, URIRef(cls)))
         if depth < 3:
             _fill(node, cls, graph, depth + 1, all_shapes, counter)
+        return node
+    if facets.or_classes:
+        # sh:node of an sh:or of classes (DCAT-AP :DcatResource_Shape): an instance of the first alternative.
+        cls = sorted(facets.or_classes)[0]
+        counter[0] += 1
+        node = URIRef(f"https://example.org/witness/{counter[0]}")
+        graph.add((node, RDF.type, URIRef(cls)))
         return node
     if facets.node_kind == "Literal":
         return Literal("example", lang="en")
@@ -234,8 +257,10 @@ def witness_check(view: ProfileView) -> tuple[ConformanceCheck, str]:
             messages.append(f"{view.kb.curie(str(path)) if path else '?'}: {message}")
         return bool(conforms), messages
 
-    ext_ok, ext_messages = run(merged)
+    ext_ok, ext_messages = run(compile_shacl_graph(view, include_trace=False))   # the extension's own shapes
     base_ok, base_messages = run(view.kb.base.shapes_graph())
+    if ext_ok and base_ok:
+        ext_ok, ext_messages = run(merged)                                         # and both together
     items = [ConformanceItem(message=f"extension: {m}") for m in ext_messages[:20]] + \
             [ConformanceItem(message=f"base: {m}") for m in base_messages[:20]]
     if ext_ok and base_ok:

@@ -27,8 +27,9 @@ every file).
 ## What the base is
 
 * **Constraints** come from the official SHACL file of the release, unmodified
-  (`shacl/dcat-ap-SHACL.ttl`, plus `ranges.ttl` for 3.0.1; the 1.x and 2.x releases'
-  own shape files, see [dcat-versions.md](dcat-versions.md)).
+  (`shacl/dcat-ap-SHACL.ttl` for 3.x; the 1.x and 2.x releases' own shape files, with the range shapes
+  of 2.1.x; see [dcat-versions.md](dcat-versions.md)). Property links that point to no property shape
+  are dropped in memory, because a SHACL engine rejects them.
 * **The DCAT state** is the W3C DCAT version the release states it builds on, as it
   was on the release date (`profile.yaml` `dcat_basis`, with the quote).
 * **Obligation levels** (mandatory / recommended / optional) come from the

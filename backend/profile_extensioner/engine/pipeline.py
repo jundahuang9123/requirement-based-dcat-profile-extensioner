@@ -129,6 +129,56 @@ class Pipeline:
         self._update_project(mutate)
         if had:
             self.log("review", "note", f"The sign-off was withdrawn: {reason}")
+            if self.store.list_artifacts(self.pid):
+                self.run_compile(cascade=False)          # the artefacts must no longer say "released"
+                self.set_stage("conformance", "stale", cascade=False)
+
+    def _mark_stale_from(self, first: str, reason: str) -> None:
+        """Inputs of ``first`` changed: it and every later stage are stale, and a release is withdrawn."""
+        def mutate(project: Project) -> None:
+            for stage in STAGE_ORDER[STAGE_ORDER.index(first):]:
+                if project.stage_states.get(stage) == "done":
+                    project.stage_states[stage] = "stale"
+        self._update_project(mutate)
+        self.log("review", "note", f"{reason}: stages from {first} on are out of date")
+        self._withdraw_release(reason)
+
+    def settings_changed(self, before: Project) -> None:
+        """Settings were changed after a run (the project is saved already): mark what they feed as stale."""
+        retrieval = ("retrieval", "top_k", "use_hints", "exclude_namespaces")
+        proposing = ("verify", "replay_cache", "votes")          # verify gates check B1 inside propose
+        deciding = ("repair_rounds", "attribution_check", "auto_accept", "auto_accept_min_confidence",
+                    "later_dcat_terms", "require_human_signoff", "blind")
+        old, new = before.config, self.project.config
+        if any(getattr(old, f) != getattr(new, f) for f in retrieval):
+            self._mark_stale_from("retrieve", "the retrieval settings changed")
+        elif before.llm != self.project.llm or any(getattr(old, f) != getattr(new, f) for f in proposing):
+            self._mark_stale_from("propose", "the model or proposal settings changed")
+        elif any(getattr(old, f) != getattr(new, f) for f in deciding):
+            self._mark_stale_from("verify", "the decision settings changed")
+        elif (before.profile_title, before.name) != (self.project.profile_title, self.project.name):
+            self._mark_stale_from("compile", "the profile title changed")
+
+    def atoms_changed(self) -> None:
+        """Atoms were added, edited or removed: everything derived from them is out of date."""
+        self._mark_stale_from("intake", "the requirement atoms changed")
+
+    def release_blockers(self) -> list[str]:
+        """Why the profile cannot be released now (empty: it can)."""
+        reasons = []
+        if self.project.pending_rebase is not None:
+            reasons.append("a rebase plan is pending; apply or cancel it first")
+        open_items = [c.id for c in self.changes() if c.decision.status in ("needs_review", "proposed")]
+        if open_items:
+            reasons.append(f"{len(open_items)} change(s) still need review")
+        report = self.store.get_conformance(self.pid)
+        if report is None or report.verdict == "non_conformant":
+            reasons.append("run the conformance check first; a non-conformant profile cannot be released")
+        not_current = [stage for stage in STAGE_ORDER if stage != "review"
+                       and self.project.stage_states.get(stage) not in ("done", "skipped")]
+        if not_current:
+            reasons.append("stages not current: " + ", ".join(not_current) + " (run them again)")
+        return reasons
 
     def active_atoms(self) -> list[Atom]:
         return [atom for atom in self.store.list_atoms(self.pid) if atom.active]
@@ -265,6 +315,7 @@ class Pipeline:
         warnings = [r for r in change.verification if not r.passed and r.severity == "warning"]
         config = self.project.config
         judged = any(r.check == "T2" and r.details.get("problem") != "judge_unavailable" for r in change.verification)
+        supported = any(r.check == "T2" and r.passed for r in change.verification)
         if errors:
             status, note = "needs_review", "failed: " + ", ".join(sorted({r.check for r in errors}))
         elif not config.auto_accept:
@@ -281,12 +332,13 @@ class Pipeline:
             status, note = "needs_review", ("the judge was unavailable (T2): not judged"
                                             if any(r.details.get("problem") == "judge_unavailable" for r in change.verification)
                                             else "no attribution verdict (T2): not judged")
+        elif config.attribution_check and change.atom_ids and not supported:
+            status, note = "needs_review", "the judge found the change only partly supported by its atoms (T2)"
         else:
             status = "auto_accepted"
             basis = "all checks passed" if config.verify else "symbolic verification switched off (condition)"
             if config.attribution_check:
-                basis += "; judged supported" if not any(r.check == "T2" and not r.passed for r in change.verification) \
-                    else "; judged partially supported"
+                basis += "; judged supported"
             note = basis + (f"; {len(warnings)} warning(s) to look at" if warnings else "")
         change.decision = Decision(status=status, decided_by="rule:policy", note=note)  # type: ignore[arg-type]
 
@@ -305,10 +357,9 @@ class Pipeline:
         for change in changes:
             if change.id not in results or change.decision.status in ("superseded", "rejected"):
                 continue
-            kept = [] if change.id in rejudge else [r for r in change.verification if r.check == "T2"
-                                                    and r.details.get("problem") != "judge_unavailable"]
+            kept = [] if change.id in rejudge else [r for r in change.verification if r.check == "T2"]
             change.verification = results[change.id] + kept
-            if not kept and not has_errors(change.verification) and not is_human(change):
+            if not kept and not repairable_failures(change.verification) and not is_human(change):
                 verdict = self._attribution(change, ctx, stage=stage)
                 if verdict is not None:
                     change.verification.append(verdict)
@@ -329,7 +380,8 @@ class Pipeline:
             if change.id not in results:
                 continue
             change.verification = results[change.id]
-            if not has_errors(change.verification):
+            # Judge every claim on its own, also a duplicate: consolidation merges only claims the judge supports.
+            if not repairable_failures(change.verification):
                 t2 = self._attribution(change, ctx)
                 if t2 is not None:
                     change.verification.append(t2)
@@ -379,7 +431,7 @@ class Pipeline:
                     ctx.changes = self.changes() + [revised]
                     revised.verification = self._check_set(
                         [c for c in ctx.changes if c.decision.status != "superseded"], ctx).get(revised.id, [])
-                    if not has_errors(revised.verification):
+                    if not repairable_failures(revised.verification):
                         t2 = self._attribution(revised, ctx, stage="repair")
                         if t2:
                             revised.verification.append(t2)
@@ -395,6 +447,7 @@ class Pipeline:
                     self.store.save_change(self.pid, change)
                     self.log("repair", "withdraw", result.note, subject_type="change", subject_id=change.id,
                              author=self.llm.author)
+                    self._restore_absorbed(change)
                 else:
                     change.provenance.repair_round = round_number
                     self.store.save_change(self.pid, change)
@@ -413,7 +466,7 @@ class Pipeline:
         for conflict in conflicts:
             for cid in conflict.change_ids:
                 change = self.store.get_change(self.pid, cid)
-                if change and not is_human(change):
+                if change and not is_human(change) and change.decision.decided_by != "rule:rebase":
                     change.decision = Decision(status="needs_review", decided_by="rule:consolidate",
                                                note=f"conflict {conflict.id}: {conflict.description}")
                     self.store.save_change(self.pid, change)
@@ -422,6 +475,19 @@ class Pipeline:
         # Merged changes cover more atoms: verify the set again and judge them again with all their atoms.
         self._reverify(stage=stage, rejudge=merged)
         return merged, conflicts
+
+    def _restore_absorbed(self, withdrawn: ProfileChange) -> None:
+        """A machine withdrew a change that had absorbed duplicates: the absorbed changes come back (their atoms
+        must not be lost with it) and are verified and decided again."""
+        for absorbed_id in withdrawn.merged_from:
+            absorbed = self.store.get_change(self.pid, absorbed_id)
+            if absorbed is None or absorbed.decision.status != "superseded" \
+                    or absorbed.decision.decided_by != "rule:consolidate":
+                continue
+            absorbed.decision = Decision(status="proposed", decided_by="rule:pipeline",
+                                         note=f"restored: {withdrawn.id}, which it had been merged into, was withdrawn")
+            self.store.save_change(self.pid, absorbed)
+            self.log("repair", "restore", absorbed.decision.note, subject_type="change", subject_id=absorbed.id)
 
     def run_consolidate(self) -> None:
         self.set_stage("consolidate", "running")
@@ -495,8 +561,11 @@ class Pipeline:
     def _auto_release(self) -> None:
         """Condition ``require_human_signoff=False``: release a conformant profile without a person. What is
         still in the review queue is not part of it. Any later decision withdraws the release, as usual."""
-        report = self.store.get_conformance(self.pid)
-        if report is None or report.verdict == "non_conformant" or self.project.pending_rebase is not None:
+        if self.project.signoff is not None:
+            return                                   # never replace a release (a person's above all)
+        blockers = [reason for reason in self.release_blockers() if "still need review" not in reason]
+        if blockers:
+            self.log("review", "note", "not released automatically: " + "; ".join(blockers))
             return
         waiting = sum(1 for c in self.changes() if c.decision.status in ("needs_review", "proposed"))
         signoff = SignOff(by="rule:auto-release", change_set_hash=self.change_set_hash(),
@@ -533,7 +602,7 @@ class Pipeline:
         changes = self.changes()
         live = [c for c in changes if c.decision.status not in ("superseded",)]
         included = [c for c in live if c.included]
-        proposed = [c for c in live if c.decision.status != "rejected"]
+        proposed = [c for c in live if c.provenance.author_type != "human"]        # machine proposals, rejected ones too
         coverage = self.coverage()
         counts: dict[str, int] = {}
         for value in coverage.values():
@@ -563,7 +632,8 @@ class Pipeline:
             "extension_rate": extension_rate(included),
             "extension_rate_proposed": extension_rate(proposed),
             "repair_calls": len(repair_calls),
-            "repaired_and_included": sum(1 for c in included if c.supersedes and c.provenance.repair_round > 0),
+            "repaired_and_included": sum(1 for c in included if c.supersedes and c.provenance.repair_round > 0
+                                         and c.provenance.author_type == "llm"),
             "llm_calls": len(calls),
             "llm_calls_cached": sum(1 for c in calls if c.cached),
             "judge_calls": sum(1 for c in calls if c.purpose == "judge"),
@@ -572,8 +642,12 @@ class Pipeline:
         }
 
     def snapshot(self) -> ProjectSnapshot:
+        atoms = self.store.list_atoms(self.pid)
+        if self.project.config.blind:      # the reviewer of a blind run does not see what could name the answer
+            atoms = [atom.model_copy(update={"source_reference": None, "expected_change": None,
+                                             "counterfactual_of": None, "hints": []}) for atom in atoms]
         return ProjectSnapshot(
-            project=self.project, atoms=self.store.list_atoms(self.pid),
+            project=self.project, atoms=atoms,
             assessments=self.store.list_assessments(self.pid), candidates=self.store.all_candidates(self.pid),
             changes=self.store.list_changes(self.pid, include_superseded=True),
             conflicts=self.store.list_conflicts(self.pid), coverage=self.coverage(),
@@ -707,6 +781,8 @@ class Pipeline:
                 raise ValueError(f"{item.id}: {item.chosen!r} is not a choice ({', '.join(item.choices)})")
         new_kb = self._load_kb(plan.to_base)
         author = f"human:{by}"
+        if any(item.chosen == "repropose" for item in plan.items) or self.project.config.attribution_check:
+            build_provider(self.project.llm, self.credentials)       # fail before anything changes
         self._withdraw_release(f"rebased from {plan.from_base} to {plan.to_base}")
         report = RebaseReport(from_base=plan.from_base, to_base=plan.to_base, from_dcat=plan.from_dcat,
                               to_dcat=plan.to_dcat, plan_id=plan.plan_id, by=author, note=note, items=plan.items)
@@ -785,15 +861,32 @@ class Pipeline:
                           + (f", re-proposed {len(repropose)} atom(s)" if repropose else "") + ".")
         self._update_project(lambda project: project.rebases.append(report))
         self.log("review", "rebase", report.summary, author=author, payload=report.model_dump())
-        self.run_retrieve()
-        if repropose:
-            self.run_propose(sorted(repropose))
-        else:
-            self.set_stage("propose", "done", cascade=False)
-        self.run_verify()
-        self.run_consolidate()
-        self.run_compile()
-        self.run_conformance()
+        stage = "retrieve"
+        try:
+            self.run_retrieve()
+            stage = "propose"
+            if repropose:
+                self.run_propose(sorted(repropose))
+            else:
+                self.set_stage("propose", "done", cascade=False)
+            stage = "verify"
+            self.run_verify()
+            stage = "consolidate"
+            self.run_consolidate()
+            self.set_stage("repair", "skipped", cascade=False)
+            self.log("repair", "note", "Repair is not run after a rebase: what the move broke is in the review queue; "
+                                       "run repair from the workbench to let the model try.")
+            stage = "compile"
+            self.run_compile()
+            stage = "conformance"
+            self.run_conformance()
+        except Exception as exc:
+            # The base has moved; record that the re-run did not finish, so nothing looks complete that is not.
+            self.set_stage(stage, "failed")
+            report.summary += f" INCOMPLETE: {stage} failed ({type(exc).__name__}: {exc}); run it again."
+            self._update_project(lambda project: project.rebases.__setitem__(-1, report))
+            self.log(stage, "error", f"after the rebase: {type(exc).__name__}: {exc}")
+            raise
         self._update_project(lambda project: project.stage_states.__setitem__("review", "running"))
         return report
 
@@ -810,16 +903,9 @@ class Pipeline:
         return hashlib.sha256("\n".join(included).encode()).hexdigest()[:16]
 
     def sign_off(self, by: str, note: str = "") -> SignOff:
-        if self.project.pending_rebase is not None:
-            raise ValueError("A rebase plan is pending; apply or cancel it first.")
-        open_items = [c.id for c in self.changes() if c.decision.status in ("needs_review", "proposed")]
-        report = self.store.get_conformance(self.pid)
-        if open_items:
-            raise ValueError(f"{len(open_items)} change(s) still need review.")
-        if report is None or report.verdict == "non_conformant":
-            raise ValueError("Run the conformance check first; a non-conformant profile cannot be released.")
-        if self.project.stage_states.get("conformance") != "done":
-            raise ValueError("The conformance check is out of date; run it again.")
+        blockers = self.release_blockers()
+        if blockers:
+            raise ValueError("Cannot release: " + "; ".join(blockers) + ".")
         signoff = SignOff(by=by, note=note, change_set_hash=self.change_set_hash())
 
         def mutate(project: Project) -> None:

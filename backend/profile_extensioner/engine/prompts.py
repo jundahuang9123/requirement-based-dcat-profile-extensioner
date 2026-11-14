@@ -164,6 +164,7 @@ def build_propose_prompt(
     use_candidates: bool = True,
 ) -> tuple[str, str, dict[str, Any]]:
     """(system prompt, user prompt, machine-readable context for the offline provider)."""
+    kb = kb.for_model()
     resource_class = assessment.resource_class
     base_elements = kb.base.elements(resource_class) if resource_class else []
     class_line = (
@@ -224,6 +225,8 @@ def build_repair_prompt(
     round_number: int,
     proposed_json: str,
 ) -> tuple[str, str, dict[str, Any]]:
+    kb, raw_kb = kb.for_model(), kb
+    proposed_json = raw_kb.neutral(proposed_json)
     base_elements = kb.base.elements(change.target_class) if kb.base.has_class(change.target_class) else []
     sections = [
         _section("PROFILE", [
@@ -241,14 +244,14 @@ def build_repair_prompt(
         _section(
             "CORRECTION INSTRUCTIONS",
             [f"Repair round {round_number}. Fix ALL of these violations:"]
-            + [f"- {failure.check}: {failure.message}" for failure in failures[:20]],
+            + [f"- {failure.check}: {raw_kb.neutral(failure.message)}" for failure in failures[:20]],
         ),
         _section("OUTPUT", "Return action 'revise' with the corrected change, or 'withdraw' with the reason."),
     ]
     context = {
         "task": "repair",
-        "change": change.model_dump(),
-        "failures": [failure.model_dump() for failure in failures],
+        "change": raw_kb.neutral(change.model_dump()),
+        "failures": [raw_kb.neutral(failure.model_dump()) for failure in failures],
         "atoms": [_model_atom(atom) for atom in atoms],
         "licensed_obligation": _strongest_licensed(atoms),
         "candidates": [candidate.model_dump() for candidate in candidates],
@@ -264,19 +267,20 @@ def build_repair_prompt(
 def build_judge_prompt(
     change: ProfileChange, atoms: Sequence[Atom], kb: KnowledgeBase
 ) -> tuple[str, str, dict[str, Any]]:
+    kb, raw_kb = kb.for_model(), kb
     sections = [
         *[_section("ATOM", _atom_block(atom)) for atom in atoms],
         _section("PROPOSED CHANGE", verbalise_change(change, kb)),
         _section(
             "CLAIMED COVERAGE",
-            [f'- atom {link.atom_id} ({link.coverage}): {link.reason} | quote: "{link.evidence_quote}"'
+            [f'- atom {link.atom_id} ({link.coverage}): {raw_kb.neutral(link.reason)} | quote: "{link.evidence_quote}"'
              for link in change.covers],
         ),
         _section("OUTPUT", "Return the verdict."),
     ]
     context = {
         "task": "judge",
-        "change": change.model_dump(),
+        "change": raw_kb.neutral(change.model_dump()),
         "atoms": [_model_atom(atom) for atom in atoms],
         "licensed_obligation": _strongest_licensed(atoms),
     }

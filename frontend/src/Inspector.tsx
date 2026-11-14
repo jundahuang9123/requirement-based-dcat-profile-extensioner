@@ -110,7 +110,7 @@ export function Inspector({ snapshot, selection, select, reviewer, refresh, noti
         <blockquote>{atom.statement}</blockquote>
         <p className="muted">subject: {atom.subject} · modality: <b>{atom.modality}</b>
           {atom.source_reference && !snapshot.project.config.blind ? ` · source: ${atom.source_reference.document}${atom.source_reference.locator ? `, ${atom.source_reference.locator}` : ''}` : ''}</p>
-        {atom.counterfactual_of && <p className="note">Counterfactual of {atom.counterfactual_of}: {atom.expected_change}</p>}
+        {atom.counterfactual_of && !snapshot.project.config.blind && <p className="note">Counterfactual of {atom.counterfactual_of}: {atom.expected_change}</p>}
         {assessment?.lint.length ? (<section><h4>Atom checks</h4><ul className="issues">
           {assessment.lint.map((i) => <li key={i.code} className={`issue issue--${i.severity}`}><b>{i.code}</b> {i.message}</li>)}</ul></section>) : null}
         {assessment && (

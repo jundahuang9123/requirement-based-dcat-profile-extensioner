@@ -266,11 +266,12 @@ class BaseProfileInfo(BaseModel):
     class_count: int = 0
     element_count: int = 0
     release_date: str = ""                       # date of the release, as the release states it
-    # Resolvable RDF of the official constraint shapes at the pinned source commit (owl:imports targets);
-    # empty when the release publishes them only inside an archive (``shape_archives`` then names it).
+    # Resolvable RDF of the official shapes at the pinned source commit, or a byte-identical mirror
+    # (owl:imports targets); empty only when no plain copy exists (DCAT-AP 1.2: ``shape_archives`` names the zip).
     shape_urls: list[str] = Field(default_factory=list)
     shape_archives: list[str] = Field(default_factory=list)
     release_url: str = ""                        # an absolute URL of the release (homepage, else its source tree)
+    shape_fixes: list[str] = Field(default_factory=list)   # in-memory repairs of the official shapes (files unmodified)
     release_status: str = ""
     dcat: DcatBasis | None = None                # the DCAT state it builds on
     is_latest: bool = False                      # the newest release: the default for a new extension

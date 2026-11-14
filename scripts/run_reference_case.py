@@ -19,7 +19,9 @@ kiconnect needs RBDPE_LLM_API_KEY (the session proxy injects the real key; set i
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import re
 import sys
 import time
 from pathlib import Path
@@ -56,9 +58,24 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--repair-rounds", type=int, default=3)
     parser.add_argument("--votes", type=int, default=1)
     parser.add_argument("--top-k", type=int, default=8)
+    parser.add_argument("--evalmap", type=Path, help="evaluator map (default: <dir>/<case>.atoms.evalmap.json)")
     args = parser.parse_args(argv)
 
-    atoms = parse_atom_set((args.dir / f"{args.case}.atoms.yaml").read_text(encoding="utf-8"))
+    atoms_path = args.dir / f"{args.case}.atoms.yaml"
+    atoms_text = atoms_path.read_text(encoding="utf-8")
+    atoms = parse_atom_set(atoms_text)
+    evalmap_path = args.evalmap or args.dir / f"{args.case}.atoms.evalmap.json"
+    problems = blindness_problems(atoms)
+    if not evalmap_path.exists():
+        problems.append(f"no evaluator map at {evalmap_path}: the leak scan would not know what to look for")
+    if problems:
+        print("refusing to run, the input is not a blind benchmark input:\n  " + "\n  ".join(problems), file=sys.stderr)
+        return 4
+    evalmap = json.loads(evalmap_path.read_text(encoding="utf-8"))
+    atoms_sha = hashlib.sha256(atoms_text.encode("utf-8")).hexdigest()
+    if evalmap.get("atoms_file_sha256") and evalmap["atoms_file_sha256"] != atoms_sha:
+        print(f"refusing to run: {atoms_path} does not match its evaluator map (re-import both)", file=sys.stderr)
+        return 4
     model = None if args.provider == "mock" else args.model
     pid = f"{args.case}-{args.provider}-{model or 'rules'}" + (f"-{args.tag}" if args.tag else "")
     pid = pid.replace("/", "_")
@@ -68,6 +85,11 @@ def main(argv: list[str] | None = None) -> int:
             print(f"project {pid} exists in {args.store}; use another --tag or --replace", file=sys.stderr)
             return 2
         store.delete_project(pid)
+    if args.provider == "kiconnect":
+        # The environment key (RBDPE_LLM_API_KEY) is only ever sent to the origin of RBDPE_LLM_BASE_URL.
+        import os
+
+        os.environ.setdefault("RBDPE_LLM_BASE_URL", KICONNECT)
     llm = LLMSettings(provider="mock") if args.provider == "mock" else LLMSettings(
         provider="openai-compatible", model=model, base_url=KICONNECT, effort=args.effort,
         max_output_tokens=args.max_output_tokens)
@@ -86,7 +108,8 @@ def main(argv: list[str] | None = None) -> int:
     lines = [f"# {pid}: {took} s", "",
              f"SETTINGS base={pipeline.project.base_profile_id} dcat={pipeline.kb.dcat.id} provider={llm.provider} "
              f"model={model or '-'} effort={llm.effort} max_output_tokens={llm.max_output_tokens} replay={args.replay}",
-             f"CONFIG {pipeline.project.config.model_dump_json()}", ""]
+             f"CONFIG {pipeline.project.config.model_dump_json()}",
+             f"INPUT atoms_sha256={atoms_sha} import={json.dumps(evalmap.get('import', {}))} atoms={len(atoms.atoms)}", ""]
     for assessment in store.list_assessments(pid):
         lines.append(f"{assessment.atom_id:9s} {assessment.disposition:16s} {assessment.reason[:220]}")
     lines.append("")
@@ -103,14 +126,32 @@ def main(argv: list[str] | None = None) -> int:
     lines.append(f"METRICS {json.dumps(pipeline.metrics())}")
     lines.append(f"CALLS {len(calls)} " + json.dumps({s: sum(1 for c in calls if c.status == s) for s in {c.status for c in calls}})
                  + f" replayed_from_other_projects={sum(1 for c in calls if c.cached and c.replayed_from_project != pid)}")
-    leaks = leak_scan(store.list_llm_calls(pid, limit=None), args.dir / f"{args.case}.atoms.evalmap.json", atoms)
+    leaks = leak_scan(store.list_llm_calls(pid, limit=None), evalmap_path, atoms)
     lines.append("LEAKCHECK " + ("clean" if not leaks else "LEAK " + json.dumps(leaks)))
     (args.dir / f"{pid}.txt").write_text("\n".join(lines), encoding="utf-8")
     print("\n".join(lines))
     return 3 if leaks else 0
 
 
-PROFILE_CANARIES = ("StatDCAT", "GeoDCAT", "HealthDCAT", "mobilityDCAT", "DCAT-AP-JRC", "NAPCORE", "BRegDCAT")
+PROFILE_CANARIES = ("StatDCAT", "GeoDCAT", "HealthDCAT", "mobilityDCAT", "DCAT-AP-JRC", "NAPCORE", "BRegDCAT",
+                    "jrc-research")
+OPAQUE_ID = re.compile(r"^A-[0-9a-f]{6}$")
+
+
+def blindness_problems(atoms) -> list[str]:
+    """What makes an atom set unfit for a blind run (it would identify the case or carry the answer)."""
+    problems = []
+    for atom in atoms.atoms:
+        if not OPAQUE_ID.match(atom.id):
+            problems.append(f"atom id {atom.id!r} is not opaque (import with scripts/import_rq1_reference.py)")
+        for field in ("source_reference", "expected_change", "counterfactual_of"):
+            if getattr(atom, field, None):
+                problems.append(f"atom {atom.id} carries {field}")
+        if atom.hints:
+            problems.append(f"atom {atom.id} carries hints")
+    if getattr(atoms, "benchmark_id", None):
+        problems.append(f"the atom set names its benchmark ({atoms.benchmark_id})")
+    return problems[:10]
 
 
 def leak_scan(calls, evalmap_path: Path, atoms) -> dict[str, int]:

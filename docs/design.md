@@ -24,14 +24,14 @@ holding the final review right.
 |-----------|---------|
 | All error-level checks pass, the judge finds the change supported (when on), confidence ≥ threshold, a majority of votes agree (when voting) | `auto_accepted`: part of the profile unless a human overrules |
 | An error-level check fails | bounded repair (default 3 rounds; every round starts from a fresh verification of the whole set); still failing → `needs_review` |
-| Two changes on the same (class, property) | a set-level finding (V5 `duplicate_element`): **consolidation** merges them before repair, the merged change is verified and judged again with all its atoms; incompatible duplicates become a conflict |
-| The judge did not assess the change (not run, or unavailable) while the judge is on | `needs_review` (never auto-accepted unjudged) |
+| Two changes on the same (class, property) | a set-level finding (V5 `duplicate_element`). Each claim is still judged on its own; **consolidation** merges only valid claims (no error of their own, not rejected by the judge), keeping the judged-supported one, before repair; the merged change is verified and judged again with all its atoms. A claim with an error of its own is repaired first and merged afterwards. Incompatible duplicates become a conflict. If a machine withdraws a merged change, what it had absorbed is restored |
+| The judge did not assess the change (not run, or unavailable), or found it only partly supported, while the judge is on | `needs_review` (never auto-accepted without a "supported" verdict) |
 | Low confidence, no majority, conflict between changes (stays in review until a human resolves it), automatic acceptance switched off | `needs_review` |
 | A repair revision drops atoms of the change it replaces | the atoms are re-attached (a repair never loses coverage) |
 | A DCAT term only a later DCAT version than the base's defines (D1, policy `review`) | `needs_review`: a human decides |
 | A human decides | final: later machine stages never overwrite it |
 | The base is changed (rebase) | human decisions stay; machine changes with a migration finding go to `needs_review`; all are verified again |
-| Release | only by a human sign-off, only with an empty queue, no pending rebase plan, and a current, passing conformance report; any later decision withdraws it. Condition `require_human_signoff: false` releases a conformant profile automatically, labelled as such |
+| Release | only by a human sign-off, only with an empty queue, no pending rebase plan, every stage current (done or skipped) and a passing conformance report; any later decision, atom edit, title or settings change withdraws it (and the artefacts are recompiled as a draft). Condition `require_human_signoff: false` releases a conformant profile automatically, labelled as such |
 | Condition `verify: false` (ablation) | only the well-formedness guard V0 runs (plus the judge if on); decisions never claim "all checks passed"; conformance C1-C8 still measures the outcome |
 
 ## Checks

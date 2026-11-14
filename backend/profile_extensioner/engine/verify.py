@@ -66,14 +66,17 @@ class VerifyContext:
     changes: list[ProfileChange] = field(default_factory=list)          # the current change set
     candidates: dict[str, list[Candidate]] = field(default_factory=dict)  # atom id -> retrieved candidates
 
+    def _live(self) -> list[ProfileChange]:
+        return [c for c in self.changes if c.decision.status not in ("rejected", "superseded")]
+
     def minted_classes(self) -> set[str]:
-        return {c.target_class for c in self.changes if c.kind == "mint_class" and c.decision.status != "rejected"}
+        return {c.target_class for c in self._live() if c.kind == "mint_class"}
 
     def minted_properties(self) -> set[str]:
-        return {c.path for c in self.changes if c.kind == "mint_property" and c.path and c.decision.status != "rejected"}
+        return {c.path for c in self._live() if c.kind == "mint_property" and c.path}
 
     def reused_classes(self) -> set[str]:
-        return {c.target_class for c in self.changes if c.kind == "reuse_class" and c.decision.status != "rejected"}
+        return {c.target_class for c in self._live() if c.kind == "reuse_class"}
 
 
 def _ok(check: str, message: str = "") -> CheckResult:
@@ -152,7 +155,8 @@ def check_terms_exist(change: ProfileChange, ctx: VerifyContext) -> list[CheckRe
         results.append(_fail("V1", f"The datatype {kb.curie(facets.range_datatype)} is not a known datatype.", term=facets.range_datatype))
     for value in facets.controlled_vocabulary:
         if not is_absolute_iri(value):
-            results.append(_fail("V1", f"The vocabulary value '{value}' is not an IRI.", severity="warning", term=value))
+            results.append(_fail("V1", f"The vocabulary value '{value}' is not an IRI (a value list holds concepts).",
+                                 term=value))
     for label, value in (("superclass", change.super_class), ("super-property", change.sub_property_of)):
         if value and kb.term(value) is None and value not in ctx.minted_classes() | ctx.minted_properties():
             results.append(_fail("V1", f"The {label} {kb.curie(value)} is not a known term.", term=value))
@@ -526,7 +530,8 @@ def check_well_formed(change: ProfileChange, ctx: VerifyContext) -> list[CheckRe
     absolute IRI, so the change can at least be compiled. It also fills FacetJustification.status (V3's side
     effect), which the profile delta reports, without judging anything."""
     bad = [value for value in (change.target_class, change.path, change.facets.range_class, change.facets.range_datatype,
-                               change.super_class, change.sub_property_of) if value and not is_absolute_iri(value)]
+                               change.super_class, change.sub_property_of, *change.facets.controlled_vocabulary)
+           if value and not is_absolute_iri(value)]
     if not change.target_class:
         bad.append("(no target class)")
     check_refinement(change, ctx)          # annotation only: the result is not used when verification is off

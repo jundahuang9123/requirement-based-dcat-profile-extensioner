@@ -3,7 +3,7 @@
 into a BLIND atom set for this tool (the A-gold input of the RQ2 plan), plus an evaluator map.
 
 The atom set holds only what the model may see:
-- an opaque id (A-001, ...), never the reference id ("JRC-6.2" names the case, "Req-17.1" reuses
+- an opaque id (A-3f9a2c, a keyed hash), never the reference id ("JRC-6.2" names the case, "Req-17.1" reuses
   the source's numbering);
 - the standard-form statement;
 - the subject (standard_form.resource);
@@ -61,11 +61,15 @@ def main(argv: list[str] | None = None) -> int:
     base = args.base or BASES.get(str(data.get("base")).strip())
     chosen = [atom for atom in data["atoms"]
               if (atom.get("scored_by_default") if not args.all else atom.get("stratum") == "content")]
-    # Opaque ids in an order that does not follow the reference numbering.
-    chosen.sort(key=lambda atom: hashlib.sha256(f"{case}|{atom['id']}".encode()).hexdigest())
+    # Opaque ids: a keyed hash of case and reference id, so the same requirement keeps its id whatever is
+    # selected (default or --all), and the order does not follow the reference numbering.
+    def opaque_id(atom: dict) -> str:
+        return "A-" + hashlib.sha256(f"rq2-blind|{case}|{atom['id']}".encode()).hexdigest()[:6]
+
+    chosen.sort(key=opaque_id)
     atoms, evalmap = [], {}
-    for number, atom in enumerate(chosen, start=1):
-        opaque = f"A-{number:03d}"
+    for atom in chosen:
+        opaque = opaque_id(atom)
         form = atom.get("standard_form") or {}
         subject = str(form.get("resource") or "dataset").split(" or ")[0].strip().lower() or "dataset"
         raw = str(atom.get("modality") or "").lower()
@@ -81,10 +85,14 @@ def main(argv: list[str] | None = None) -> int:
         "base_profile_ids": [base] if base else [],
         "atoms": atoms,
     }
-    args.out.write_text(yaml.safe_dump(out, sort_keys=False, allow_unicode=True), encoding="utf-8")
+    text = yaml.safe_dump(out, sort_keys=False, allow_unicode=True)
+    args.out.write_text(text, encoding="utf-8")
     map_path = args.out.with_suffix(".evalmap.json")
-    map_path.write_text(json.dumps({"case": case, "base": base, "atoms": evalmap}, indent=1, ensure_ascii=False) + "\n",
-                        encoding="utf-8")
+    map_path.write_text(json.dumps({
+        "case": case, "base": base, "atoms_file_sha256": hashlib.sha256(text.encode("utf-8")).hexdigest(),
+        "import": {"all": args.all, "modality": args.modality, "reference": args.reference.name},
+        "atoms": evalmap,
+    }, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"{len(atoms)} atoms -> {args.out} (base {base}); evaluator map -> {map_path} (keep it away from the tool)")
     return 0
 
