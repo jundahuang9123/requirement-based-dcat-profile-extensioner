@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Print the tool facts the RQ2 paper quotes (vocabulary index, base profiles), read-only, no model calls.
 
-Usage (repository root, backend installed): python paper/scripts/tool_facts.py > paper/inputs/tool-facts.txt
-Every count about the tool in the paper comes from this script's output, recorded in paper/inputs/tool-facts.txt.
+Usage (backend installed): python paper/scripts/tool_facts.py [REPO_ROOT] > paper/inputs/tool-facts.txt
+REPO_ROOT defaults to this repository; pass a checkout of another commit (e.g. a worktree of main) to record its
+facts, as for paper/inputs/tool-facts-main-5ffd56e.txt. Every count about the tool in the paper comes from these
+recorded outputs.
 """
 from __future__ import annotations
 
@@ -14,7 +16,7 @@ import sys
 
 import yaml
 
-ROOT = pathlib.Path(__file__).resolve().parents[2]
+ROOT = pathlib.Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "backend"))
 
 from profile_extensioner.knowledge import list_base_profiles, load_base_profile, load_knowledge_base  # noqa: E402
