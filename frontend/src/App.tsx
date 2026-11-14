@@ -56,28 +56,57 @@ function NewProject({ onCreated, notify }: { onCreated: (p: Project) => void; no
   );
 }
 
+const CHOICE_LABEL: Record<string, string> = {
+  keep: 'keep', withdraw: 'withdraw the change', replace: 'replace the term', manual: 'decide later (review queue)',
+  repropose: 'propose again', keep_claim: 'keep "covered by the base"',
+};
+
 function RebasePanel({ project, reviewer, onDone, notify }: { project: Project; reviewer: string; onDone: () => void; notify: (m: string) => void }) {
   const [bases, setBases] = useState<BaseProfileInfo[]>([]);
   const [target, setTarget] = useState('');
   const [busy, setBusy] = useState(false);
+  const plan = project.pending_rebase ?? null;
+  const [choices, setChoices] = useState<Record<string, string>>({});
   useEffect(() => { api.baseProfiles().then((list) => { setBases(list); setTarget(list.find((b) => b.is_latest && b.id !== project.base_profile_id)?.id ?? ''); }); }, [project.base_profile_id]);
+  useEffect(() => { setChoices(Object.fromEntries((plan?.items ?? []).map((item) => [item.id, item.default_choice]))); }, [plan?.plan_id]);
+  const act = async (fn: () => Promise<unknown>, done: string) => {
+    setBusy(true);
+    try { await fn(); notify(done); onDone(); } catch (e) { notify(String(e)); } finally { setBusy(false); }
+  };
   return (
     <div className="panel">
       <h3>Base profile</h3>
       <p className="muted small">This extension builds on <b>{project.base_profile_id}</b>. Rebasing moves it onto another DCAT-AP release
-        (and so onto that release's DCAT). Every change is verified again; what needs a decision goes to your review queue; your decisions stay.</p>
-      <div className="row">
-        <select value={target} onChange={(e) => setTarget(e.target.value)}>
-          <option value="">choose a base…</option>
-          {[...bases].reverse().filter((b) => b.id !== project.base_profile_id).map((b) =>
-            <option key={b.id} value={b.id}>{b.title} ({b.release_date}) · on {b.dcat?.label}{b.is_latest ? ' · newest' : ''}</option>)}
-        </select>
-        <button type="button" disabled={!target || busy} onClick={async () => {
-          setBusy(true);
-          try { const report = await api.rebase(project.id, target, reviewer); notify(report.summary); onDone(); }
-          catch (e) { notify(String(e)); } finally { setBusy(false); }
-        }}>{busy ? 'Rebasing…' : 'Rebase'}</button>
-      </div>
+        (and so onto that release's DCAT). Preview first: nothing changes until you apply the plan. Your earlier decisions stay.</p>
+      {!plan && (
+        <div className="row">
+          <select value={target} onChange={(e) => setTarget(e.target.value)}>
+            <option value="">choose a base…</option>
+            {[...bases].reverse().filter((b) => b.id !== project.base_profile_id).map((b) =>
+              <option key={b.id} value={b.id}>{b.title} ({b.release_date}) · on {b.dcat?.label}{b.is_latest ? ' · newest' : ''}</option>)}
+          </select>
+          <button type="button" disabled={!target || busy} onClick={() => act(() => api.rebasePreview(project.id, target, reviewer), 'Rebase plan ready')}>
+            {busy ? 'Working…' : 'Preview rebase'}</button>
+        </div>)}
+      {plan && (<>
+        <p><b>Plan {plan.from_base} → {plan.to_base}</b> <span className="muted small">({plan.from_dcat} → {plan.to_dcat}) {plan.summary}</span></p>
+        {plan.items.length === 0 && <p className="muted">Nothing is affected.</p>}
+        {plan.items.map((item) => (
+          <div key={item.id} className={`issue issue--${item.severity === 'error' ? 'error' : item.severity === 'warning' ? 'warning' : 'info'}`}>
+            <div><b>{item.finding.replace(/_/g, ' ')}</b> {item.change_id ?? item.atom_id}{item.human_decided ? ' · decided by a person earlier' : ''}</div>
+            <div className="small">{item.message}</div>
+            {item.choices.length > 1 ? (
+              <select value={choices[item.id] ?? item.default_choice} onChange={(e) => setChoices({ ...choices, [item.id]: e.target.value })}>
+                {item.choices.map((c) => <option key={c} value={c}>{CHOICE_LABEL[c] ?? c}{c === 'replace' && item.replacement ? ` → ${compact(item.replacement, {})}` : ''}{c === item.default_choice ? ' (default)' : ''}</option>)}
+              </select>) : <span className="muted small">{CHOICE_LABEL[item.default_choice] ?? item.default_choice}</span>}
+          </div>))}
+        <div className="row">
+          <button type="button" className="primary" disabled={busy}
+            onClick={() => act(() => api.rebaseApply(project.id, plan.plan_id, choices, reviewer), `Moved onto ${plan.to_base}`)}>
+            {busy ? 'Applying…' : `Apply and move to ${plan.to_base}`}</button>
+          <button type="button" disabled={busy} onClick={() => act(() => api.rebaseCancel(project.id, plan.plan_id, reviewer), 'Rebase cancelled')}>Cancel</button>
+        </div>
+      </>)}
     </div>
   );
 }
@@ -261,6 +290,8 @@ export default function App() {
                     <div>{snapshot.verbalised[c.id]}</div>
                   </button>))}
                 {snapshot.conflicts.length > 0 && (<><h4>Conflicts</h4>{snapshot.conflicts.map((x) => <div key={x.id} className="issue issue--error">{x.description}</div>)}</>)}
+                {snapshot.project.pending_rebase && <div className="issue issue--warning">A rebase onto {snapshot.project.pending_rebase.to_base} is
+                  planned ({snapshot.project.pending_rebase.items.length} item(s)); open <b>Model &amp; pipeline</b> to apply or cancel it. Sign-off waits for it.</div>}
                 {(snapshot.project.rebases ?? []).length > 0 && (() => {
                   const last = snapshot.project.rebases![snapshot.project.rebases!.length - 1];
                   return (<><h4>Rebase {last.from_base} → {last.to_base} ({last.items.length} finding(s))</h4>
@@ -268,7 +299,7 @@ export default function App() {
                     {last.items.map((item, i) => (
                       <button key={i} type="button" className={`issue issue--${item.severity === 'error' ? 'error' : item.severity === 'warning' ? 'warning' : 'info'}`}
                         onClick={() => item.change_id ? setSelection({ type: 'change', id: item.change_id }) : item.atom_id ? setSelection({ type: 'atom', id: item.atom_id }) : undefined}>
-                        <b>{item.finding.replace(/_/g, ' ')}</b> · suggested: {item.suggestion}{item.replacement ? ` ${compact(item.replacement, p)}` : ''} — {item.message}
+                        <b>{item.finding.replace(/_/g, ' ')}</b> · {item.chosen ? `chosen: ${item.chosen}` : `suggested: ${item.suggestion}`}{item.replacement ? ` ${compact(item.replacement, p)}` : ''} — {item.message}
                       </button>))}</>);
                 })()}
                 <h4>Decided ({decided.length})</h4>

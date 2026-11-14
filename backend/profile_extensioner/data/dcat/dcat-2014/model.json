@@ -517,7 +517,6 @@
      "label": "byteSize",
      "path": "http://www.w3.org/ns/dcat#byteSize",
      "range": [
-      "http://www.w3.org/2000/01/rdf-schema#Literal",
       "http://www.w3.org/2001/XMLSchema#decimal"
      ],
      "range_text": "rdfs:Literal typed as xsd:decimal .",

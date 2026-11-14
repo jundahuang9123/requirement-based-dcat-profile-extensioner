@@ -246,7 +246,7 @@
    "subclass_of": [
     "http://www.w3.org/ns/dcat#Dataset"
    ],
-   "usage_note": "Datasets and data services are examples of resources in the context of a data catalog."
+   "usage_note": "A Web-based data catalog is typically represented as a single instance of this class. Datasets and data services are examples of resources in the context of a data catalog."
   },
   "http://www.w3.org/ns/dcat#CatalogRecord": {
    "definition": "A record in a catalog, describing the registration of a single dcat:Resource .",
@@ -356,7 +356,7 @@
       "http://www.w3.org/2000/01/rdf-schema#Resource"
      ],
      "range_text": "rdfs:Resource",
-     "usage_note": "An endpoint description may be expressed in a machine-readable form, such as an OpenAPI (Swagger) description [ OpenAPI ], an OGC GetCapabilities response [ WFS ], [ ISO-19142 ], [ WMS ], [ ISO-19128 ], a SPARQL Service Description [ SPARQL11-SERVICE-DESCRIPTION ], an [ OpenSearch ] or [ WSDL20 ] document, a Hydra API description [ HYDRA ], else in text or some other informal mode if a formal representation is not possible."
+     "usage_note": "The endpoint description gives specific details of the actual endpoint instances, while dcterms:conformsTo is used to indicate the general standard or specification that the endpoints implement. An endpoint description may be expressed in a machine-readable form, such as an OpenAPI (Swagger) description [ OpenAPI ], an OGC GetCapabilities response [ WFS ], [ ISO-19142 ], [ WMS ], [ ISO-19128 ], a SPARQL Service Description [ SPARQL11-SERVICE-DESCRIPTION ], an [ OpenSearch ] or [ WSDL20 ] document, a Hydra API description [ HYDRA ], else in text or some other informal mode if a formal representation is not possible."
     },
     {
      "definition": "A collection of data that this data service can distribute.",
@@ -371,9 +371,10 @@
     }
    ],
    "subclass_of": [
+    "http://www.w3.org/ns/dcat#Resource",
     "http://purl.org/dc/dcmitype/Service"
    ],
-   "usage_note": "The kind of service can be indicated using the dcterms:type property. Its value may be taken from a controlled vocabulary such as the INSPIRE spatial data service type code list [ INSPIRE-SDST ]."
+   "usage_note": "If a dcat:DataService is bound to one or more specified Datasets, they are indicated by the dcat:servesDataset property. The kind of service can be indicated using the dcterms:type property. Its value may be taken from a controlled vocabulary such as the INSPIRE spatial data service type code list [ INSPIRE-SDST ]."
   },
   "http://www.w3.org/ns/dcat#Dataset": {
    "definition": "A collection of data, published or curated by a single agent, and available for access or download in one or more representations.",
@@ -431,7 +432,6 @@
      "label": "spatial resolution",
      "path": "http://www.w3.org/ns/dcat#spatialResolutionInMeters",
      "range": [
-      "http://www.w3.org/2000/01/rdf-schema#Literal",
       "http://www.w3.org/2001/XMLSchema#decimal"
      ],
      "range_text": "rdfs:Literal typed as xsd:decimal",
@@ -454,7 +454,6 @@
      "label": "temporal resolution",
      "path": "http://www.w3.org/ns/dcat#temporalResolution",
      "range": [
-      "http://www.w3.org/2000/01/rdf-schema#Literal",
       "http://www.w3.org/2001/XMLSchema#duration"
      ],
      "range_text": "rdfs:Literal typed as xsd:duration",
@@ -471,13 +470,13 @@
       "http://www.w3.org/ns/prov#Activity"
      ],
      "range_text": "prov:Activity An activity is something that occurs over a period of time and acts upon or with entities; it may include consuming, processing, transforming, modifying, relocating, using, or generating entities.",
-     "usage_note": "Use prov:qualifiedGeneration to attach additional details about the relationship between the dataset and the activity, e.g., the exact time that the dataset was produced during the lifetime of a project"
+     "usage_note": "The activity associated with generation of a dataset will typically be an initiative, project, mission, survey, on-going activity (\"business as usual\") etc. Multiple prov:wasGeneratedBy properties can be used to indicate the dataset production context at various levels of granularity. Use prov:qualifiedGeneration to attach additional details about the relationship between the dataset and the activity, e.g., the exact time that the dataset was produced during the lifetime of a project"
     }
    ],
    "subclass_of": [
     "http://www.w3.org/ns/dcat#Resource"
    ],
-   "usage_note": "The notion of dataset in DCAT is broad and inclusive, with the intention of accommodating resource types arising from all communities. Data comes in many forms including numbers, text, pixels, imagery, sound and other multi-media, and potentially other types, any of which might be collected into a dataset."
+   "usage_note": "This class describes the conceptual dataset. One or more representations might be available, with differing schematic layouts and formats or serializations. This class describes the actual dataset as published by the dataset provider. In cases where a distinction between the actual dataset and its entry in the catalog is necessary (because metadata such as modification date might differ), the dcat:CatalogRecord class can be used for the latter. The notion of dataset in DCAT is broad and inclusive, with the intention of accommodating resource types arising from all communities. Data comes in many forms including numbers, text, pixels, imagery, sound and other multi-media, and potentially other types, any of which might be collected into a dataset."
   },
   "http://www.w3.org/ns/dcat#DatasetSeries": {
    "definition": "A collection of datasets that are published separately, but share some characteristics that group them.",
@@ -486,7 +485,7 @@
    "subclass_of": [
     "http://www.w3.org/ns/dcat#Dataset"
    ],
-   "usage_note": "Common scenarios for dataset series include: time series composed of periodically released subsets; map-series composed of items of the same type or theme but with differing spatial footprints."
+   "usage_note": "Dataset series can be also soft-typed via property dcterms:type as in the approach used in [ GeoDCAT-AP ], and adopted in [ DCAT-AP-IT ] and [ GeoDCAT-AP-IT ]). Common scenarios for dataset series include: time series composed of periodically released subsets; map-series composed of items of the same type or theme but with differing spatial footprints."
   },
   "http://www.w3.org/ns/dcat#Distribution": {
    "definition": "A specific representation of a dataset. A dataset might be available in multiple serializations that may differ in various ways, including natural language, media-type or format, schematic organization, temporal and spatial resolution, level of detail or profiles (which might specify any or all of the above).",
@@ -633,11 +632,10 @@
      "label": "byte size",
      "path": "http://www.w3.org/ns/dcat#byteSize",
      "range": [
-      "http://www.w3.org/2000/01/rdf-schema#Literal",
       "http://www.w3.org/2001/XMLSchema#nonNegativeInteger"
      ],
      "range_text": "rdfs:Literal typically typed as xsd:nonNegativeInteger .",
-     "usage_note": "While it is recommended that the size be given as an integer, alternative literals such as '1.5 MB' are sometimes used."
+     "usage_note": "The size in bytes can be approximated (as a non-negative integer) when the precise size is not known. While it is recommended that the size be given as an integer, alternative literals such as '1.5 MB' are sometimes used."
     },
     {
      "definition": "The minimum spatial separation resolvable in a dataset distribution, measured in meters.",
@@ -649,7 +647,7 @@
       "http://www.w3.org/2001/XMLSchema#double"
      ],
      "range_text": "xsd:decimal or xsd:double",
-     "usage_note": "Alternative spatial resolutions might be provided as different dataset distributions"
+     "usage_note": "If the dataset is an image or grid this should correspond to the spacing of items. For other kinds of spatial datasets, this property will usually indicate the smallest distance between items in the dataset. Alternative spatial resolutions might be provided as different dataset distributions"
     },
     {
      "definition": "Minimum time period resolvable in the dataset distribution.",
@@ -660,7 +658,7 @@
       "http://www.w3.org/2001/XMLSchema#duration"
      ],
      "range_text": "xsd:duration",
-     "usage_note": "Alternative temporal resolutions might be provided in different dataset distributions"
+     "usage_note": "If the dataset is a time-series this should correspond to the spacing of items in the series. For other kinds of dataset, this property will usually indicate the smallest time difference between items in the dataset. Alternative temporal resolutions might be provided in different dataset distributions"
     },
     {
      "definition": "An established standard to which the distribution conforms.",
@@ -759,7 +757,7 @@
       "http://www.w3.org/ns/dcat#Role"
      ],
      "range_text": "dcat:Role",
-     "usage_note": "May be used in a qualified-relation to specify the role of an Entity with respect to another Entity. It is recommended that the value be taken from a controlled vocabulary of entity roles."
+     "usage_note": "May be used in a qualified-attribution to specify the role of an Agent with respect to an Entity. It is recommended that the value be taken from a controlled vocabulary of agent roles, such as [ ISO-19115 ] CI_RoleCode . May be used in a qualified-relation to specify the role of an Entity with respect to another Entity. It is recommended that the value be taken from a controlled vocabulary of entity roles."
     }
    ],
    "subclass_of": [
@@ -876,7 +874,7 @@
       "http://purl.org/dc/terms/LinguisticSystem"
      ],
      "range_text": "dcterms:LinguisticSystem Resources defined by the Library of Congress ( ISO 639-1 , ISO 639-2 ) SHOULD be used. If a ISO 639-1 (two-letter) code is defined for language, then its corresponding IRI SHOULD be used; if no ISO 639-1 code is defined, then IRI corresponding to the ISO 639-2 (three-letter) code SHOULD be used.",
-     "usage_note": "If representations of a dataset are available for each language separately, define an instance of dcat:Distribution for each language and describe the specific language of each distribution using dcterms:language (i.e., the dataset will have multiple dcterms:language values and each distribution will have just one as the value of its dcterms:language property). In case of multilingual distributions, the distributions will have multiple dcterms:language values."
+     "usage_note": "Repeat this property if the resource is available in multiple languages. The value(s) provided for members of a catalog (i.e., dataset or service) override the value(s) provided for the catalog if they conflict. If representations of a dataset are available for each language separately, define an instance of dcat:Distribution for each language and describe the specific language of each distribution using dcterms:language (i.e., the dataset will have multiple dcterms:language values and each distribution will have just one as the value of its dcterms:language property). In case of multilingual distributions, the distributions will have multiple dcterms:language values."
     },
     {
      "definition": "The entity responsible for making the resource available.",
@@ -896,7 +894,7 @@
       "http://www.w3.org/2000/01/rdf-schema#Literal"
      ],
      "range_text": "rdfs:Literal",
-     "usage_note": "The identifier is a text string which is assigned to the resource to provide an unambiguous reference within a particular context."
+     "usage_note": "The identifier might be used as part of the IRI of the resource, but still having it represented explicitly is useful. The identifier is a text string which is assigned to the resource to provide an unambiguous reference within a particular context."
     },
     {
      "definition": "A main category of the resource. A resource can have multiple themes.",
@@ -916,7 +914,7 @@
       "http://www.w3.org/2000/01/rdf-schema#Class"
      ],
      "range_text": "rdfs:Class",
-     "usage_note": "To describe the file format, physical medium, or dimensions of the resource, use the dcterms:format element."
+     "usage_note": "The value SHOULD be taken from a well governed and broadly recognised controlled vocabulary, such as: DCMI Type vocabulary [ DCTERMS ] [ ISO-19115-1 ] scope codes Datacite resource types [ DataCite ] PARSE.Insight content-types used by re3data.org [ RE3DATA-SCHEMA ] (see item 15 contentType) MARC intellectual resource types Some members of these controlled vocabularies are not strictly suitable for datasets or data services (e.g., DCMI Type Event , PhysicalObject ; [ ISO-19115-1 ] CollectionHardware , CollectionSession , Initiative , Sample , Repository ), but might be used in the context of other kinds of catalogs defined in DCAT profiles or applications. To describe the file format, physical medium, or dimensions of the resource, use the dcterms:format element."
     },
     {
      "definition": "A resource with an unspecified relationship to the cataloged resource.",
@@ -1024,7 +1022,7 @@
      "path": "http://purl.org/dc/terms/isReferencedBy",
      "range": [],
      "range_text": "",
-     "usage_note": "This property is used to associate a resource with the resource (of type dcat:Resource ) in question. For other relations to resources not covered with this property, the more generic property dcat:qualifiedRelation can be used. See also 15. Qualified relations ."
+     "usage_note": "In relation to the use case of data citation, when the cataloged resource is a dataset, the dcterms:isReferencedBy property allows to relate the dataset to the resources (such as scholarly publications) that cite or point to the dataset. Multiple dcterms:isReferencedBy properties can be used to indicate the dataset has been referenced by multiple publications, or other resources. This property is used to associate a resource with the resource (of type dcat:Resource ) in question. For other relations to resources not covered with this property, the more generic property dcat:qualifiedRelation can be used. See also 15. Qualified relations ."
     },
     {
      "definition": "The previous version of a resource in a lineage [ PAV ].",
@@ -1124,7 +1122,7 @@
     }
    ],
    "subclass_of": [],
-   "usage_note": "dcat:Resource is an extension point that enables the definition of any kind of catalog. Additional sub-classes may be defined in a DCAT profile or other DCAT application for catalogs of other kinds of resources."
+   "usage_note": "The class of all cataloged resources, the super-class of dcat:Dataset , dcat:DataService , dcat:Catalog and any other member of a dcat:Catalog . This class carries properties common to all cataloged resources, including datasets and data services. The instances of this class SHOULD be included in a catalog. When describing a resource which is not a dcat:Dataset or dcat:DataService , it is recommended to create a suitable sub-class of dcat:Resource , or use dcat:Resource with the dcterms:type property to indicate the specific type. dcat:Resource is an extension point that enables the definition of any kind of catalog. Additional sub-classes may be defined in a DCAT profile or other DCAT application for catalogs of other kinds of resources."
   },
   "http://www.w3.org/ns/dcat#Role": {
    "definition": "A role is the function of a resource or agent with respect to another resource, in the context of resource attribution or resource relationships.",
@@ -1133,7 +1131,30 @@
    "subclass_of": [
     "http://www.w3.org/2004/02/skos/core#Concept"
    ],
-   "usage_note": "Used in a qualified-relation to specify the role of an Entity with respect to another Entity. It is recommended that the values be managed as a controlled vocabulary of entity roles such as [ ISO-19115-1 ] DS_AssociationTypeCode IANA Registry of Link Relations [ IANA-RELATIONS ] DataCite metadata schema [ DataCite ] MARC relators"
+   "usage_note": "Used in a qualified-attribution to specify the role of an Agent with respect to an Entity. It is recommended that the values be managed as a controlled vocabulary of agent roles, such as [ ISO-19115-1 ] CI_RoleCode . Used in a qualified-relation to specify the role of an Entity with respect to another Entity. It is recommended that the values be managed as a controlled vocabulary of entity roles such as [ ISO-19115-1 ] DS_AssociationTypeCode IANA Registry of Link Relations [ IANA-RELATIONS ] DataCite metadata schema [ DataCite ] MARC relators"
+  },
+  "http://www.w3.org/ns/prov#Attribution": {
+   "definition": "",
+   "from_domain": true,
+   "label": "Attribution",
+   "properties": [
+    {
+     "definition": "The function of an entity or agent with respect to another entity or resource.",
+     "domain": [
+      "http://www.w3.org/ns/prov#Attribution",
+      "http://www.w3.org/ns/dcat#Relationship"
+     ],
+     "from_domain": true,
+     "label": "had role",
+     "path": "http://www.w3.org/ns/dcat#hadRole",
+     "range": [
+      "http://www.w3.org/ns/dcat#Role"
+     ],
+     "range_text": "dcat:Role",
+     "usage_note": "May be used in a qualified-attribution to specify the role of an Agent with respect to an Entity. It is recommended that the value be taken from a controlled vocabulary of agent roles, such as [ ISO-19115 ] CI_RoleCode . May be used in a qualified-relation to specify the role of an Entity with respect to another Entity. It is recommended that the value be taken from a controlled vocabulary of entity roles."
+    }
+   ],
+   "subclass_of": []
   }
  },
  "generated_from": "spec.html",

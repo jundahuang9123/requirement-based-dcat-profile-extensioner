@@ -263,6 +263,10 @@ class BaseProfileInfo(BaseModel):
     class_count: int = 0
     element_count: int = 0
     release_date: str = ""                       # date of the release, as the release states it
+    # Resolvable RDF of the official constraint shapes at the pinned source commit (owl:imports targets);
+    # empty when the release publishes them only inside an archive (``shape_archives`` then names it).
+    shape_urls: list[str] = Field(default_factory=list)
+    shape_archives: list[str] = Field(default_factory=list)
     release_status: str = ""
     dcat: DcatBasis | None = None                # the DCAT state it builds on
     is_latest: bool = False                      # the newest release: the default for a new extension
@@ -566,6 +570,10 @@ class LLMCallRecord(BaseModel):
     cache_read_tokens: int = 0
     duration_ms: int = 0
     cached: bool = False                         # served from the local replay cache
+    replayed_from: str = ""                      # id of the original call a replayed answer comes from
+    replayed_from_project: str = ""
+    stop_reason: str = ""                        # provider's finish/stop reason of the last attempt
+    notes: list[str] = Field(default_factory=list)   # request adaptations (fallbacks, dropped parameters)
     status: Literal["ok", "error", "refused", "invalid_output"] = "ok"
     error: str = ""
     created_at: str = Field(default_factory=now_iso)
@@ -604,6 +612,9 @@ class PipelineConfig(BaseModel):
     # DCAT terms that only exist in a DCAT version later than the one the base builds on (check D1):
     # "review" = allowed only by a human decision, "forbid" = an error, "allow" = a note.
     later_dcat_terms: Literal["review", "forbid", "allow"] = "review"
+    # Replay of earlier model answers with an identical request: "project" (this project's own calls;
+    # a new project is an independent run), "global" (any project in the store), "off" (never).
+    replay_cache: Literal["project", "global", "off"] = "project"
 
 
 class SignOff(BaseModel):
@@ -613,9 +624,16 @@ class SignOff(BaseModel):
     at: str = Field(default_factory=now_iso)
 
 
-class RebaseItem(BaseModel):
-    """One finding of moving an extension onto another base (and so, possibly, another DCAT)."""
+RebaseChoice = Literal["keep", "withdraw", "replace", "manual", "repropose", "keep_claim"]
 
+
+class RebaseItem(BaseModel):
+    """One finding of moving an extension onto another base (and so, possibly, another DCAT).
+
+    Each item offers the choices that make sense for its finding, with a preselected default; the human
+    applies the plan with their choices (Dataspecer's change-propagation review was the model)."""
+
+    id: str = ""                                 # stable within its plan
     change_id: str | None = None
     atom_id: str | None = None
     term: str | None = None
@@ -629,12 +647,33 @@ class RebaseItem(BaseModel):
         "deprecated_by_base",   # the new base deprecates the term (and may name its replacement)
         "mint_now_reusable",    # a minted term has a counterpart in the new base or its DCAT
         "class_not_in_base",    # the target class is not a class of the new base
-        "covered_claim_lost",   # an atom was covered by the old base; the new base no longer covers it
+        "covered_claim_lost",   # an atom was covered by the old base; the new base no longer has the element
+        "covered_claim_weakened",  # the new base still has the element, but it no longer satisfies the atom
+        "intake_changed",       # the atom's subject maps to another class (or to one at all) under the new base
     ]
     severity: Literal["info", "warning", "error"] = "info"
-    suggestion: Literal["keep", "withdraw", "replace", "review", "repropose"] = "keep"
+    choices: list[RebaseChoice] = Field(default_factory=lambda: ["keep"])
+    default_choice: RebaseChoice = "keep"
+    suggestion: RebaseChoice = "keep"            # = default_choice (kept for older clients)
+    chosen: RebaseChoice | None = None           # what was applied
     replacement: str | None = None
+    human_decided: bool = False                  # the change carries a human decision (it is never overwritten)
     message: str = ""
+
+
+class RebasePlan(BaseModel):
+    """A previewed move onto another base; nothing has changed yet. Apply it (with choices) or cancel it."""
+
+    plan_id: str
+    from_base: str
+    to_base: str
+    from_dcat: str = ""
+    to_dcat: str = ""
+    by: str = ""
+    state_hash: str = ""                         # the project state the plan was computed on
+    created_at: str = Field(default_factory=now_iso)
+    items: list[RebaseItem] = Field(default_factory=list)
+    summary: str = ""
 
 
 class RebaseReport(BaseModel):
@@ -642,10 +681,13 @@ class RebaseReport(BaseModel):
     to_base: str
     from_dcat: str = ""
     to_dcat: str = ""
+    plan_id: str = ""
     by: str = ""
     note: str = ""
     at: str = Field(default_factory=now_iso)
-    items: list[RebaseItem] = Field(default_factory=list)
+    items: list[RebaseItem] = Field(default_factory=list)   # with ``chosen`` filled in
+    new_change_ids: list[str] = Field(default_factory=list)
+    reproposed_atoms: list[str] = Field(default_factory=list)
     summary: str = ""
 
 
@@ -664,6 +706,7 @@ class Project(BaseModel):
     stage_states: dict[str, StageState] = Field(default_factory=dict)
     signoff: SignOff | None = None
     rebases: list[RebaseReport] = Field(default_factory=list)   # every move onto another base, newest last
+    pending_rebase: RebasePlan | None = None     # a previewed move, waiting to be applied or cancelled
 
 
 class ProjectSnapshot(BaseModel):

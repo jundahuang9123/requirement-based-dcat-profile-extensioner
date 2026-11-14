@@ -31,6 +31,7 @@ from ..contracts import (
     BlackboardEntry,
     CheckResult,
     Decision,
+    RebasePlan,
     RebaseReport,
     ProfileChange,
     Project,
@@ -69,6 +70,7 @@ class Pipeline:
         if project is None:
             raise KeyError(project_id)
         self.project = project
+        self.data_dir = data_dir
         self.kb: KnowledgeBase = load_knowledge_base(
             project.base_profile_id, profile_namespace=project.profile_namespace,
             profile_prefix=project.profile_prefix, exclude_namespaces=project.config.exclude_namespaces,
@@ -82,7 +84,8 @@ class Pipeline:
     def llm(self) -> LLMClient:
         if self._llm is None:
             provider = build_provider(self.project.llm, self.credentials)
-            self._llm = LLMClient(provider, self.project.llm, store=self.store, project_id=self.project.id)
+            self._llm = LLMClient(provider, self.project.llm, store=self.store, project_id=self.project.id,
+                                  cache_scope=self.project.config.replay_cache)
         return self._llm
 
     @property
@@ -246,6 +249,8 @@ class Pipeline:
     def _decide(self, change: ProfileChange) -> None:
         if is_human(change):
             return
+        if change.decision.decided_by == "rule:rebase" and change.decision.status == "needs_review":
+            return   # a rebase item the plan left to a human: only a human clears it
         errors = change.failed_checks()
         warnings = [r for r in change.verification if not r.passed and r.severity == "warning"]
         config = self.project.config
@@ -554,59 +559,160 @@ class Pipeline:
         self._mark_released_stale()
         return assessment
 
-    def rebase(self, new_base_id: str, by: str, note: str = "") -> RebaseReport:
-        """Move the extension onto another base (and so, possibly, another DCAT version).
+    # -- rebase: move the extension onto another base (and so, possibly, another DCAT) -----------------
 
-        Findings go to the review queue with a default suggestion; human decisions stay; every
-        change is verified again against the new base, then the profile is recompiled and checked
-        for conformance to the new base."""
+    def _state_hash(self) -> str:
+        """Everything a rebase plan depends on: the base, every live change, every assessment."""
+        parts = [self.project.base_profile_id]
+        parts += sorted(c.model_dump_json() for c in self.changes() if c.decision.status != "superseded")
+        parts += sorted(a.model_dump_json() for a in self.store.list_assessments(self.pid))
+        return hashlib.sha256("\n".join(parts).encode()).hexdigest()[:16]
+
+    def _load_kb(self, base_id: str) -> KnowledgeBase:
+        return load_knowledge_base(
+            base_id, profile_namespace=self.project.profile_namespace, profile_prefix=self.project.profile_prefix,
+            exclude_namespaces=self.project.config.exclude_namespaces, data_dir=self.data_dir,
+        )
+
+    def rebase_preview(self, new_base_id: str, by: str) -> RebasePlan:
+        """Compute what moving onto ``new_base_id`` means, item by item, with choices and defaults.
+        Nothing changes until the plan is applied; a newer preview replaces a pending one."""
         from ..engine.rebase import analyse_rebase, summarise
 
         old_base = self.project.base_profile_id
         if new_base_id == old_base:
             raise ValueError(f"the extension already builds on {old_base}")
-        new_kb = load_knowledge_base(
-            new_base_id, profile_namespace=self.project.profile_namespace, profile_prefix=self.project.profile_prefix,
-            exclude_namespaces=self.project.config.exclude_namespaces,
-        )   # raises KeyError for an unknown base
-        old_kb = self.kb
-        live = [change for change in self.changes() if change.decision.status != "superseded"]
-        items = analyse_rebase(live, self.store.list_assessments(self.pid), old_kb, new_kb)
-        report = RebaseReport(from_base=old_base, to_base=new_base_id, from_dcat=old_kb.dcat.id, to_dcat=new_kb.dcat.id,
-                              by=f"human:{by}", note=note, items=items, summary=summarise(items, old_kb, new_kb))
-        self._withdraw_release(f"rebased from {old_base} to {new_base_id}")
+        new_kb = self._load_kb(new_base_id)   # KeyError for an unknown base
+        items = analyse_rebase(self.changes(), self.store.list_assessments(self.pid), self.store.list_atoms(self.pid),
+                               self.kb, new_kb, self.project)
+        plan = RebasePlan(plan_id=f"rb-{uuid.uuid4().hex[:10]}", from_base=old_base, to_base=new_base_id,
+                          from_dcat=self.kb.dcat.id, to_dcat=new_kb.dcat.id, by=f"human:{by}",
+                          state_hash=self._state_hash(), items=items, summary=summarise(items, self.kb, new_kb))
+        self._update_project(lambda project: setattr(project, "pending_rebase", plan))
+        self.log("review", "rebase_plan", f"Rebase previewed: {plan.summary}", author=f"human:{by}",
+                 payload={"plan_id": plan.plan_id, "items": len(items)})
+        return plan
 
-        def mutate(project: Project) -> None:
-            project.base_profile_id = new_base_id
-            project.rebases.append(report)
+    def rebase_cancel(self, plan_id: str, by: str) -> None:
+        plan = self.project.pending_rebase
+        if plan is None or plan.plan_id != plan_id:
+            raise KeyError(plan_id)
+        self._update_project(lambda project: setattr(project, "pending_rebase", None))
+        self.log("review", "rebase_plan", f"Rebase {plan.from_base} -> {plan.to_base} cancelled.", author=f"human:{by}")
+
+    def rebase_apply(self, plan_id: str, choices: dict[str, str] | None, by: str, note: str = "") -> RebaseReport:
+        """Apply a previewed plan with the human's choices (defaults where none is given), switch the base,
+        then intake, retrieve, re-propose what must be, verify, consolidate, compile and check conformance
+        against the new base. Human decisions stay; choices are the applying human's decisions."""
+        plan = self.project.pending_rebase
+        if plan is None or plan.plan_id != plan_id:
+            raise KeyError(plan_id)
+        if plan.state_hash != self._state_hash():
+            raise ValueError("The project changed after this rebase plan was computed; preview it again.")
+        choices = choices or {}
+        unknown = sorted(set(choices) - {item.id for item in plan.items})
+        if unknown:
+            raise ValueError(f"unknown plan item(s): {', '.join(unknown)}")
+        for item in plan.items:
+            item.chosen = choices.get(item.id, item.default_choice)  # type: ignore[assignment]
+            if item.chosen not in item.choices:
+                raise ValueError(f"{item.id}: {item.chosen!r} is not a choice ({', '.join(item.choices)})")
+        new_kb = self._load_kb(plan.to_base)
+        author = f"human:{by}"
+        self._withdraw_release(f"rebased from {plan.from_base} to {plan.to_base}")
+        report = RebaseReport(from_base=plan.from_base, to_base=plan.to_base, from_dcat=plan.from_dcat,
+                              to_dcat=plan.to_dcat, plan_id=plan.plan_id, by=author, note=note, items=plan.items)
+
+        def switch(project: Project) -> None:
+            project.base_profile_id = plan.to_base
+            project.pending_rebase = None
             for stage in STAGE_ORDER:
-                if project.stage_states.get(stage) == "done" and stage not in ("intake", "propose"):
+                if project.stage_states.get(stage) == "done":
                     project.stage_states[stage] = "stale"
-        self._update_project(mutate)
+        self._update_project(switch)
         self.kb = new_kb
-        self.log("review", "rebase", report.summary, author=f"human:{by}", payload=report.model_dump())
 
-        # Verify every change against the new base (machine decisions are re-made by the policy). No
-        # repair runs here: what the move breaks is shown to a human, who can run repair from the workbench.
-        self.run_retrieve()
-        self.run_verify()
-        for item in items:
-            if not item.change_id:
+        # 1. intake under the new base; machine assessments keep their disposition until re-proposed
+        for assessment in run_intake(self.active_atoms(), self.kb):
+            stored = self.store.get_assessment(self.pid, assessment.atom_id)
+            if stored is None:
+                self.store.save_assessment(self.pid, assessment)
                 continue
-            change = self.store.get_change(self.pid, item.change_id)
+            stored.lint = assessment.lint
+            if stored.provenance.author_type != "human":
+                stored.resource_class = assessment.resource_class
+            self.store.save_assessment(self.pid, stored)
+        self.set_stage("intake", "done")
+
+        # 2. the choices
+        repropose: set[str] = set()
+        for item in plan.items:
+            change = self.store.get_change(self.pid, item.change_id) if item.change_id else None
+            if item.chosen == "repropose":
+                if item.atom_id:
+                    repropose.add(item.atom_id)
+                elif change is not None:
+                    repropose.update(change.atom_ids)
+                continue
+            if item.chosen == "keep_claim" and item.atom_id:
+                self.override_assessment(item.atom_id, "covered_by_base",
+                                         f"kept after the rebase onto {plan.to_base}: {item.message}", by)
+                continue
             if change is None or change.decision.status == "superseded":
                 continue
-            change.engine_notes.append(f"rebase {old_base} -> {new_base_id}: {item.message}")
-            if item.suggestion != "keep" and not is_human(change) and change.decision.status != "rejected":
+            change.engine_notes.append(f"rebase {plan.from_base} -> {plan.to_base}: {item.message} (chosen: {item.chosen})")
+            if item.chosen == "withdraw":
+                change.decision = Decision(status="rejected", decided_by=author,  # type: ignore[arg-type]
+                                           note=f"rebase: withdrawn ({item.finding})")
+            elif item.chosen == "manual" and not is_human(change):
                 change.decision = Decision(status="needs_review", decided_by="rule:rebase",  # type: ignore[arg-type]
-                                           note=f"rebase: {item.message} Suggested: {item.suggestion}"
-                                                + (f" with {self.kb.curie(item.replacement)}" if item.replacement else ""))
+                                           note=f"rebase: {item.message}")
+            elif item.chosen == "replace" and item.replacement:
+                replaced = change.model_copy(deep=True)
+                replaced.id = f"{change.id.split('~')[0]}~r{uuid.uuid4().hex[:8]}"
+                replaced.supersedes = change.id
+                if change.is_class_change:
+                    replaced.target_class = item.replacement
+                    replaced.kind = "reuse_class" if change.kind == "mint_class" else change.kind  # type: ignore[assignment]
+                else:
+                    replaced.path = item.replacement
+                    if change.kind == "mint_property":
+                        replaced.kind = "reuse_property"  # type: ignore[assignment]
+                    replaced.mint = None
+                replaced.provenance.author_type = "rule"
+                replaced.provenance.author = "rule:rebase"
+                replaced.engine_notes.append(f"replaces {self.kb.curie(item.term)} by {self.kb.curie(item.replacement)} "
+                                             f"(rebase onto {plan.to_base}, chosen by {by})")
+                replaced.decision = Decision(status="proposed", decided_by="rule:rebase",  # type: ignore[arg-type]
+                                             note="replacement chosen in the rebase plan")
+                change.decision = Decision(status="superseded", decided_by=author, note=f"replaced: {item.finding}")
+                self.store.save_change(self.pid, replaced)
+                report.new_change_ids.append(replaced.id)
             self.store.save_change(self.pid, change)
+
+        # 3. record the move (the documentation shows the base history), then everything again against the
+        #    new base (manual items stay with a human, see _decide)
+        report.reproposed_atoms = sorted(repropose)
+        report.summary = (f"Rebased {plan.summary.rstrip('.')}; applied {len(plan.items)} item(s)"
+                          + (f", re-proposed {len(repropose)} atom(s)" if repropose else "") + ".")
+        self._update_project(lambda project: project.rebases.append(report))
+        self.log("review", "rebase", report.summary, author=author, payload=report.model_dump())
+        self.run_retrieve()
+        if repropose:
+            self.run_propose(sorted(repropose))
+        else:
+            self.set_stage("propose", "done", cascade=False)
+        self.run_verify()
         self.run_consolidate()
         self.run_compile()
         self.run_conformance()
         self._update_project(lambda project: project.stage_states.__setitem__("review", "running"))
         return report
+
+    def rebase(self, new_base_id: str, by: str, note: str = "") -> RebaseReport:
+        """Preview and apply with every default choice (scripts; the workbench previews first)."""
+        plan = self.rebase_preview(new_base_id, by)
+        return self.rebase_apply(plan.plan_id, {}, by, note)
 
     def change_set_hash(self) -> str:
         included = sorted(
@@ -616,6 +722,8 @@ class Pipeline:
         return hashlib.sha256("\n".join(included).encode()).hexdigest()[:16]
 
     def sign_off(self, by: str, note: str = "") -> SignOff:
+        if self.project.pending_rebase is not None:
+            raise ValueError("A rebase plan is pending; apply or cancel it first.")
         open_items = [c.id for c in self.changes() if c.decision.status in ("needs_review", "proposed")]
         report = self.store.get_conformance(self.pid)
         if open_items:

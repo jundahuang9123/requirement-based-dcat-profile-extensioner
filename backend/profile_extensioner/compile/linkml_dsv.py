@@ -129,6 +129,17 @@ def compile_dsv(view: ProfileView) -> str:
     graph.add((profile, RDF.type, DSV.ApplicationProfile))
     base_dsv = kb.base.dsv_application_profile()
     graph.add((profile, PROF.isProfileOf, URIRef(base_dsv or kb.base.info.homepage or kb.base.info.id)))
+    # Name the base RELEASE and its DCAT explicitly: Dataspecer's DSVs of DCAT-AP 2.1.1 and 3.0.1 share one
+    # IRI namespace, so dsv:profileOf alone does not tell the versions apart (docs/research/B3, 2.2).
+    for url in kb.base.info.shape_urls or kb.base.info.shape_archives:
+        graph.add((profile, DCTERMS.conformsTo, URIRef(url)))
+    if kb.base.info.homepage:
+        graph.add((profile, DCTERMS.conformsTo, URIRef(kb.base.info.homepage)))
+    if kb.dcat.version.tr:
+        graph.add((profile, DCTERMS.conformsTo, URIRef(kb.dcat.version.tr)))
+    graph.add((profile, DCTERMS.description, Literal(
+        f"Extends {kb.base.info.title} ({kb.base.info.release_date or 'release date not stated'}); "
+        + kb.dcat.summary(kb.base.info.title), lang="en")))
 
     class_profiles: dict[str, URIRef] = {}
 

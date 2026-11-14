@@ -4,10 +4,16 @@ vLLM, LM Studio, university gateways ...). Plain HTTP, no vendor SDK.
 Structured output is requested with ``response_format: json_schema``. Endpoints
 that do not know it get one retry with ``json_object`` and the schema spelled
 out in the system prompt; the answer is validated by ``LLMClient`` either way.
+
+``max_output_tokens`` is sent as ``max_tokens`` and ``effort`` as
+``reasoning_effort`` (xhigh/max are clamped to high). An endpoint that answers
+400 naming one of them gets a retry without it (``max_tokens`` is renamed to
+``max_completion_tokens`` when asked); what it rejected is remembered per model.
 """
 from __future__ import annotations
 
 import json
+import threading
 import time
 from typing import Any
 
@@ -16,6 +22,12 @@ from pydantic import BaseModel
 
 from ..contracts import LLMSettings
 from .base import Completion, LLMError, LLMUnavailable, strict_json_schema
+
+# Bump whenever the request body changes meaning, so the replay cache does not
+# serve answers that were produced by a differently-shaped request.
+REQUEST_DIALECT = "openai-chat/2"
+# OpenAI's reasoning_effort levels; LLMSettings.effort also has Anthropic's xhigh and max.
+REASONING_EFFORT = {"low": "low", "medium": "medium", "high": "high", "xhigh": "high", "max": "high"}
 
 
 class OpenAICompatibleProvider:
@@ -29,6 +41,13 @@ class OpenAICompatibleProvider:
         self._base_url = base_url.rstrip("/")
         self._api_key = api_key
         self._default_model = default_model
+        self._lock = threading.Lock()
+        self._rejected: set[tuple[str, str]] = set()   # (model, feature) the endpoint answered 400 to
+
+    def request_signature(self, settings: LLMSettings) -> str:
+        """What, besides the prompts, shapes the answer: part of the replay-cache key."""
+        return (f"{REQUEST_DIALECT}|max={settings.max_output_tokens}|effort={REASONING_EFFORT.get(settings.effort)}"
+                f"|temperature={settings.temperature}")
 
     def default_model(self) -> str:
         if not self._default_model:
@@ -79,6 +98,8 @@ class OpenAICompatibleProvider:
         context: dict[str, Any] | None = None,
     ) -> Completion:
         json_schema = strict_json_schema(schema)
+        with self._lock:
+            known = {feature for (rejected_model, feature) in self._rejected if rejected_model == model}
         body: dict[str, Any] = {
             "model": model,
             "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
@@ -86,20 +107,28 @@ class OpenAICompatibleProvider:
                 "type": "json_schema",
                 "json_schema": {"name": schema.__name__, "schema": json_schema, "strict": True},
             },
+            "max_tokens": settings.max_output_tokens,
         }
+        effort = REASONING_EFFORT.get(settings.effort)
+        if effort:
+            body["reasoning_effort"] = effort
         if settings.temperature is not None:
             body["temperature"] = settings.temperature
-        notes: list[str] = []
+        notes: list[str] = [f"effort {settings.effort} sent as reasoning_effort {effort}"] if effort != settings.effort else []
+        for feature in sorted(known):   # what this endpoint already rejected for this model
+            notes.append(f"{_degrade(body, feature, system, json_schema)} (learned earlier)")
         response = self._post(body, settings.timeout_seconds)
-        if response.status_code == 400:
-            # The endpoint may not support json_schema: fall back to json_object + schema in the prompt.
-            notes.append("json_schema response format rejected; retried with json_object")
-            body["response_format"] = {"type": "json_object"}
-            body["messages"][0]["content"] = (
-                f"{system}\n\nAnswer with one JSON object that validates against this JSON Schema:\n"
-                f"{json.dumps(json_schema)}"
-            )
+        tried: list[str] = []
+        while response.status_code == 400:
+            feature = _rejected_feature(body, response.text, tried)
+            if feature is None:
+                break
+            tried.append(feature)
+            notes.append(_degrade(body, feature, system, json_schema))
             response = self._post(body, settings.timeout_seconds)
+        if tried and response.status_code < 400:
+            with self._lock:   # the token limit depends on the prompt length: not remembered
+                self._rejected.update((model, feature) for feature in tried if feature != "token_limit")
         if response.status_code in (401, 403):
             raise LLMUnavailable("The endpoint rejected the API key.")
         if response.status_code == 404:
@@ -114,13 +143,17 @@ class OpenAICompatibleProvider:
             text = choice["message"].get("content") or ""
         except (ValueError, KeyError, IndexError, TypeError) as exc:
             raise LLMError(f"Unexpected response shape from {self._base_url}: {response.text[:400]}") from exc
+        finish_reason = str(choice.get("finish_reason") or "")
+        if finish_reason == "length":
+            raise LLMError(f"The answer was cut off at the output token limit ({settings.max_output_tokens}); "
+                           "raise max_output_tokens.")
         usage = data.get("usage") or {}
         return Completion(
             text=_strip_code_fence(text),
             model=data.get("model") or model,
             input_tokens=int(usage.get("prompt_tokens") or 0),
             output_tokens=int(usage.get("completion_tokens") or 0),
-            stop_reason=str(choice.get("finish_reason") or ""),
+            stop_reason=finish_reason,
             notes=notes,
         )
 
@@ -131,6 +164,47 @@ class OpenAICompatibleProvider:
             return sorted(item["id"] for item in response.json().get("data", []) if "id" in item)
         except (httpx.HTTPError, ValueError, KeyError, TypeError) as exc:
             raise LLMUnavailable(f"Could not list models at {self._base_url}: {exc}") from exc
+
+
+def _rejected_feature(body: dict[str, Any], error_text: str, tried: list[str]) -> str | None:
+    """Which optional part of ``body`` to give up after a 400: the one the error names first, else
+    json_schema (the long-standing fallback), then reasoning_effort, then the token limit, so the
+    last attempt is the request this provider sent before it knew these parameters. Each at most once."""
+    text = (error_text or "").lower()
+    has_limit = "max_tokens" in body or "max_completion_tokens" in body
+    candidates = []
+    if "reasoning_effort" in body and ("reasoning" in text or "think" in text):
+        candidates.append("reasoning_effort")
+    if "max_tokens" in body and "max_tokens" in text and "max_completion_tokens" in text and "too large" not in text:
+        candidates.append("max_tokens")        # e.g. OpenAI reasoning models: "use max_completion_tokens"
+    if has_limit and ("max_tokens" in text or "max_completion_tokens" in text or "context length" in text):
+        candidates.append("token_limit")       # limit beyond the model's context: the server's own limit is lower
+    if body["response_format"].get("type") == "json_schema":
+        candidates.append("json_schema")
+    if "reasoning_effort" in body:
+        candidates.append("reasoning_effort")
+    if has_limit:
+        candidates.append("token_limit")
+    return next((feature for feature in candidates if feature not in tried), None)
+
+
+def _degrade(body: dict[str, Any], feature: str, system: str, json_schema: dict[str, Any]) -> str:
+    """Change ``body`` so that it no longer uses ``feature``; return a note for the audit record."""
+    if feature == "reasoning_effort":
+        body.pop("reasoning_effort", None)
+        return "reasoning_effort rejected; retried without it"
+    if feature == "max_tokens":
+        body["max_completion_tokens"] = body.pop("max_tokens")
+        return "max_tokens rejected; retried with max_completion_tokens"
+    if feature == "token_limit":
+        limit = body.pop("max_tokens", None) or body.pop("max_completion_tokens", None)
+        return f"output token limit {limit} rejected; retried with the endpoint's own limit"
+    # json_schema: fall back to json_object + schema in the prompt.
+    body["response_format"] = {"type": "json_object"}
+    body["messages"][0]["content"] = (
+        f"{system}\n\nAnswer with one JSON object that validates against this JSON Schema:\n{json.dumps(json_schema)}"
+    )
+    return "json_schema response format rejected; retried with json_object"
 
 
 def _strip_code_fence(text: str) -> str:

@@ -74,9 +74,51 @@ def test_assessments_candidates_and_call_cache():
     store.save_candidates("p1", "a1", [Candidate(iri="http://purl.org/dc/terms/title", curie="dcterms:title", kind="property")])
     assert store.all_candidates("p1")["a1"][0].curie == "dcterms:title"
     store.add_llm_call("p1", LLMCallRecord(request_hash="h1", status="error", response_text=""))
-    assert store.find_cached_call("h1") is None
+    assert store.find_cached_call("h1", project_id="p1") is None
     store.add_llm_call("p1", LLMCallRecord(request_hash="h1", status="ok", response_text="{}"))
-    assert store.find_cached_call("h1").response_text == "{}"
+    assert store.find_cached_call("h1", project_id="p1").response_text == "{}"
+
+
+def test_call_cache_is_scoped_to_the_project_and_replays_only_originals():
+    store = Store()
+    original = LLMCallRecord(request_hash="h1", status="ok", response_text='{"a": 1}')
+    store.add_llm_call("p1", original)
+    assert store.find_cached_call("h1", project_id="p2") is None              # another project: an independent run
+    assert store.find_cached_call("h1", project_id=None).id == original.id    # global replay on request
+    store.add_llm_call("p2", LLMCallRecord(request_hash="h2", status="ok", response_text='{"b": 2}', cached=True))
+    assert store.find_cached_call("h2", project_id="p2") is None              # a replay is never a source
+
+
+def test_llm_client_cache_scope(tmp_path):
+    from pydantic import BaseModel
+
+    from profile_extensioner.contracts import LLMSettings
+    from profile_extensioner.llm.client import LLMClient
+    from profile_extensioner.llm.mock import MockProvider
+
+    class Answer(BaseModel):
+        ok: bool = True
+
+    class Counting(MockProvider):
+        calls = 0
+
+        def complete(self, **kwargs):
+            Counting.calls += 1
+            from profile_extensioner.llm.base import Completion
+            return Completion(text='{"ok": true}', model="m")
+
+    store = Store()
+    first = LLMClient(Counting(), LLMSettings(provider="mock"), store=store, project_id="p1")
+    first.generate(system="s", user="u", schema=Answer, purpose="x")
+    _, again = first.generate(system="s", user="u", schema=Answer, purpose="x")
+    assert again.cached and again.replayed_from and again.replayed_from_project == "p1"
+    other = LLMClient(Counting(), LLMSettings(provider="mock"), store=store, project_id="p2")
+    _, fresh = other.generate(system="s", user="u", schema=Answer, purpose="x")
+    assert not fresh.cached                                                   # project scope: p2 asks the model
+    shared = LLMClient(Counting(), LLMSettings(provider="mock"), store=store, project_id="p3", cache_scope="global")
+    assert shared.generate(system="s", user="u", schema=Answer, purpose="x")[1].cached
+    off = LLMClient(Counting(), LLMSettings(provider="mock"), store=store, project_id="p1", cache_scope="off")
+    assert not off.generate(system="s", user="u", schema=Answer, purpose="x")[1].cached
 
 
 def test_export_holds_state_and_log():

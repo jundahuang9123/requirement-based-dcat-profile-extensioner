@@ -109,7 +109,7 @@ def _dcat_terms(state: DcatState, root: Path) -> list:
     return list(terms.values())
 
 
-@lru_cache(maxsize=8)
+@lru_cache(maxsize=32)
 def _shared_index(base_profile_id: str, data_dir: str, excluded: tuple[str, ...]) -> VocabularyIndex:
     root = Path(data_dir) if data_dir else DATA_DIR
     index = VocabularyIndex.load(root / "vocab", exclude_namespaces=excluded)

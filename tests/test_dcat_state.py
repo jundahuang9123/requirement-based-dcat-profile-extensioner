@@ -240,3 +240,24 @@ def test_each_base_loads_with_its_dcat(base):
     assert kb.dcat.id == kb.base.info.dcat.dcat
     assert kb.term(DCAT + "Dataset") is not None and kb.term(DCAT + "Dataset").dcat_status == "current"
     assert Path(DCAT_DIR / kb.dcat.id / "dcat.ttl").exists()
+
+
+def test_compiled_outputs_name_the_base_release_and_its_dcat():
+    from profile_extensioner.compile.linkml_dsv import compile_dsv
+
+    for base, imports, dcat_tr in (
+        ("dcat-ap-2.1.1", "releases/2.1.1/dcat-ap_2.1.1_shacl_shapes.ttl", "REC-vocab-dcat-2-20200204"),
+        ("dcat-ap-1.1", None, "REC-vocab-dcat-20140116"),
+    ):
+        kb = kb_for(base)
+        project = Project(id="p", name="p", base_profile_id=base, profile_namespace="https://example.org/x#",
+                          profile_prefix="ext")
+        atoms = [Atom(id="a1", statement="Users can see keywords.", subject="dataset", modality="should")]
+        view = build_view(project, kb, atoms, [change("refine_property", DCAT + "Dataset", DCAT + "keyword",
+                                                      obligation="recommended")])
+        shacl, dsv = compile_shacl(view), compile_dsv(view)
+        if imports:
+            assert f"owl:imports <https://raw.githubusercontent.com/SEMICeu/DCAT-AP/" in shacl and imports in shacl
+        else:   # 1.1 publishes its shapes only inside a zip: named, not imported
+            assert "owl:imports" not in shacl and "shacl-201706.zip" in shacl
+        assert dcat_tr in shacl and dcat_tr in dsv

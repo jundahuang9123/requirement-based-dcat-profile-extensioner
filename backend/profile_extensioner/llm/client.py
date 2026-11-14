@@ -5,7 +5,8 @@
 * schema validation of the answer, with ONE corrective retry that shows the
   model its validation errors;
 * an audit record per call (prompts, answer, tokens, duration) on the blackboard;
-* a replay cache keyed by the full request, so re-running a stage does not pay
+* a replay cache keyed by the full request (prompts, schema, model, effort and the generation
+  parameters the provider sends), scoped to the project unless configured otherwise, so re-running a stage does not pay
   for (or re-roll) answers that were already given. Model output is not
   deterministic even at fixed settings, so the stored answer IS the record of
   what a run decided.
@@ -34,12 +35,17 @@ class LLMClient:
         store: Store | None = None,
         project_id: str = "",
         use_cache: bool = True,
+        cache_scope: str = "project",
     ) -> None:
+        """``cache_scope``: "project" replays only this project's own earlier answers (the default: a
+        new project is an independent run), "global" replays any project's, "off" never replays.
+        ``use_cache=False`` is the same as "off"."""
         self.provider = provider
         self.settings = settings
         self.store = store
         self.project_id = project_id
-        self.use_cache = use_cache
+        self.cache_scope = cache_scope if use_cache else "off"
+        self.use_cache = self.cache_scope != "off"
 
     @property
     def author(self) -> str:
@@ -67,9 +73,11 @@ class LLMClient:
         so that each gets its own answer and its own cache slot.
         """
         model = self.model_for(purpose)
-        request_hash = _request_hash(
-            self.provider.name, model, self.settings.effort, prompt_version, schema.__name__, system, user, variant
-        )
+        parts: list[object] = [self.provider.name, model, self.settings.effort]
+        signature = getattr(self.provider, "request_signature", None)
+        if signature is not None:   # generation parameters the provider actually sends (keeps old keys for others)
+            parts.append(signature(self.settings))
+        request_hash = _request_hash(*parts, prompt_version, schema.__name__, system, user, variant)
         record = LLMCallRecord(
             stage=stage,
             purpose=purpose,
@@ -83,7 +91,8 @@ class LLMClient:
         )
 
         if self.use_cache and self.store is not None:
-            cached = self.store.find_cached_call(request_hash)
+            cached = self.store.find_cached_call(
+                request_hash, project_id=None if self.cache_scope == "global" else self.project_id)
             if cached is not None:
                 try:
                     parsed = schema.model_validate_json(cached.response_text)
@@ -92,6 +101,9 @@ class LLMClient:
                 if parsed is not None:
                     record.response_text = cached.response_text
                     record.cached = True
+                    record.model = cached.model or model
+                    record.replayed_from = cached.id
+                    record.replayed_from_project = cached.project_id
                     return parsed, self._save(record)
 
         started = time.monotonic()
@@ -135,6 +147,8 @@ class LLMClient:
             record.input_tokens += completion.input_tokens
             record.output_tokens += completion.output_tokens
             record.cache_read_tokens += completion.cache_read_tokens
+            record.stop_reason = completion.stop_reason
+            record.notes.extend(note for note in completion.notes if note not in record.notes)
             try:
                 return schema.model_validate_json(completion.text), completion.text
             except ValidationError as exc:

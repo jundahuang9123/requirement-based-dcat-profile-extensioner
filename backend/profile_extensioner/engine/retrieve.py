@@ -136,6 +136,8 @@ def retrieve_candidates(
         for listed in kb.dcat.properties_for(resource_class):
             if listed.path in scored or kb.base.element(resource_class, listed.path) is not None:
                 continue
+            if kb.term(listed.path) is None:      # a namespace hidden from the index (exclude_namespaces)
+                continue
             score, matched = kb.vocab.score_text(
                 focused, label=listed.label, name=local_name(listed.path),
                 definition=" ".join(part for part in (listed.definition, listed.usage_note) if part),

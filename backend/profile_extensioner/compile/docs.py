@@ -82,12 +82,16 @@ def compile_documentation(view: ProfileView, rows: list[dict[str, str]], conform
         lines.append(f"> {item.get('quote', '')} ({item.get('file', '')})")
     for note in kb.dcat.basis.notes:
         lines.append(f"Note: {note}")
-    later = sorted({kb.curie(iri) for change in view.changes
-                    for iri in (change.target_class, change.path, change.facets.range_class)
-                    if iri and kb.dcat_status(iri) == "later"})
+    later: dict[str, set[str]] = {}
+    for change in view.changes:
+        for iri in (change.target_class, change.path, change.facets.range_class):
+            if iri and kb.dcat_status(iri) == "later":
+                later.setdefault(kb.curie(iri), set()).add(
+                    "a human reviewer" if change.decision.decided_by.startswith("human:") else "the automatic policy")
     if later:
-        lines.append(f"This extension uses terms of a later DCAT version than {kb.dcat.label}, each accepted by a "
-                     f"human reviewer: {', '.join(later)}.")
+        lines.append(f"This extension uses terms of a later DCAT version than {kb.dcat.label}: "
+                     + "; ".join(f"{term} (accepted by {' and '.join(sorted(who))})" for term, who in sorted(later.items()))
+                     + ".")
     lines.append("")
     if conformance_summary:
         lines += ["## Conformance to the base", "", conformance_summary, ""]

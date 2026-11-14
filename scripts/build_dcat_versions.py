@@ -159,17 +159,23 @@ ROW = re.compile(r"<tr\b[^>]*>\s*<t[hd]\b[^>]*>(.*?)</t[hd]>\s*<t[hd]\b[^>]*>(.*
 HEADING = re.compile(r"<h[2-6]\b[^>]*>(.*?)</h[2-6]>", re.S)
 
 
+RDFS_LITERAL = PREFIXES["rdfs"] + "Literal"
+
+
 def extract_model(spec_html: str) -> dict:
     """Walk the specification in document order. A table whose first row is 'RDF Class:' opens a class;
-    a table whose first row is 'RDF Property:' adds a property to the class that is open."""
+    a table whose first row is 'RDF Property:' adds a property to the class that is open.
+
+    A label may repeat inside one table (DCAT 3, Class: Data Service has two "Sub-class of" rows,
+    dcat:Resource and dctype:Service, and two "Usage note" rows): every row is kept."""
     classes: dict[str, dict] = {}
     current: list[str] = []
     last_heading = ""
-    position = 0
     events = sorted(
         [(m.start(), "h", m) for m in HEADING.finditer(spec_html)] + [(m.start(), "t", m) for m in TABLE.finditer(spec_html)],
         key=lambda item: item[0],
     )
+    shared: list[tuple[str, dict]] = []          # (other domain class, property entry) for "Domain: A or B" rows
     for _, kind, match in events:
         if kind == "h":
             last_heading = text_of(match.group(1))
@@ -181,37 +187,62 @@ def extract_model(spec_html: str) -> dict:
         if not rows:
             continue
         head, head_value = rows[0]
-        fields = {label: value for label, value in rows[1:]}
+        fields: dict[str, list[str]] = {}
+        for label, value in rows[1:]:
+            fields.setdefault(label, []).append(value)
+
+        def first(key: str) -> str:
+            return text_of((fields.get(key) or [""])[0])
+
+        def joined(key: str) -> str:
+            return " ".join(text_of(cell) for cell in fields.get(key) or [])
+
+        def all_iris(*keys: str) -> list[str]:
+            found: list[str] = []
+            for key in keys:
+                for cell in fields.get(key) or []:
+                    found += [iri for iri in iris_in(cell) if iri not in found]
+            return found
+
         if head == "rdf class":
             current = iris_in(head_value)
             for iri in current:
                 entry = classes.setdefault(iri, {"label": re.sub(r"^[\d.]+\s*", "", last_heading).replace("Class:", "").strip(),
                                                  "definition": "", "subclass_of": [], "properties": []})
-                entry["definition"] = entry["definition"] or text_of(fields.get("definition", ""))
-                for key in ("sub class of", "subclass of", "sub-class of"):
-                    for sup in iris_in(fields.get(key, "")):
-                        if sup not in entry["subclass_of"]:
-                            entry["subclass_of"].append(sup)
-                entry["usage_note"] = entry.get("usage_note") or text_of(fields.get("usage note", ""))
+                entry["definition"] = entry["definition"] or first("definition")
+                for sup in all_iris("sub class of", "subclass of", "sub-class of"):
+                    if sup not in entry["subclass_of"]:
+                        entry["subclass_of"].append(sup)
+                entry["usage_note"] = entry.get("usage_note") or joined("usage note")
         elif head == "rdf property" and current:
             paths = iris_in(head_value)
             if not paths:
                 continue
             label = re.sub(r"^[\d.]+\s*", "", last_heading).replace("Property:", "").strip()
+            range_text = joined("range")
+            ranges = all_iris("range")
+            # "rdfs:Literal typed as xsd:X": the values are xsd:X literals (DCAT 3 dcat:byteSize, ...).
+            if re.match(r"^rdfs:Literal\s+(typically\s+)?typed as\b", range_text) and len(ranges) > 1:
+                ranges = [iri for iri in ranges if iri != RDFS_LITERAL]
+            domain = all_iris("domain")
             for class_iri in current:
                 for path in paths:
                     entry = classes[class_iri]
                     if any(existing["path"] == path for existing in entry["properties"]):
                         continue
-                    entry["properties"].append({
-                        "path": path, "label": label,
-                        "definition": text_of(fields.get("definition", "")),
-                        "range": iris_in(fields.get("range", "")),
-                        "range_text": text_of(fields.get("range", "")),
-                        "domain": iris_in(fields.get("domain", "")),
-                        "usage_note": text_of(fields.get("usage note", "")),
-                    })
-        position += 1
+                    record = {
+                        "path": path, "label": label, "definition": first("definition"),
+                        "range": ranges, "range_text": range_text, "domain": domain, "usage_note": joined("usage note"),
+                    }
+                    entry["properties"].append(record)
+                    # "Domain: prov:Attribution or dcat:Relationship": the property applies to the other class too.
+                    if class_iri in domain:
+                        shared += [(other, record) for other in domain if other != class_iri]
+    for other, record in shared:
+        entry = classes.setdefault(other, {"label": other.rsplit("#", 1)[-1].rsplit("/", 1)[-1], "definition": "",
+                                           "subclass_of": [], "properties": [], "from_domain": True})
+        if not any(existing["path"] == record["path"] for existing in entry["properties"]):
+            entry["properties"].append({**record, "from_domain": True})
     return {"classes": classes, "inverse_properties": extract_inverses(spec_html)}
 
 

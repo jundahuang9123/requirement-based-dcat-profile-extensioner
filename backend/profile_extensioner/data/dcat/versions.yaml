@@ -69,8 +69,8 @@ versions:
     sha256: 3d400fe5a39e4d49487733d3bc6105c4e5b2d06dd58dac166f93e20e2f4868ec
   model:
     file: dcat-2/model.json
-    classes: 12
-    class_property_pairs: 75
+    classes: 13
+    class_property_pairs: 76
   dcat_terms:
     classes: 8
     properties: 28
@@ -118,8 +118,8 @@ versions:
     model_equals_main_spec: true
   model:
     file: dcat-3/model.json
-    classes: 14
-    class_property_pairs: 88
+    classes: 15
+    class_property_pairs: 89
   dcat_terms:
     classes: 9
     properties: 43

@@ -103,17 +103,16 @@ def _section(title: str, body: str | Sequence[str]) -> str:
 
 
 def _atom_block(atom: Atom) -> list[str]:
+    """What the model sees of an atom: its statement, subject and modality only. The source reference
+    (document and locator) stays on the workbench and in the trace, never in a prompt: in a benchmark it
+    names the published profile the atoms were taken from, i.e. the answer."""
     licensed = MODALITY_OBLIGATION[atom.modality]
-    lines = [
+    return [
         f"id: {atom.id}",
         f'statement: "{atom.statement}"',
         f"subject: {atom.subject}",
         f"modality: {atom.modality} (strongest obligation this licenses: {licensed})",
     ]
-    if atom.source_reference:
-        locator = f", {atom.source_reference.locator}" if atom.source_reference.locator else ""
-        lines.append(f"source: {atom.source_reference.document}{locator}")
-    return lines
 
 
 def dcat_profile_lines(kb: KnowledgeBase) -> list[str]:

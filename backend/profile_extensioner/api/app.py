@@ -114,6 +114,12 @@ class RebaseRequest(BaseModel):
     note: str = ""
 
 
+class RebaseApplyRequest(BaseModel):
+    choices: dict[str, str] = {}                 # plan item id -> choice; the default where missing
+    by: str = "reviewer"
+    note: str = ""
+
+
 class EditRequest(BaseModel):
     change: ProfileChange
     by: str = "reviewer"
@@ -238,8 +244,16 @@ def create_project(request: ProjectCreate) -> dict[str, Any]:
         except ValueError as exc:
             raise HTTPException(400, str(exc)) from exc
     # The base: as asked; else as the atom set declares it; else the newest DCAT-AP release (on the newest DCAT).
-    base_id = request.base_profile_id or (atom_set.base_profile_ids[0] if atom_set and atom_set.base_profile_ids
-                                          else latest_base_profile_id())
+    known = {info.id: info for info in list_base_profiles()}
+    titles = {info.title.lower(): info.id for info in known.values()}
+    if request.base_profile_id:
+        base_id = request.base_profile_id
+        if base_id not in known:
+            raise HTTPException(400, f"unknown base profile {base_id!r}; known: {', '.join(known)}")
+    else:
+        declared = [titles.get(str(value).strip().lower(), str(value).strip())
+                    for value in (atom_set.base_profile_ids if atom_set else [])]
+        base_id = next((value for value in declared if value in known), None) or latest_base_profile_id()
     project = Project(
         id=stable_id("prj", request.name, request.profile_namespace, os.urandom(4).hex()),
         name=request.name, description=request.description or (atom_set.description if atom_set else ""),
@@ -367,10 +381,43 @@ def calls(project_id: str, subject_id: str | None = None) -> list[dict[str, Any]
     return [c.model_dump() for c in store.list_llm_calls(project_id, subject_id=subject_id)]
 
 
+@app.post("/api/projects/{project_id}/rebase/preview")
+def rebase_preview(project_id: str, request: RebaseRequest) -> dict[str, Any]:
+    """Plan a move onto another base (DCAT-AP release, and so its DCAT): one item per finding, with
+    choices and a default. Nothing changes until the plan is applied."""
+    try:
+        with _Exclusive(project_id):
+            return _pipeline(project_id).rebase_preview(request.base_profile_id, request.by).model_dump()
+    except KeyError as exc:
+        raise HTTPException(404, f"Unknown base profile: {exc}") from exc
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
+@app.post("/api/projects/{project_id}/rebase/{plan_id}/apply")
+def rebase_apply(project_id: str, plan_id: str, request: RebaseApplyRequest) -> dict[str, Any]:
+    try:
+        with _Exclusive(project_id):
+            return _pipeline(project_id).rebase_apply(plan_id, request.choices, request.by, request.note).model_dump()
+    except KeyError as exc:
+        raise HTTPException(404, f"No pending rebase plan {exc}") from exc
+    except ValueError as exc:
+        raise HTTPException(409 if "preview it again" in str(exc) else 400, str(exc)) from exc
+
+
+@app.delete("/api/projects/{project_id}/rebase/{plan_id}")
+def rebase_cancel(project_id: str, plan_id: str, by: str = "reviewer") -> dict[str, Any]:
+    try:
+        with _Exclusive(project_id):
+            _pipeline(project_id).rebase_cancel(plan_id, by)
+            return {"cancelled": plan_id}
+    except KeyError as exc:
+        raise HTTPException(404, f"No pending rebase plan {exc}") from exc
+
+
 @app.post("/api/projects/{project_id}/rebase")
 def rebase(project_id: str, request: RebaseRequest) -> dict[str, Any]:
-    """Move the extension onto another base (DCAT-AP release, and so its DCAT). Human decisions stay;
-    findings that need a decision go to the review queue; the profile is re-verified and re-checked."""
+    """Preview and apply with every default choice in one step (for scripts)."""
     try:
         with _Exclusive(project_id):
             return _pipeline(project_id).rebase(request.base_profile_id, request.by, request.note).model_dump()

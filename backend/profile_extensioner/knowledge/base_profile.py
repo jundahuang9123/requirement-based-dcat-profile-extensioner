@@ -126,6 +126,16 @@ class BaseProfile:
             dsv_index = json.loads((root / config["dsv_index"]).read_text(encoding="utf-8"))
         release = config.get("release") or {}
         basis = config.get("dcat_basis") or {}
+        source = config.get("source") or {}
+        raw_root = ""
+        if str(source.get("repository", "")).startswith("https://github.com/") and source.get("commit"):
+            raw_root = (str(source["repository"]).replace("https://github.com/", "https://raw.githubusercontent.com/")
+                        .rstrip("/") + f"/{source['commit']}/")
+        constraint_names = {Path(name).name for name in (config.get("shapes") or {}).get("constraints", [])}
+        shape_urls = [raw_root + item["path"] for item in source.get("files") or []
+                      if raw_root and Path(item["path"]).name in constraint_names]
+        shape_archives = [raw_root + item["path"] for item in source.get("files") or []
+                          if raw_root and str(item["path"]).endswith(".zip")]
         dcat_info = None
         if basis.get("dcat"):
             from .dcat_state import list_dcat_versions
@@ -140,6 +150,8 @@ class BaseProfile:
             licence=str(config.get("licence") or ""),
             shape_files=[str(path.relative_to(root)) for path in shape_files],
             release_date=str(release.get("date") or ""),
+            shape_urls=shape_urls,
+            shape_archives=shape_archives,
             release_status=str(release.get("status") or ""),
             dcat=DcatBasis(
                 dcat=str(basis["dcat"]),
@@ -392,7 +404,7 @@ def latest_base_profile_id(data_dir: Path | None = None) -> str:
     return infos[-1].id
 
 
-@lru_cache(maxsize=8)
+@lru_cache(maxsize=64)
 def _load_cached(base_profile_id: str, data_dir: str) -> BaseProfile:
     return BaseProfile.load(base_profile_id, Path(data_dir) if data_dir else None)
 

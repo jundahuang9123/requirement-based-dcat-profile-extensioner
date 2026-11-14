@@ -55,16 +55,20 @@ export type PipelineConfig = {
   auto_accept: boolean; auto_accept_min_confidence: number; require_human_signoff: boolean; use_hints: boolean;
   exclude_namespaces: string[]; max_parallel_calls: number; later_dcat_terms: 'review' | 'forbid' | 'allow';
 };
-export type RebaseItem = { change_id: string | null; atom_id: string | null; term: string | null; finding: string;
-  severity: 'info' | 'warning' | 'error'; suggestion: string; replacement: string | null; message: string };
-export type RebaseReport = { from_base: string; to_base: string; from_dcat: string; to_dcat: string; by: string; note: string;
-  at: string; items: RebaseItem[]; summary: string };
+export type RebaseItem = { id: string; change_id: string | null; atom_id: string | null; term: string | null; finding: string;
+  severity: 'info' | 'warning' | 'error'; choices: string[]; default_choice: string; suggestion: string; chosen: string | null;
+  replacement: string | null; human_decided: boolean; message: string };
+export type RebasePlan = { plan_id: string; from_base: string; to_base: string; from_dcat: string; to_dcat: string; by: string;
+  created_at: string; items: RebaseItem[]; summary: string };
+export type RebaseReport = { from_base: string; to_base: string; from_dcat: string; to_dcat: string; plan_id: string; by: string;
+  note: string; at: string; items: RebaseItem[]; new_change_ids: string[]; reproposed_atoms: string[]; summary: string };
 export type Project = {
   id: string; name: string; description: string; base_profile_id: string; profile_title: string;
   profile_namespace: string; profile_prefix: string; created_at: string; updated_at: string;
   config: PipelineConfig; llm: LLMSettings; stage_states: Record<string, StageState>;
   signoff: { by: string; note: string; at: string; change_set_hash: string } | null;
   rebases?: RebaseReport[];
+  pending_rebase?: RebasePlan | null;
 };
 export type Snapshot = {
   project: Project; atoms: Atom[]; assessments: Assessment[]; candidates: Record<string, Candidate[]>;
@@ -122,8 +126,12 @@ export const api = {
   runAsync: (id: string, body: { from_stage?: string; only?: string; atom_ids?: string[] }) => call('POST', `/projects/${id}/run-async`, body),
   entries: (id: string, after = 0) => call<Entry[]>('GET', `/projects/${id}/entries?after=${after}`),
   calls: (id: string, subject?: string) => call<Call[]>('GET', `/projects/${id}/calls${subject ? `?subject_id=${encodeURIComponent(subject)}` : ''}`),
-  rebase: (id: string, baseProfileId: string, by: string, note = '') =>
-    call<RebaseReport>('POST', `/projects/${id}/rebase`, { base_profile_id: baseProfileId, by, note }),
+  rebasePreview: (id: string, baseProfileId: string, by: string) =>
+    call<RebasePlan>('POST', `/projects/${id}/rebase/preview`, { base_profile_id: baseProfileId, by }),
+  rebaseApply: (id: string, planId: string, choices: Record<string, string>, by: string, note = '') =>
+    call<RebaseReport>('POST', `/projects/${id}/rebase/${planId}/apply`, { choices, by, note }),
+  rebaseCancel: (id: string, planId: string, by: string) =>
+    call<{ cancelled: string }>('DELETE', `/projects/${id}/rebase/${planId}?by=${encodeURIComponent(by)}`),
   decide: (id: string, changeId: string, status: string, by: string, note: string) =>
     call<Change>('POST', `/projects/${id}/changes/${changeId}/decision`, { status, by, note }),
   edit: (id: string, changeId: string, change: Change, by: string, note: string) =>

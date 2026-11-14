@@ -338,15 +338,21 @@ class Store:
             ).fetchall()
         return [LLMCallRecord.model_validate_json(row["doc"]) for row in rows]
 
-    def find_cached_call(self, request_hash: str) -> LLMCallRecord | None:
-        """Most recent successful call with the same request hash (replay cache)."""
+    def find_cached_call(self, request_hash: str, *, project_id: str | None) -> LLMCallRecord | None:
+        """Most recent ORIGINAL successful call with the same request hash (replay cache).
+
+        ``project_id`` scopes the lookup to one project; ``None`` searches the whole store (global
+        replay). Replayed records are never sources, so an answer is replayed only from the call that
+        produced it."""
+        clause, params = "request_hash = ?", [request_hash]
+        if project_id is not None:
+            clause += " AND project_id = ?"
+            params.append(project_id)
         with self._lock:
-            rows = self._db.execute(
-                "SELECT doc FROM llm_calls WHERE request_hash = ? ORDER BY seq DESC LIMIT 20", (request_hash,)
-            ).fetchall()
+            rows = self._db.execute(f"SELECT doc FROM llm_calls WHERE {clause} ORDER BY seq DESC", params).fetchall()
         for row in rows:
             record = LLMCallRecord.model_validate_json(row["doc"])
-            if record.status == "ok" and record.response_text:
+            if record.status == "ok" and record.response_text and not record.cached:
                 return record
         return None
 
