@@ -1,2 +1,232 @@
-\section{APPENDIX}
-\todo{section to be written}
+% Appendices A and B of the RQ2 paper; appendices C and D are in sections/12-appendix-cd.tex.
+% Brief: outline-final.md 6.10 and Sect. 4 (Tables 3-5, Figs. 3-4). Source shorthand in the "% src:" comments:
+%   DEMO  = paper/inputs/demo-materials-testing-lab-2026-11-14.json: the synthetic demo run behind Fig. 3 (offline
+%           rules provider "mock", base dcat-ap-3.0.1, commit 0d7aadc; same outcome at 5ffd56e, issues digest P8)
+%   ATOMS = examples/materials-testing-lab/atoms.yaml (synthetic atoms; identical at 5ffd56e)
+%   @5ffd56e B/<path> = backend/profile_extensioner/<path> at commit 5ffd56e, the tool the paper describes
+%   CONF5 = docs/conformance.md at 5ffd56e; RQ1 Lx = line x of the RQ1 draft text of 13 Nov 2026 (rq1-main.txt)
+% No benchmark content: the atoms of Table 3 are invented, and Table 5 prints only the companion's atom counts.
+
+\section{Illustrations}\label{app:illustrations}
+
+Table~\ref{tab:criteria} illustrates the criteria of Sect.~\ref{sec:problem}, Table~\ref{tab:checks} lists the
+checks of Sect.~\ref{sec:pipeline}, and Fig.~\ref{fig:workbench} shows the workbench of Sect.~\ref{sec:impl}.
+
+\begin{table}[tp]
+  \caption{Illustrative atoms and how the criteria apply. The atoms are invented for a fictional
+    materials-testing laboratory and are not benchmark content; the outcomes are those of the offline rules
+    provider on \acs{DCAT-AP}~3.0.1 in the run behind Fig.~\ref{fig:workbench}, a lexical baseline, not a % src: DEMO:2-6
+    model. E2: the obligation the atom's modality licenses and the one the change sets. In the run, 4 of the 15 % src: DEMO:8,10
+    atoms are covered by the base and 1 is out of scope; 5 of the 10 changes are auto-accepted, and the other 5, % src: DEMO:13,20,22,72-173
+    all mints at confidence 0.45, wait for review and are not compiled, so the compiled extension adds one % src: DEMO:123-172; @5ffd56e B/llm/mock.py:199; @5ffd56e B/compile/model.py:47-49
+    element, tightens four and is conformant.} % src: DEMO:32-33
+  \label{tab:criteria}
+  \centering\scriptsize
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabular}{@{}p{3.5cm}p{2.45cm}p{1.55cm}p{1.85cm}p{2.0cm}@{}}
+    \toprule
+    Atom (modality) & E1: disposition, kind & E2: licensed / set & E3: decision & E4: against the base\\
+    \midrule
+    lab-01 ``Every dataset must have a title.'' (must) % src: ATOMS:19-22
+      & covered by the base (B1 passed) % src: DEMO:175; a failed B1 sets the atom unclear: @5ffd56e B/engine/pipeline.py:207-211
+      & mandatory / -- % src: @5ffd56e B/contracts.py:713-715
+      & no change; a person may override % src: @5ffd56e B/engine/pipeline.py:538
+      & inherited, no element\\
+    lab-02 ``Every dataset must name the organisation responsible for making it available.'' (must) % src: ATOMS:25-28
+      & refine \term{dcterms:publisher} on \term{dcat:Dataset} % src: DEMO:74,81
+      & mandatory / mandatory % src: DEMO:81
+      & auto-accepted; one warning to look at % src: DEMO:75,80
+      & recommended $\rightarrow$ mandatory, minimum 1: tightened\\ % src: DEMO:81
+    lab-06 ``A dataset should state the testing standard that the measurements followed.'' (should) % src: ATOMS:49-52
+      & refine \term{dcterms:conformsTo} on \term{dcat:Dataset} % src: DEMO:104,111
+      & recommended / recommended % src: DEMO:111
+      & auto-accepted % src: DEMO:105,110
+      & optional $\rightarrow$ recommended: tightened\\ % src: DEMO:111
+    lab-07 ``A dataset should list the people who contributed to carrying out the tests.'' (should) % src: ATOMS:55-58
+      & reuse \term{dcterms:contributor} on \term{dcat:Dataset} % src: DEMO:114,121
+      & recommended / recommended % src: DEMO:121
+      & auto-accepted % src: DEMO:115,120
+      & added: the base does not constrain it there\\ % src: DEMO:33 (1 added); @5ffd56e B/engine/verify.py:319-320
+    lab-11 ``A dataset must state the number of specimens that were tested.'' (must) % src: ATOMS:79-82
+      & mint \term{lab:numberSpecimens} % src: DEMO:154,161
+      & mandatory / mandatory % src: DEMO:161
+      & waits for review: confidence 0.45 below 0.5 % src: DEMO:155,160
+      & added in the extension's namespace once accepted; \term{xsd:string} is the rules provider's choice\\ % src: DEMO:161; knowledge-compile-ui digest Sect. 8 item 15
+    lab-12 ``A dataset must state its measurement uncertainty and the calibration date of the testing machine.''
+      (must; compound \verify{intake lint; not in the demo record}) % src: ATOMS:85-88; @5ffd56e B/engine/intake.py:72-79 (code reading)
+      & one mint, \term{lab:measurementUncertainty}, for a two-part atom; the calibration date gets no change % src: DEMO:163-172 (the only change for lab-12)
+      & mandatory / mandatory % src: DEMO:171
+      & waits for review (0.45) % src: DEMO:165,170
+      & added in the extension's namespace once accepted\\
+    lab-15 ``The portal must answer a search query within two seconds.'' (must) % src: ATOMS:103-106
+      & out of scope % src: DEMO:189
+      & mandatory / -- % src: @5ffd56e B/contracts.py:713-715
+      & no change; a person may override % src: @5ffd56e B/engine/pipeline.py:538
+      & --\\
+    lab-02-cf, lab-02 with \emph{should} (counterfactual, inactive in the run) % src: ATOMS:111-118
+      & expected: covered by the base % src: ATOMS:117
+      & recommended / -- % src: ATOMS:114; @5ffd56e B/contracts.py:713-715
+      & expected, not run % src: ATOMS:118
+      & no change: the base's recommended level suffices\\ % src: ATOMS:117; DEMO:81 (base: recommended)
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[tp]
+  \caption{Checks on every change and on the compiled extension. Program code runs every check except T2, a
+    judgment of the model, which runs only on a change without an error. Error: for a change, it blocks % src: @5ffd56e B/engine/pipeline.py:221-244,279
+    automatic acceptance and sends the change to repair and, if it still fails, to the queue (for B1, the atom is % src: @5ffd56e B/engine/pipeline.py:246-267,295-339
+    left unclear); for the extension, it makes the verdict non-conformant, which blocks the sign-off. Warning: % src: @5ffd56e B/engine/pipeline.py:207-211,618-640; @5ffd56e B/conformance/check.py:264-266
+    shown to the person and never blocking, except that a D1 warning withholds automatic acceptance under the
+    default policy. Source: the guideline or work the check follows; derived: our rule. E: the criterion of % src: @5ffd56e B/engine/pipeline.py:260-263; @5ffd56e B/contracts.py:606
+    Sect.~\ref{sec:problem} the check serves.}
+  \label{tab:checks}
+  \centering\scriptsize
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabular}{@{}p{1.85cm}p{4.05cm}p{3.1cm}p{1.5cm}p{0.75cm}@{}}
+    \toprule
+    Check & Error & Warning & Source & E\\
+    \midrule
+    \multicolumn{5}{@{}l}{\textit{On every change}}\\
+    V1 terms exist % src: @5ffd56e B/engine/verify.py:96-158
+      & an unknown class, property, range or super-term; a mint outside the extension's namespace or of an
+        existing term; a class used as a property
+      & an existing term not among the retrieved candidates; a vocabulary value that is not an IRI
+      & derived & E4\\
+    V2 domain and range % src: @5ffd56e B/engine/verify.py:166-211
+      & a declared domain or range that excludes the class or the range class, where the class hierarchy is
+        known; a class range on a literal-valued property, or a datatype on an object property
+      & the same domain or range misfit where the hierarchy is unknown
+      & derived & E4\\
+    D1 DCAT version % src: @5ffd56e B/engine/verify.py:229-245,259-273; @5ffd56e B/contracts.py:606
+      & a DCAT term only earlier versions define; a DCAT property on a class the base's DCAT does not list it
+        for, when the term declares no domain
+      & a term only a later DCAT defines: a person decides (policy \emph{forbid}: error; \emph{allow}: a note)
+      & \cite[\S4]{w3cdcat3} & E4\\
+    D2 deprecated terms % src: @5ffd56e B/engine/verify.py:246-257
+      & a term that the base's DCAT or the base deprecates
+      & --
+      & \cite[\S4]{w3cdcat3} & E4\\
+    D3 inverse properties % src: @5ffd56e B/engine/verify.py:274-280; @5ffd56e B/knowledge/dcat_state.py:81,198-200; @5ffd56e B/data/dcat/dcat-3/model.json (11 pairs, 6 with a dcat: inverse; none in dcat-2014 or dcat-2)
+      & --
+      & every use of one of the six \term{dcat:} inverse properties (bases on DCAT~3)
+      & \cite[\S7]{w3cdcat3} & E4\\
+    V3 legal refinement % src: @5ffd56e B/engine/verify.py:291-357
+      & a facet or obligation that loosens or contradicts the base; a refinement that tightens nothing
+      & a facet not shown to narrow the base's
+      & \cite{semicreuse2026} & E1, E4\\
+    V4 reuse before mint % src: @5ffd56e B/engine/verify.py:57,365-399
+      & a mint without a reason why no candidate fits, a label or a definition; an indexed term of the same name
+      & a candidate scoring 6.0 or more left unaddressed
+      & \cite{semicreuse2026,fathallah2026rigor,lippolis2025ontology} & E1\\
+    V5 consistency % src: @5ffd56e B/engine/verify.py:407-434,493-510
+      & a negative minimum, a maximum below 1 or below the minimum; an obligation the minimum contradicts; two
+        ranges; a node kind that does not fit; an empty usage note; two live changes on one class and property
+      & a minted property without a range
+      & derived & E1, E4\\
+    T1 trace % src: @5ffd56e B/engine/verify.py:442-475
+      & no atom, or one that is not active; a link without a reason; a quote that is not verbatim in the atom; an
+        obligation above the licensed one; a facet without a reason
+      & --
+      & \cite{fathallah2026rigor} & E2\\
+    T2 attribution, judged by the model % src: @5ffd56e B/engine/pipeline.py:221-244
+      & unsupported, or a facet named unsupported
+      & partially supported; judge unavailable
+      & \cite{rashkin2023ais} & E2\\
+    B1 covered by the base % src: @5ffd56e B/engine/verify.py:513-533
+      & no base element named, or one not in the base or weaker than the licensed obligation
+      & --
+      & \cite{lippolis2025ontology} & E1\\
+    \midrule
+    \multicolumn{5}{@{}l}{\textit{On the compiled extension}}\\
+    C1 legal refinement % src: @5ffd56e B/conformance/check.py:111-142 (obligation compared only where the base has a shape: :119-120)
+      & a constraint or obligation that loosens the base (obligations only where the base has a shape)
+      & --
+      & \cite{semicreuse2026} & E4\\
+    C2 no contradiction % src: @5ffd56e B/conformance/check.py:143-147; @5ffd56e B/conformance/refinement.py:116,128,133,166,177,195; CONF5:44
+      & a constraint no data can meet together with the base: a minimum above its maximum or the reverse, another
+        datatype, disjoint node kinds or value lists
+      & --
+      & derived & E4\\
+    C3 own namespace % src: @5ffd56e B/conformance/check.py:149-158
+      & a mint outside the extension's namespace or of an existing term
+      & --
+      & \cite{semicreuse2026} & E4\\
+    C4 existing terms % src: @5ffd56e B/conformance/check.py:160-168
+      & a reused property that is not in the vocabulary index
+      & --
+      & derived & E4\\
+    C5 trace % src: @5ffd56e B/conformance/check.py:170-177
+      & an element without an atom, or with one that is not active
+      & --
+      & \cite{semicreuse2026} & E2\\
+    C6 (V6) valid SHACL % src: @5ffd56e B/engine/verify.py:536-549; @5ffd56e B/conformance/check.py:254-255
+      & shapes that do not parse or fail the SHACL shapes for SHACL
+      & --
+      & \cite{w3cshacl} & E4\\
+    C7 witness % src: @5ffd56e B/conformance/check.py:212-247,257-261; base-only branch unreachable: knowledge-compile-ui digest Sect. 4.4
+      & -- (its base-only branch cannot fire)
+      & no witness, one instance per constrained class filled to its minimum counts, satisfies base and
+        extension together; or the validation fails to run
+      & derived & E4\\
+    C8 DCAT state % src: @5ffd56e B/conformance/check.py:64-99
+      & a DCAT term that the base's DCAT deprecates or no longer defines
+      & a term of a later DCAT, which under the default policy only a person can accept
+      & \cite[\S4]{w3cdcat3} & E4\\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\input{figures/workbench}
+
+\section{The Benchmark in Full}\label{app:benchmark}
+
+Table~\ref{tab:cases-full} lists the cases in full, and Fig.~\ref{fig:reference} shows how a reference delta is built
+and matched (Sect.~\ref{sec:benchmark}). \todo{cases in full: base release and reference version per case (Q3);
+source of each reference delta (Q23); elements by kind; aligned elements (Q9); A-rq1 (Q21); counterfactual atoms
+per case; test-case atom counts as in Table~\ref{tab:cases} (Q11)}
+
+\begin{table}[tp]
+  \caption{The five cases in full, test cases above development cases. Base: the release the reference delta is
+    computed against. Reference: the published profile and its version; in parentheses, how the reference delta
+    is obtained, shapes compared or tables extracted by hand. Elements: reference elements by kind; loosened:
+    elements that relax the base, reported apart. Aligned: elements at least one atom asks for (in parentheses,
+    those none asks for). Atoms: A-gold, the scored content atoms of the companion benchmark
+    \cite{anon2027rq1}; A-rq1, atoms converted from the needs of the companion workflow; counterfactual, atoms
+    reworded so that the right answer departs from the publication.}
+  \label{tab:cases-full}
+  \centering\scriptsize
+  \setlength{\tabcolsep}{2.5pt}
+  \begin{tabular}{@{}p{1.75cm}p{1.3cm}rrrrrrrrr@{}}
+    \toprule
+    & & \multicolumn{4}{c}{Elements} & & & \multicolumn{3}{c}{Atoms}\\
+    \cmidrule(lr){3-6}\cmidrule(l){9-11}
+    Case (base) & Reference (source) & reuse & refine & mint & class & loosened & Aligned & A-gold & A-rq1
+      & counterf.\\
+    \midrule
+    mobilityDCAT-AP (\tbd) & \tbd{} (\tbd) & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd{} (\tbd) & 39 & \tbd % src: RQ1 L382 (Table 1, Atoms)
+      & \tbd\\
+    GeoDCAT-AP (\tbd) & \tbd{} (\tbd) & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd{} (\tbd) & 37 & \tbd % src: RQ1 L383
+      & \tbd\\
+    HealthDCAT-AP (\tbd) & \tbd{} (\tbd) & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd{} (\tbd) & 89 & \tbd % src: RQ1 L384
+      & \tbd\\
+    \textit{Test cases} & & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd{} (\tbd) & 165 & \tbd & \tbd\\ % src: RQ1 L385 (39+37+89)
+    \midrule
+    StatDCAT-AP (\tbd) & \tbd{} (\tbd) & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd{} (\tbd) & 14 & \tbd % src: RQ1 L386
+      & \tbd\\
+    DCAT-AP-JRC (\tbd) & \tbd{} (\tbd) & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd{} (\tbd) & 17 & \tbd % src: RQ1 L387
+      & \tbd\\
+    \midrule
+    All five & & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd{} (\tbd) & 196 & \tbd & \tbd\\ % src: RQ1 L388 (165+14+17)
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{figure}[tp]
+  \centering
+  \input{figures/reference-flow}
+  \caption{From a published profile to Recovery, in the order of the arrows. Steps 1 to 5 fix the denominator,
+    the aligned reference elements, before step 6 matches any output; the dashed path collects what stays
+    outside it. Strict is reported beside Recovery.}
+  \label{fig:reference}
+\end{figure}
