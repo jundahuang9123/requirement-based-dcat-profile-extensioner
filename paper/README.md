@@ -161,8 +161,9 @@ Numbered as in the `\todo` markers of the sources (Qn). Each can be answered on 
    unavailable judge only warn, and a change cleared by consolidation can be accepted without any judge verdict.
    The design note says otherwise. Confirm the paper's wording, or fix the code first.
 7. **Q7 Conditions.** Status of each:
-   - FP (full pipeline), RB (rules baseline), CB (candidates without the engine's checks), −RET, −REP, −T2: runnable
-     or nearly;
+   - FP (full pipeline), RB (rules baseline), −RET, −REP, −T2: runnable or nearly;
+   - CB (closed book: the same model without the atoms, a contamination probe): needs a probe script, and its variant
+     is open (the companion's, with domain and base only, or the plan's, with the extension's name);
    - SX (the model writes SHACL): not implemented;
    - TC/TR need a working verify switch (`PipelineConfig.verify` is never read);
    - HR (human review in the loop): in or out?
