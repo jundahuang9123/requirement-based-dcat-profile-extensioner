@@ -60,17 +60,16 @@ normalization of a recommended minimum were added while the development cases ra
 \paragraph{Inputs.} The input of each case is \emph{A-gold}: every content atom the companion benchmark scores for
 it, not only those its corpus states, because the pipeline reads no corpus (Table~\ref{tab:cases}). An importer
 copies each atom's identifier, statement, subject, modality and source reference and drops the evaluator fields
-(the relation to the base, anchor quotations, evidence labels), so that the modeling step is measured apart from
-extraction. % src: @5ffd56e scripts/import_rq1_reference.py:1-16, 47-59; RQ1 L403-410
-The reference sets record what kind of statement a source makes, not must, should or may; the importer maps
+(relation to the base, anchor quotations, evidence labels), so the modeling step is measured apart from extraction.
+% src: @5ffd56e scripts/import_rq1_reference.py:1-16, 47-59; RQ1 L403-410
+The reference sets record the kind of statement a source makes, not must, should or may; the importer maps
 explicit requirements and mandatory items to must, recommendations to should and optional items to may, and leaves
 the rest unspecified, which licenses at most recommended (Sect.~\ref{sec:problem}).
 % src: @5ffd56e scripts/import_rq1_reference.py:12-14, 26-32, 56; @5ffd56e B/contracts.py:713-715; PILOT:4-5
 \verify{share of unspecified modalities per case} \todo{carry the reference's obligation into the modality? leak
-against fidelity (Q20)} The atom counts are those the companion study reports. \todo{author: print test-case atom
-counts from RQ1 Table 1 (Q11)} A second input, \emph{A-rq1}, turns the needs that a run of the companion workflow
-retained (it accepted none) into atoms and shows how extraction errors carry into the profile.
-% src: RQ1 L474-475; PLAN:24-25
+against fidelity (Q20)} The atom counts are those the companion reports. \todo{author: print test-case atom counts
+from RQ1 Table 1 (Q11)} A second input, \emph{A-rq1}, turns the needs that a companion workflow run retained (it
+accepted none) into atoms and shows how extraction errors carry into the profile. % src: RQ1 L474-475; PLAN:24-25
 \todo{A-rq1: which run, conversion, in or out (Q21)}
 
 \paragraph{Reference deltas.} Each reference delta compares the published profile's shapes and specified
@@ -93,16 +92,15 @@ hand-extracted references (Q9)}
 \acp{IRI} agree, and in the \emph{relaxed} sense when its path is a sub- or super-property of the reference path
 under RDFS and an adjudicator confirms the pair; a minted element matches \emph{by meaning}, on its class and
 definition, never by \ac{IRI}. % src: PLAN:67-68; EXP:24-26; PE:3-28
-A reference element is credited once, by its best match in that order. Matched pairs are compared on obligation,
-minimum, maximum, range and value list, not on severity, which the generated delta derives from the obligation.
-% src: PLAN:69; KCU §8 item 12; ISS K12 (@5ffd56e B/compile/shacl.py:76; B/engine/propose.py:295)
-\emph{Recovery} counts the aligned reference elements with a match of any kind, and \emph{Strict} those with a
-strict match. Recovery is thus a recall: the share of the aligned reference elements that a run matches, not the
-share of correct changes or of the published profile. We lead with Recovery and report Strict beside every figure:
-relaxed matches and matches by meaning rest on a judgment, and for a reviewer of the output they still point to the
-element. Included changes that match no reference element are adjudicated as an alternative modeling of an aligned
-atom, as going beyond the reference, or as wrong. The included changes of all runs of a case are pooled, each
-distinct element once under a random identifier, so that the adjudicators see neither run nor condition.
-% src: PLAN:65-69 (design)
+A reference element is credited once, by its best match in that order, and matched pairs are compared on
+obligation, minimum, maximum, range and value list, not on severity, which the generated delta derives from the
+obligation. % src: PLAN:69; KCU §8 item 12; ISS K12 (@5ffd56e B/compile/shacl.py:76; B/engine/propose.py:295)
+\emph{Recovery} counts the aligned reference elements with any match, and \emph{Strict} those with a strict match.
+Recovery is thus a recall: the share of the aligned reference elements that a run matches, not the share of correct
+changes or of the published profile. We lead with Recovery and report Strict beside every figure: relaxed matches
+and matches by meaning rest on a judgment, and for a reviewer they still point to the element. Unmatched included
+changes are adjudicated as an alternative modeling of an aligned atom, as going beyond the reference, or as wrong;
+the included changes of all runs of a case are pooled, each distinct element once under a random identifier, so
+that adjudicators see neither run nor condition. % src: PLAN:65-69 (design)
 \todo{adjudicator: person or model family, blind to the condition; agreement (Q9)} \todo{evaluator:
 scripts/evaluate\_rq2.py not built}
