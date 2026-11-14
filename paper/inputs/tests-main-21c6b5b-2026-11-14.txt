@@ -1,0 +1,6 @@
+# Test run of the extensioner at main commit 21c6b5b, 14 Nov 2026 (read-only worktree of main; offline).
+# Command (from the worktree root; no API key in the environment, mock provider, no bytecode or pytest cache written):
+#   env -u RBDPE_LLM_API_KEY -u ANTHROPIC_API_KEY -u OPENAI_API_KEY PYTHONDONTWRITEBYTECODE=1 \
+#     PYTHONPATH=backend RBDPE_LLM_PROVIDER=mock python -B -m pytest -q -p no:cacheprovider tests
+# Result (last line of the output):
+170 passed in 25.02s

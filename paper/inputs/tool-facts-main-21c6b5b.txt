@@ -1,0 +1,23 @@
+# tool facts at commit 21c6b5b
+vendored vocabularies: 12
+vocabulary prefixes: adms, dcatap, dcterms, eli, foaf, locn, odrl, prov, skos, spdx, time, vcard
+vendored triples (MANIFEST): 11599
+index terms without base: 865 (237 classes, 628 properties)
+index terms with base dcat-ap-1.1: 928 (249 classes, 679 properties)
+index terms with base dcat-ap-1.2: 928 (249 classes, 679 properties)
+index terms with base dcat-ap-1.2.1: 928 (249 classes, 679 properties)
+index terms with base dcat-ap-2.0.0: 929 (249 classes, 680 properties)
+index terms with base dcat-ap-2.0.1: 929 (249 classes, 680 properties)
+index terms with base dcat-ap-2.1.0: 928 (249 classes, 679 properties)
+index terms with base dcat-ap-2.1.1: 927 (249 classes, 678 properties)
+index terms with base dcat-ap-3.0.0: 933 (256 classes, 677 properties)
+index terms with base dcat-ap-3.0.1: 926 (249 classes, 677 properties)
+base dcat-ap-1.1: 11 target classes, 78 (class, property) elements; obligations of the elements {'mandatory': 9, 'optional': 39, 'recommended': 16}; obligation table rows {'mandatory': 15, 'optional': 44, 'recommended': 19}; unhandled SHACL constructs 6
+base dcat-ap-1.2: 11 target classes, 78 (class, property) elements; obligations of the elements {'mandatory': 9, 'optional': 39, 'recommended': 16}; obligation table rows {'mandatory': 15, 'optional': 44, 'recommended': 19}; unhandled SHACL constructs 6
+base dcat-ap-1.2.1: 11 target classes, 80 (class, property) elements; obligations of the elements {'mandatory': 15, 'optional': 42, 'recommended': 19, 'unknown': 2}; obligation table rows {'mandatory': 15, 'optional': 44, 'recommended': 19}; unhandled SHACL constructs 6
+base dcat-ap-2.0.0: 14 target classes, 112 (class, property) elements; obligations of the elements {'mandatory': 19, 'optional': 59, 'recommended': 28, 'unknown': 3}; obligation table rows {'mandatory': 19, 'optional': 61, 'recommended': 29}; unhandled SHACL constructs 8
+base dcat-ap-2.0.1: 14 target classes, 112 (class, property) elements; obligations of the elements {'mandatory': 19, 'optional': 59, 'recommended': 28, 'unknown': 3}; obligation table rows {'mandatory': 19, 'optional': 61, 'recommended': 29}; unhandled SHACL constructs 9
+base dcat-ap-2.1.0: 14 target classes, 111 (class, property) elements; obligations of the elements {'mandatory': 19, 'optional': 60, 'recommended': 28, 'unknown': 2}; obligation table rows {'mandatory': 19, 'optional': 61, 'recommended': 29}; unhandled SHACL constructs 9
+base dcat-ap-2.1.1: 14 target classes, 110 (class, property) elements; obligations of the elements {'mandatory': 19, 'optional': 60, 'recommended': 29, 'unknown': 1}; obligation table rows {'mandatory': 19, 'optional': 61, 'recommended': 29}; unhandled SHACL constructs 14
+base dcat-ap-3.0.0: 40 target classes, 131 (class, property) elements; obligations of the elements {'mandatory': 20, 'optional': 72, 'recommended': 39}; obligation table rows {'mandatory': 20, 'optional': 72, 'recommended': 39}; unhandled SHACL constructs 0
+base dcat-ap-3.0.1: 33 target classes, 131 (class, property) elements; obligations of the elements {'mandatory': 20, 'optional': 72, 'recommended': 39}; obligation table rows {'mandatory': 20, 'optional': 72, 'recommended': 39}; unhandled SHACL constructs 0
