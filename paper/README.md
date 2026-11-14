@@ -308,6 +308,22 @@ Numbered as in the `\todo` markers of the sources (Qn). Each can be answered on 
     - `chmielewski2026blackboard` (RQ1) has neither DOI nor URL ("to appear").
     - The RQ1 bib header says 54 entries, but the file has 62.
 
+31. **Q31 Next steps in the conclusion.** Pick them (the candidates are in a comment in `sections/09-conclusion.tex`):
+    - a person's review of drafted extensions (HR);
+    - an end-to-end run from extracted needs;
+    - embedding retrieval;
+    - controlled-vocabulary usage levels;
+    - per-atom witnesses for C7.
+32. **Q32 Work before the main evaluation** (markers without a question of their own):
+    - freeze the commit and tag of the pipeline and the reference deltas;
+    - build the evaluator that writes `results/main-numbers.tex`;
+    - hide the target namespace per case;
+    - write the counterfactual atoms per case (leakage control L4);
+    - join the relation labels back at scoring time;
+    - prepare the demo walk-through for the supplementary material.
+33. **Q33 Synthetic demo wording.** Table `tab:criteria` quotes the synthetic atoms verbatim, including the British
+    "organisation" from `examples/materials-testing-lab/atoms.yaml`. Keep it, or change the example file?
+
 ## Tool issues found while writing
 
 All issues were checked read-only, offline and in memory on a worktree of `main` at **5ffd56e**. Only synthetic atoms,
