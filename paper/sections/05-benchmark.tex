@@ -73,10 +73,10 @@ accepted none) into atoms and shows how extraction errors carry into the profile
 \todo{A-rq1: which run, conversion, in or out (Q21)}
 
 \paragraph{Reference deltas.} Each reference delta compares the published profile's shapes and specified
-obligations with those of its base per class and property, after the merging of shapes that the pipeline applies
-to the base (Sect.~\ref{sec:problem}). An element is \emph{added} where the base states nothing, \emph{tightened}
-where the profile is stricter on a facet and \emph{loosened} where it is weaker; loosened elements are kept and
-reported apart, and unchanged ones are dropped, because an inherited constraint earns no credit.
+obligations with those of its base per class and property, merged as the pipeline merges the base's shapes
+(Sect.~\ref{sec:problem}). An element is \emph{added} where the base states nothing, \emph{tightened} where the
+profile is stricter on a facet and \emph{loosened} where it is weaker; loosened elements are kept and reported
+apart, and unchanged ones are dropped, because an inherited constraint earns no credit.
 % src: PLAN:13-15; PE:1-28, :127-128 (DeltaStatus); the delta spike's docstring (Q23)
 Class additions are kept, usage notes are not scored, and the constraints on one class and path fold into one
 element. Constructs the comparison does not handle are listed, never scored; a profile without shapes is extracted

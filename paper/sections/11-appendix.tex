@@ -6,6 +6,7 @@
 %   @5ffd56e B/<path> = backend/profile_extensioner/<path> at commit 5ffd56e, the tool the paper describes
 %   CONF5 = docs/conformance.md at 5ffd56e; RQ1 Lx = line x of the RQ1 draft text of 13 Nov 2026 (rq1-main.txt)
 % No benchmark content: the atoms of Table 3 are invented, and Table 5 prints only the companion's atom counts.
+% Table columns are ragged right (>{\raggedright\arraybackslash}p{}), so narrow cells do not stretch.
 
 \section{Illustrations}\label{app:illustrations}
 
@@ -23,7 +24,9 @@ checks of Sect.~\ref{sec:pipeline}, and Fig.~\ref{fig:workbench} shows the workb
   \label{tab:criteria}
   \centering\scriptsize
   \setlength{\tabcolsep}{3pt}
-  \begin{tabular}{@{}p{3.5cm}p{2.45cm}p{1.55cm}p{1.85cm}p{2.0cm}@{}}
+  \begin{tabular}{@{}>{\raggedright\arraybackslash}p{3.3cm}>{\raggedright\arraybackslash}p{2.75cm}%
+      >{\raggedright\arraybackslash}p{1.65cm}>{\raggedright\arraybackslash}p{1.75cm}%
+      >{\raggedright\arraybackslash}p{1.9cm}@{}}
     \toprule
     Atom (modality) & E1: disposition, kind & E2: licensed / set & E3: decision & E4: against the base\\
     \midrule
@@ -54,7 +57,8 @@ checks of Sect.~\ref{sec:pipeline}, and Fig.~\ref{fig:workbench} shows the workb
       & added in the extension's namespace once accepted; \term{xsd:string} is the rules provider's choice\\ % src: DEMO:161; knowledge-compile-ui digest Sect. 8 item 15
     lab-12 ``A dataset must state its measurement uncertainty and the calibration date of the testing machine.''
       (must; compound \verify{intake lint; not in the demo record}) % src: ATOMS:85-88; @5ffd56e B/engine/intake.py:72-79 (code reading)
-      & one mint, \term{lab:measurementUncertainty}, for a two-part atom; the calibration date gets no change % src: DEMO:163-172 (the only change for lab-12)
+      & one mint, \term{lab:measurement\allowbreak Uncertainty}, for a two-part atom; the calibration date gets no
+        change % src: DEMO:163-172 (the only change for lab-12)
       & mandatory / mandatory % src: DEMO:171
       & waits for review (0.45) % src: DEMO:165,170
       & added in the extension's namespace once accepted\\
@@ -74,62 +78,63 @@ checks of Sect.~\ref{sec:pipeline}, and Fig.~\ref{fig:workbench} shows the workb
 
 \begin{table}[tp]
   \caption{Checks on every change and on the compiled extension. Program code runs every check except T2, a
-    judgment of the model, which runs only on a change without an error. Error: for a change, it blocks % src: @5ffd56e B/engine/pipeline.py:221-244,279
-    automatic acceptance and sends the change to repair and, if it still fails, to the queue (for B1, the atom is % src: @5ffd56e B/engine/pipeline.py:246-267,295-339
-    left unclear); for the extension, it makes the verdict non-conformant, which blocks the sign-off. Warning: % src: @5ffd56e B/engine/pipeline.py:207-211,618-640; @5ffd56e B/conformance/check.py:264-266
-    shown to the person and never blocking, except that a D1 warning withholds automatic acceptance under the
-    default policy. Source: the guideline or work the check follows; derived: our rule. E: the criterion of % src: @5ffd56e B/engine/pipeline.py:260-263; @5ffd56e B/contracts.py:606
-    Sect.~\ref{sec:problem} the check serves.}
+    judgment of the model, made only on a change without an error. Error: it blocks automatic acceptance and % src: @5ffd56e B/engine/pipeline.py:221-244,246-267,279
+    sends the change to repair and, if it still fails, to the queue (B1: the atom is left unclear); on the % src: @5ffd56e B/engine/pipeline.py:207-211,295-339
+    extension, it makes the verdict non-conformant, which blocks the sign-off. Warning: shown to the person and % src: @5ffd56e B/conformance/check.py:264-266; @5ffd56e B/engine/pipeline.py:618-640
+    never blocking, except that a D1 warning withholds automatic acceptance by default. Source: the guideline % src: @5ffd56e B/engine/pipeline.py:260-263; @5ffd56e B/contracts.py:606
+    or work the check follows; derived: our rule. E: the criterion it serves (Sect.~\ref{sec:problem}).}
   \label{tab:checks}
   \centering\scriptsize
-  \setlength{\tabcolsep}{3pt}
-  \begin{tabular}{@{}p{1.85cm}p{4.05cm}p{3.1cm}p{1.5cm}p{0.75cm}@{}}
+  \setlength{\tabcolsep}{2pt}
+  \begin{tabular}{@{}>{\raggedright\arraybackslash}p{1.7cm}>{\raggedright\arraybackslash}p{4.9cm}%
+      >{\raggedright\arraybackslash}p{3.4cm}>{\raggedright\arraybackslash}p{1.04cm}%
+      >{\raggedright\arraybackslash}p{0.6cm}@{}}
     \toprule
     Check & Error & Warning & Source & E\\
     \midrule
     \multicolumn{5}{@{}l}{\textit{On every change}}\\
     V1 terms exist % src: @5ffd56e B/engine/verify.py:96-158
-      & an unknown class, property, range or super-term; a mint outside the extension's namespace or of an
-        existing term; a class used as a property
-      & an existing term not among the retrieved candidates; a vocabulary value that is not an IRI
+      & an unknown class, property, range or super-term; a mint outside the namespace or of an existing term; a
+        class used as a property
+      & a term outside the retrieved candidates; a vocabulary value that is not an IRI
       & derived & E4\\
     V2 domain and range % src: @5ffd56e B/engine/verify.py:166-211
-      & a declared domain or range that excludes the class or the range class, where the class hierarchy is
-        known; a class range on a literal-valued property, or a datatype on an object property
-      & the same domain or range misfit where the hierarchy is unknown
+      & a declared domain or range that excludes the class, with a known class hierarchy; a class range on a
+        literal property, or a datatype on an object property
+      & the same misfit with no known hierarchy
       & derived & E4\\
     D1 DCAT version % src: @5ffd56e B/engine/verify.py:229-245,259-273; @5ffd56e B/contracts.py:606
       & a DCAT term only earlier versions define; a DCAT property on a class the base's DCAT does not list it
-        for, when the term declares no domain
-      & a term only a later DCAT defines: a person decides (policy \emph{forbid}: error; \emph{allow}: a note)
+        for, if the term declares no domain
+      & a term only a later DCAT defines: a person decides (\emph{forbid}: error; \emph{allow}: a note)
       & \cite[\S4]{w3cdcat3} & E4\\
     D2 deprecated terms % src: @5ffd56e B/engine/verify.py:246-257
-      & a term that the base's DCAT or the base deprecates
+      & a term the base's DCAT or the base deprecates
       & --
       & \cite[\S4]{w3cdcat3} & E4\\
     D3 inverse properties % src: @5ffd56e B/engine/verify.py:274-280; @5ffd56e B/knowledge/dcat_state.py:81,198-200; @5ffd56e B/data/dcat/dcat-3/model.json (11 pairs, 6 with a dcat: inverse; none in dcat-2014 or dcat-2)
       & --
-      & every use of one of the six \term{dcat:} inverse properties (bases on DCAT~3)
+      & every use of one of the six \term{dcat:} inverses (bases on DCAT~3)
       & \cite[\S7]{w3cdcat3} & E4\\
     V3 legal refinement % src: @5ffd56e B/engine/verify.py:291-357
       & a facet or obligation that loosens or contradicts the base; a refinement that tightens nothing
       & a facet not shown to narrow the base's
       & \cite{semicreuse2026} & E1, E4\\
     V4 reuse before mint % src: @5ffd56e B/engine/verify.py:57,365-399
-      & a mint without a reason why no candidate fits, a label or a definition; an indexed term of the same name
+      & a mint without a reason no candidate fits, a label or a definition; an indexed term of the same name
       & a candidate scoring 6.0 or more left unaddressed
-      & \cite{semicreuse2026,fathallah2026rigor,lippolis2025ontology} & E1\\
+      & \cite{semicreuse2026}, \cite{fathallah2026rigor,lippolis2025ontology} & E1\\
     V5 consistency % src: @5ffd56e B/engine/verify.py:407-434,493-510
-      & a negative minimum, a maximum below 1 or below the minimum; an obligation the minimum contradicts; two
+      & a negative minimum, a maximum below 1 or under the minimum; an obligation the minimum contradicts; two
         ranges; a node kind that does not fit; an empty usage note; two live changes on one class and property
       & a minted property without a range
       & derived & E1, E4\\
     T1 trace % src: @5ffd56e B/engine/verify.py:442-475
-      & no atom, or one that is not active; a link without a reason; a quote that is not verbatim in the atom; an
-        obligation above the licensed one; a facet without a reason
+      & no atom, or an inactive one; a link without a reason; a quote not verbatim in the atom; an obligation
+        above the licensed one; a facet without a reason
       & --
       & \cite{fathallah2026rigor} & E2\\
-    T2 attribution, judged by the model % src: @5ffd56e B/engine/pipeline.py:221-244
+    T2 attribution (model) % src: @5ffd56e B/engine/pipeline.py:221-244
       & unsupported, or a facet named unsupported
       & partially supported; judge unavailable
       & \cite{rashkin2023ais} & E2\\
@@ -144,7 +149,7 @@ checks of Sect.~\ref{sec:pipeline}, and Fig.~\ref{fig:workbench} shows the workb
       & --
       & \cite{semicreuse2026} & E4\\
     C2 no contradiction % src: @5ffd56e B/conformance/check.py:143-147; @5ffd56e B/conformance/refinement.py:116,128,133,166,177,195; CONF5:44
-      & a constraint no data can meet together with the base: a minimum above its maximum or the reverse, another
+      & no data can meet it together with the base: a minimum above the base's maximum or the reverse, another
         datatype, disjoint node kinds or value lists
       & --
       & derived & E4\\
@@ -157,21 +162,20 @@ checks of Sect.~\ref{sec:pipeline}, and Fig.~\ref{fig:workbench} shows the workb
       & --
       & derived & E4\\
     C5 trace % src: @5ffd56e B/conformance/check.py:170-177
-      & an element without an atom, or with one that is not active
+      & an element without an atom, or with an inactive one
       & --
       & \cite{semicreuse2026} & E2\\
-    C6 (V6) valid SHACL % src: @5ffd56e B/engine/verify.py:536-549; @5ffd56e B/conformance/check.py:254-255
+    C6 (V6) SHACL % src: @5ffd56e B/engine/verify.py:536-549; @5ffd56e B/conformance/check.py:254-255
       & shapes that do not parse or fail the SHACL shapes for SHACL
       & --
       & \cite{w3cshacl} & E4\\
     C7 witness % src: @5ffd56e B/conformance/check.py:212-247,257-261; base-only branch unreachable: knowledge-compile-ui digest Sect. 4.4
       & -- (its base-only branch cannot fire)
-      & no witness, one instance per constrained class filled to its minimum counts, satisfies base and
-        extension together; or the validation fails to run
+      & the witness fails base and extension together (Sect.~\ref{sec:compile}), or validation does not run
       & derived & E4\\
     C8 DCAT state % src: @5ffd56e B/conformance/check.py:64-99
-      & a DCAT term that the base's DCAT deprecates or no longer defines
-      & a term of a later DCAT, which under the default policy only a person can accept
+      & a DCAT term the base's DCAT deprecates or no longer defines
+      & a later DCAT term, which by default only a person can accept
       & \cite[\S4]{w3cdcat3} & E4\\
     \bottomrule
   \end{tabular}
@@ -197,7 +201,7 @@ per case; test-case atom counts as in Table~\ref{tab:cases} (Q11)}
   \label{tab:cases-full}
   \centering\scriptsize
   \setlength{\tabcolsep}{2.5pt}
-  \begin{tabular}{@{}p{1.75cm}p{1.3cm}rrrrrrrrr@{}}
+  \begin{tabular}{@{}>{\raggedright\arraybackslash}p{1.75cm}>{\raggedright\arraybackslash}p{1.3cm}rrrrrrrrr@{}}
     \toprule
     & & \multicolumn{4}{c}{Elements} & & & \multicolumn{3}{c}{Atoms}\\
     \cmidrule(lr){3-6}\cmidrule(l){9-11}
