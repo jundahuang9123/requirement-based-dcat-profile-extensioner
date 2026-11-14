@@ -1,28 +1,32 @@
-% Fig. 1: the pipeline. Mirrors the RQ1 paper's Fig. 1 (numbered operations in three labelled rows,
-% the middle row read from right to left). Shaded: the operation calls the model; double border:
-% a person decides; plain: program code.
+% Fig. 1: the pipeline of the tool at commit 5ffd56e. Mirrors the RQ1 paper's Fig. 1: numbered operations in three
+% labelled rows, the middle row read from right to left. Encoding in RQ1's grammar: dashed border = the operation
+% calls the model (3 proposer, 4 judge, 5 repairer); light fill = a person decides (9); plain = program code. The
+% blackboard band is program code as well, so it has a plain (solid, grey) border.
+% Sources of the labels: B/engine/intake.py, retrieve.py, propose.py, verify.py (V1-V5, D1-D3, T1, B1),
+% pipeline.py (T2 judge, repair, consolidation, decision, sign-off), compile/, conformance/check.py (C1-C8)
+% at 5ffd56e; B = backend/profile_extensioner.
 \begin{tikzpicture}[
     font=\scriptsize,
-    op/.style={draw, rounded corners=2pt, minimum height=0.9cm, align=center,
+    op/.style={draw, rounded corners=2pt, minimum height=1.08cm, align=center,
                inner sep=2pt, text width=3.5cm},
-    llm/.style={op, fill=black!12},
-    human/.style={op, double, double distance=0.9pt},
+    llm/.style={op, dashed},
+    human/.style={op, fill=black!8},
     row/.style={font=\scriptsize\bfseries, anchor=south west, inner sep=1pt},
     flow/.style={-{Stealth[length=1.5mm]}, semithick},
     side/.style={-{Stealth[length=1.5mm]}, semithick, dashed},
   ]
   % row 1: read and propose (left to right)
   \node[op]  (o1) at (0,0)    {1.\ Intake: lint the atoms,\\ map subjects to classes};
-  \node[op]  (o2) at (4.1,0)  {2.\ Retrieve candidates, base\\ elements of the class first};
-  \node[llm] (o3) at (8.2,0)  {3.\ Propose a disposition and\\ typed changes per atom};
+  \node[op]  (o2) at (4.1,0)  {2.\ Retrieve candidates: the\\ base, its DCAT, other\\ vocabularies};
+  \node[llm] (o3) at (8.2,0)  {3.\ Propose a disposition and\\ typed changes per atom; B1\\ checks covered-by-base claims};
   % row 2: check and repair (right to left)
-  \node[llm] (o4) at (8.2,-1.6) {4.\ Verify: V1--V6, T1, B1 in\\ code, T2 by a model judge};
-  \node[llm] (o5) at (4.1,-1.6) {5.\ Repair failing changes,\\ at most three rounds};
-  \node[op]  (o6) at (0,-1.6)   {6.\ Consolidate: one element\\ per class and property};
+  \node[llm] (o4) at (8.2,-1.75) {4.\ Verify: V1--V5, D1--D3,\\ T1 in code, T2 by a\\ model judge};
+  \node[llm] (o5) at (4.1,-1.75) {5.\ Repair failing changes,\\ at most three rounds};
+  \node[op]  (o6) at (0,-1.75)   {6.\ Consolidate: one element\\ per class and property};
   % row 3: compile and release (left to right)
-  \node[op]    (o7) at (0,-3.2)   {7.\ Compile SHACL, LinkML,\\ DSV, ProfileDelta, docs};
-  \node[op]    (o8) at (4.1,-3.2) {8.\ Conformance C1--C7,\\ witness vs.\ official base};
-  \node[human] (o9) at (8.2,-3.2) {9.\ Review the queue, decide,\\ sign off the release};
+  \node[op]    (o7) at (0,-3.7)   {7.\ Compile SHACL, LinkML,\\ DSV, ProfileDelta, docs;\\ V6 checks the SHACL};
+  \node[op]    (o8) at (4.1,-3.7) {8.\ Conformance C1--C8,\\ witness against the\\ official shapes};
+  \node[human] (o9) at (8.2,-3.7) {9.\ Review the queue, decide,\\ sign off the release};
   % row labels
   \node[row] at (o1.north west) {Read and propose};
   \node[row] at (o6.north west) {Check and repair};
@@ -37,10 +41,11 @@
   \draw[flow] ([xshift=12mm]o6.south) -- ([xshift=12mm]o7.north);
   \draw[flow] (o7) -- (o8);
   \draw[flow] (o8) -- (o9);
-  \draw[side] (o4.south) -- node[right=1pt, font=\tiny, align=left] {queue: unresolved,\\ unsure, conflicting} (o9.north);
-  % blackboard
-  \node[draw, dashed, rounded corners=2pt, anchor=north, text width=11.6cm, align=center,
-        inner sep=3pt] (bb) at (4.1,-3.9)
+  \draw[side] (o4.south) -- node[left=1pt, font=\tiny, align=right] {queue: errors after repair, low confidence,\\
+    conflicts, later-DCAT terms} (o9.north);
+  % blackboard (program code: plain border)
+  \node[draw=black!55, rounded corners=2pt, anchor=north, text width=11.6cm, align=center,
+        inner sep=3pt] (bb) at (4.1,-4.45)
         {Blackboard: append-only log of every rule, model call and human action\\
          current state of every atom and change\ $\cdot$\ model calls with prompts, answers, tokens and a replay cache};
 \end{tikzpicture}
