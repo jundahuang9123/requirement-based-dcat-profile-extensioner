@@ -17,9 +17,9 @@ from ..knowledge import KnowledgeBase
 from .retrieve import query_tokens
 from .verbalise import base_element_line, facets_text, verbalise_change
 
-PROPOSE_VERSION = "propose-v2"   # v2: DCAT state of the base
-REPAIR_VERSION = "repair-v2"
-JUDGE_VERSION = "judge-v1"
+PROPOSE_VERSION = "propose-v3"   # v2: DCAT state of the base; v3: no source reference, project title or prefix
+REPAIR_VERSION = "repair-v3"
+JUDGE_VERSION = "judge-v2"
 
 PROPOSE_SYSTEM = """\
 You are the proposer of a requirements-driven profile engineering workbench. An existing DCAT application \
@@ -102,6 +102,12 @@ def _section(title: str, body: str | Sequence[str]) -> str:
     return f"[{title}]\n{text or 'None'}"
 
 
+def _model_atom(atom: Atom) -> dict[str, Any]:
+    """What a provider may see of an atom (also the offline provider's context): the same four fields as the
+    prompt. Source references, hints, tags and expected changes never leave the workbench."""
+    return atom.model_dump(include={"id", "statement", "subject", "modality"})
+
+
 def _atom_block(atom: Atom) -> list[str]:
     """What the model sees of an atom: its statement, subject and modality only. The source reference
     (document and locator) stays on the workbench and in the trace, never in a prompt: in a benchmark it
@@ -170,8 +176,7 @@ def build_propose_prompt(
         _section("PROFILE", [
             f"Base profile: {kb.base.info.title}",
             *dcat_profile_lines(kb),
-            f"Extension: {project.profile_title or project.name}; new terms are written NEW:localName "
-            f"(they will be minted as {project.profile_prefix}:localName)",
+            "New terms are written NEW:localName.",
         ]),
         _section("ATOM", _atom_block(atom)),
         _section("RESOURCE CLASS", class_line),
@@ -192,7 +197,7 @@ def build_propose_prompt(
     ]
     context = {
         "task": "propose",
-        "atom": atom.model_dump(),
+        "atom": _model_atom(atom),
         "licensed_obligation": MODALITY_OBLIGATION[atom.modality],
         "resource_class": resource_class,
         "resource_class_curie": kb.curie(resource_class) if resource_class else None,
@@ -204,7 +209,6 @@ def build_propose_prompt(
              "path_curie": kb.curie(change.path) if change.path else None, "label": change.label}
             for change in pending
         ],
-        "profile_prefix": project.profile_prefix,
     }
     return PROPOSE_SYSTEM, "\n\n".join(sections), context
 
@@ -225,7 +229,7 @@ def build_repair_prompt(
         _section("PROFILE", [
             f"Base profile: {kb.base.info.title}",
             *dcat_profile_lines(kb),
-            f"New terms are written NEW:localName (minted as {project.profile_prefix}:localName)",
+            "New terms are written NEW:localName.",
         ]),
         *[_section("ATOM", _atom_block(atom)) for atom in atoms],
         _section(
@@ -245,7 +249,7 @@ def build_repair_prompt(
         "task": "repair",
         "change": change.model_dump(),
         "failures": [failure.model_dump() for failure in failures],
-        "atoms": [atom.model_dump() for atom in atoms],
+        "atoms": [_model_atom(atom) for atom in atoms],
         "licensed_obligation": _strongest_licensed(atoms),
         "candidates": [candidate.model_dump() for candidate in candidates],
         "proposed_json": proposed_json,
@@ -273,7 +277,7 @@ def build_judge_prompt(
     context = {
         "task": "judge",
         "change": change.model_dump(),
-        "atoms": [atom.model_dump() for atom in atoms],
+        "atoms": [_model_atom(atom) for atom in atoms],
         "licensed_obligation": _strongest_licensed(atoms),
     }
     return JUDGE_SYSTEM, "\n\n".join(sections), context

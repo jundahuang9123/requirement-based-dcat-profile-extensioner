@@ -52,7 +52,10 @@ class LLMClient:
         return f"llm:{self.provider.name}/{self.model_for('')}"
 
     def model_for(self, purpose: str) -> str:
-        return self.settings.step_models.get(purpose) or self.settings.model or self.provider.default_model()
+        steps = self.settings.step_models
+        aliases = {"judge": ("judge", "attribution")}.get(purpose, (purpose,))
+        chosen = next((steps[name] for name in aliases if steps.get(name)), None)
+        return chosen or self.settings.model or self.provider.default_model()
 
     def generate(
         self,

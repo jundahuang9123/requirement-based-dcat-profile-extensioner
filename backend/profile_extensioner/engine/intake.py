@@ -25,6 +25,10 @@ MODAL_WORDS = {
     "should": ("should", "ought to", "is recommended", "are recommended"),
     "may": ("may", "is allowed", "are allowed", "optionally"),   # "can" states a capability ("Users can know ..."), not an obligation
 }
+# Names of published DCAT application profiles and close identifiers. An atom statement that names one
+# hints at the answer of a benchmark case; the lint only flags it (a requirement may legitimately say so).
+PROFILE_NAMES = re.compile(
+    r"\b(DCAT-AP(?:[- ]?[A-Z][A-Za-z]+)?|StatDCAT|GeoDCAT|HealthDCAT|mobilityDCAT|BRegDCAT|NAPCORE|HVD)\b", re.IGNORECASE)
 VAGUE_WORDS = ("appropriate", "adequate", "as needed", "if possible", "where possible", "etc", "and so on",
                "user-friendly", "sufficient", "relevant information", "as appropriate")
 
@@ -48,6 +52,14 @@ def lint_atom(atom: Atom) -> list[LintIssue]:
             code="contains_prefixed_name", severity="error",
             message=f"The statement contains what looks like a vocabulary term ({', '.join(prefixed[:3])}).",
             suggestion="Name the information that is needed, not the property that would carry it.",
+        ))
+    named = sorted({match.group(0) for match in PROFILE_NAMES.finditer(statement)})
+    if named:
+        issues.append(LintIssue(
+            code="contains_profile_name", severity="warning",
+            message=f"The statement names a published application profile ({', '.join(named)}); in an evaluation this "
+                    f"hints at the answer.",
+            suggestion="State the need without naming the profile, unless the requirement really is about it.",
         ))
     if not SUBJECT_RE.match(atom.subject or ""):
         issues.append(LintIssue(

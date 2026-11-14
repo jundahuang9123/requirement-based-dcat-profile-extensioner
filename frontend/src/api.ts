@@ -54,6 +54,7 @@ export type PipelineConfig = {
   retrieval: boolean; top_k: number; verify: boolean; repair_rounds: number; attribution_check: boolean; votes: number;
   auto_accept: boolean; auto_accept_min_confidence: number; require_human_signoff: boolean; use_hints: boolean;
   exclude_namespaces: string[]; max_parallel_calls: number; later_dcat_terms: 'review' | 'forbid' | 'allow';
+  replay_cache?: 'project' | 'global' | 'off'; blind?: boolean;
 };
 export type RebaseItem = { id: string; change_id: string | null; atom_id: string | null; term: string | null; finding: string;
   severity: 'info' | 'warning' | 'error'; choices: string[]; default_choice: string; suggestion: string; chosen: string | null;
@@ -140,7 +141,8 @@ export const api = {
     call('POST', `/projects/${id}/atoms/${atomId}/assessment`, { disposition, reason, by }),
   signoff: (id: string, by: string, note: string) => call('POST', `/projects/${id}/signoff`, { by, note }),
   providers: () => call<ProviderStatus[]>('GET', '/llm/providers'),
-  setKey: (provider: string, apiKey: string) => call<ProviderStatus[]>('POST', '/llm/key', { provider, api_key: apiKey }),
+  setKey: (provider: string, apiKey: string, baseUrl?: string | null) =>
+    call<ProviderStatus[]>('POST', '/llm/key', { provider, api_key: apiKey, base_url: baseUrl ?? null }),
   models: (settings: LLMSettings) => call<string[]>('POST', '/llm/models', settings),
   terms: (id: string, q: string) => call<any[]>('GET', `/terms?project_id=${id}&q=${encodeURIComponent(q)}`),
 };
@@ -154,4 +156,4 @@ export function compact(iri: string | null | undefined, prefixes: Record<string,
   return best ? `${best[0]}:${iri.slice(best[1].length)}` : iri;
 }
 
-export const STAGES = ['intake', 'retrieve', 'propose', 'verify', 'repair', 'consolidate', 'compile', 'conformance', 'review'] as const;
+export const STAGES = ['intake', 'retrieve', 'propose', 'verify', 'consolidate', 'repair', 'compile', 'conformance', 'review'] as const;

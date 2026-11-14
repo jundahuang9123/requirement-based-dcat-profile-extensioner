@@ -90,7 +90,10 @@ class BaseProfile:
             raise KeyError(f"unknown base profile: {base_profile_id}")
         config: dict[str, Any] = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
         prefixes = Prefixes(config.get("prefixes") or {})
-        shape_files = [root / name for name in (config.get("shapes") or {}).get("constraints", [])]
+        # The base's shapes graph: the constraint shapes and the range shapes (2.1.x publish their class ranges
+        # in a separate file). Files listed under shapes.not_loaded are vendored but unusable (3.0.1 ranges.ttl).
+        shape_files = [root / name for name in (config.get("shapes") or {}).get("constraints", [])] + \
+            [root / name for name in (config.get("shapes") or {}).get("ranges", [])]
         shapes = load_graph(shape_files)
         if config.get("implicit_class_targets"):
             # SHACL implicit class targets need the shape IRI to be an rdfs:Class; the 1.1 files omit that triple.
@@ -131,11 +134,22 @@ class BaseProfile:
         if str(source.get("repository", "")).startswith("https://github.com/") and source.get("commit"):
             raw_root = (str(source["repository"]).replace("https://github.com/", "https://raw.githubusercontent.com/")
                         .rstrip("/") + f"/{source['commit']}/")
-        constraint_names = {Path(name).name for name in (config.get("shapes") or {}).get("constraints", [])}
+        loaded_names = {Path(name).name for name in (config.get("shapes") or {}).get("constraints", [])
+                        + (config.get("shapes") or {}).get("ranges", [])}
         shape_urls = [raw_root + item["path"] for item in source.get("files") or []
-                      if raw_root and Path(item["path"]).name in constraint_names]
+                      if raw_root and "!/" not in item["path"] and Path(item["path"]).name in loaded_names]
+        for mirror in source.get("mirrors") or []:      # the same file, byte for byte, published as plain RDF
+            repository = str(mirror.get("repository", ""))
+            if repository.startswith("https://github.com/") and mirror.get("commit"):
+                shape_urls.append(repository.replace("https://github.com/", "https://raw.githubusercontent.com/")
+                                  .rstrip("/") + f"/{mirror['commit']}/{mirror['path']}")
         shape_archives = [raw_root + item["path"] for item in source.get("files") or []
                           if raw_root and str(item["path"]).endswith(".zip")]
+        release_dir = next((str(Path(item["path"]).parent) for item in source.get("files") or []
+                            if str(item["path"]).startswith("releases/")), "")
+        release_url = str(config.get("homepage") or "") or (
+            f"{str(source.get('repository', '')).rstrip('/')}/tree/{source.get('commit')}/{release_dir.split('!')[0]}"
+            if source.get("repository") and source.get("commit") and release_dir else "")
         dcat_info = None
         if basis.get("dcat"):
             from .dcat_state import list_dcat_versions
@@ -152,6 +166,7 @@ class BaseProfile:
             release_date=str(release.get("date") or ""),
             shape_urls=shape_urls,
             shape_archives=shape_archives,
+            release_url=release_url,
             release_status=str(release.get("status") or ""),
             dcat=DcatBasis(
                 dcat=str(basis["dcat"]),

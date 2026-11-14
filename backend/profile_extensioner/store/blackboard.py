@@ -326,16 +326,19 @@ class Store:
             ).fetchone()
         return LLMCallRecord.model_validate_json(row["doc"]) if row else None
 
-    def list_llm_calls(self, project_id: str, *, subject_id: str | None = None, limit: int = 2000) -> list[LLMCallRecord]:
+    def list_llm_calls(self, project_id: str, *, subject_id: str | None = None,
+                       limit: int | None = 2000) -> list[LLMCallRecord]:
+        """Call records in order; ``limit=None`` returns all of them (metrics)."""
         clauses, params = ["project_id = ?"], [project_id]
         if subject_id is not None:
             clauses.append("subject_id = ?")
             params.append(subject_id)
-        params.append(limit)
+        sql = f"SELECT doc FROM llm_calls WHERE {' AND '.join(clauses)} ORDER BY seq"
+        if limit is not None:
+            sql += " LIMIT ?"
+            params.append(limit)
         with self._lock:
-            rows = self._db.execute(
-                f"SELECT doc FROM llm_calls WHERE {' AND '.join(clauses)} ORDER BY seq LIMIT ?", params
-            ).fetchall()
+            rows = self._db.execute(sql, params).fetchall()
         return [LLMCallRecord.model_validate_json(row["doc"]) for row in rows]
 
     def find_cached_call(self, request_hash: str, *, project_id: str | None) -> LLMCallRecord | None:

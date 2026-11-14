@@ -11,12 +11,16 @@ source:
   files:
   - path: releases/1.2/dcat-ap_1.2_shacl.zip
     sha256: c78e1135443389247a1c85cddb30f62bf637dada317f6e375c43fef40035cd0b
+  - path: releases/1.2/dcat-ap_1.2_shacl.zip!/dcat-ap_1.2_shacl/dcat-ap.shapes.ttl
+    sha256: e6b48f772361ad0ac698442aef67688aa891c36cc353c7f516b735b3a272eda2
   - path: releases/1.2/dcat-ap_1.2.rdf
     sha256: 8a040025d3c0a6967166774c153c155fa502246b418d00988fc5a263c5b5d874
 shapes:
   constraints:
   - shacl/dcat-ap.shapes.ttl
   ranges: []
+  deprecated: []
+  not_loaded: []
 obligations: obligations.yaml
 main_classes:
 - dcat:Catalog

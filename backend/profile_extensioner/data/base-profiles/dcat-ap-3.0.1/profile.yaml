@@ -20,10 +20,11 @@ source:
 shapes:
   constraints:
   - shacl/dcat-ap-SHACL.ttl
-  ranges:
-  - shacl/ranges.ttl
+  ranges: []
   deprecated:
   - shacl/deprecateduris.ttl
+  not_loaded:
+  - shacl/ranges.ttl
 obligations: obligations.yaml
 main_classes:
 - dcat:Catalog

@@ -52,7 +52,9 @@ from .repair import repair_change
 from .retrieve import retrieve_candidates
 from .schemas import AttributionOut
 from .verbalise import verbalise_change
-from .verify import VerifyContext, check_shapes_valid, has_errors, verify_assessment, verify_change_set
+from .verify import (
+    VerifyContext, check_shapes_valid, guard_change_set, has_errors, repairable_failures, verify_assessment, verify_change_set,
+)
 
 HUMAN_STATUSES = ("accepted", "rejected")
 
@@ -200,7 +202,7 @@ class Pipeline:
             self.store.save_assessment(self.pid, result.assessment)
             for change in result.changes:
                 self.store.save_change(self.pid, change)
-            b1 = verify_assessment(result.assessment, atom, self.kb)
+            b1 = verify_assessment(result.assessment, atom, self.kb) if self.project.config.verify else []
             self.log("propose", "proposal",
                      f"{result.assessment.disposition}: " + ("; ".join(verbalise_change(c, self.kb) for c in result.changes)
                                                              or result.assessment.reason)[:400],
@@ -221,7 +223,7 @@ class Pipeline:
             candidates=self.store.all_candidates(self.pid),
         )
 
-    def _attribution(self, change: ProfileChange, ctx: VerifyContext) -> CheckResult | None:
+    def _attribution(self, change: ProfileChange, ctx: VerifyContext, *, stage: str = "verify") -> CheckResult | None:
         if not self.project.config.attribution_check:
             return None
         atoms = [ctx.atoms[aid] for aid in change.atom_ids if aid in ctx.atoms]
@@ -230,10 +232,12 @@ class Pipeline:
         system, user, context = build_judge_prompt(change, atoms, self.kb)
         try:
             verdict, record = self.llm.generate(system=system, user=user, schema=AttributionOut, purpose="judge",
-                                                subject_id=change.id, stage="verify", prompt_version=JUDGE_VERSION,
+                                                subject_id=change.id, stage=stage, prompt_version=JUDGE_VERSION,
                                                 context=context)
         except LLMError as exc:
-            return CheckResult(check="T2", passed=False, severity="warning", message=f"Judge unavailable: {exc}")
+            # No verdict: the policy treats this like "not judged" (needs_review), never as a pass.
+            return CheckResult(check="T2", passed=False, severity="warning", message=f"Judge unavailable: {exc}",
+                               details={"problem": "judge_unavailable"})
         if record.id:
             change.provenance.call_ids.append(record.id)
         if verdict.verdict == "supported":
@@ -246,14 +250,21 @@ class Pipeline:
             details={"unsupported_facets": list(verdict.unsupported_facets)},
         )
 
+    def _open_conflict_ids(self) -> set[str]:
+        return {cid for conflict in self.store.list_conflicts(self.pid) for cid in conflict.change_ids}
+
     def _decide(self, change: ProfileChange) -> None:
         if is_human(change):
             return
         if change.decision.decided_by == "rule:rebase" and change.decision.status == "needs_review":
             return   # a rebase item the plan left to a human: only a human clears it
+        if change.decision.decided_by == "rule:consolidate" and change.decision.status == "needs_review" \
+                and change.id in self._open_conflict_ids():
+            return   # a conflict the consolidator could not merge: a person decides
         errors = change.failed_checks()
         warnings = [r for r in change.verification if not r.passed and r.severity == "warning"]
         config = self.project.config
+        judged = any(r.check == "T2" and r.details.get("problem") != "judge_unavailable" for r in change.verification)
         if errors:
             status, note = "needs_review", "failed: " + ", ".join(sorted({r.check for r in errors}))
         elif not config.auto_accept:
@@ -266,17 +277,54 @@ class Pipeline:
             later = sorted({self.kb.curie(str(r.details.get("term"))) for r in warnings if r.details.get("requires_human")})
             status, note = "needs_review", (f"uses {', '.join(later)}, which the base's DCAT "
                                             f"({self.kb.dcat.label}) does not define: a human decides (D1)")
+        elif config.attribution_check and change.atom_ids and not judged:
+            status, note = "needs_review", ("the judge was unavailable (T2): not judged"
+                                            if any(r.details.get("problem") == "judge_unavailable" for r in change.verification)
+                                            else "no attribution verdict (T2): not judged")
         else:
             status = "auto_accepted"
-            note = "all checks passed" + (f"; {len(warnings)} warning(s) to look at" if warnings else "")
+            basis = "all checks passed" if config.verify else "symbolic verification switched off (condition)"
+            if config.attribution_check:
+                basis += "; judged supported" if not any(r.check == "T2" and not r.passed for r in change.verification) \
+                    else "; judged partially supported"
+            note = basis + (f"; {len(warnings)} warning(s) to look at" if warnings else "")
         change.decision = Decision(status=status, decided_by="rule:policy", note=note)  # type: ignore[arg-type]
+
+    def _check_set(self, changes: list[ProfileChange], ctx: VerifyContext) -> dict[str, list[CheckResult]]:
+        """The symbolic checks, or only the well-formedness guard when verification is switched off."""
+        return verify_change_set(changes, ctx) if self.project.config.verify else guard_change_set(changes, ctx)
+
+    def _reverify(self, *, stage: str, rejudge: Iterable[str] = ()) -> None:
+        """Verify the live set again (set-level findings depend on the whole set). A change keeps its T2 verdict
+        unless it is in ``rejudge`` (its claim changed, e.g. it absorbed duplicates); an error-free change without
+        a verdict is judged now, so nothing is auto-accepted unjudged."""
+        rejudge = set(rejudge)
+        ctx = self._context()
+        changes = self.changes()
+        results = self._check_set(changes, ctx)
+        for change in changes:
+            if change.id not in results or change.decision.status in ("superseded", "rejected"):
+                continue
+            kept = [] if change.id in rejudge else [r for r in change.verification if r.check == "T2"
+                                                    and r.details.get("problem") != "judge_unavailable"]
+            change.verification = results[change.id] + kept
+            if not kept and not has_errors(change.verification) and not is_human(change):
+                verdict = self._attribution(change, ctx, stage=stage)
+                if verdict is not None:
+                    change.verification.append(verdict)
+            self._decide(change)
+            self.store.save_change(self.pid, change)
 
     def run_verify(self) -> None:
         self.set_stage("verify", "running")
         self._withdraw_release("verification ran again")
         ctx = self._context()
         changes = self.changes()
-        results = verify_change_set(changes, ctx)
+        if not self.project.config.verify:
+            self.log("verify", "note", "Symbolic verification is switched off (condition): only the well-formedness "
+                                       "guard V0 runs" + ("; the judge (T2) still runs." if self.project.config.attribution_check
+                                                          else "; the judge (T2) is off too."))
+        results = self._check_set(changes, ctx)
         for change in changes:
             if change.id not in results:
                 continue
@@ -292,7 +340,7 @@ class Pipeline:
             self.store.save_change(self.pid, change)
             failed = [r for r in change.verification if not r.passed]
             self.log("verify", "check", f"{change.decision.status}: " + ("; ".join(f"{r.check} {r.message}" for r in failed)[:400]
-                                                                           or "all checks passed"),
+                                                                           or change.decision.note),
                      subject_type="change", subject_id=change.id, author="rule:verify",
                      payload={"failed": [r.model_dump() for r in failed]})
         self.set_stage("verify", "done")
@@ -301,28 +349,38 @@ class Pipeline:
         self.set_stage("repair", "running")
         self._withdraw_release("repair ran again")
         rounds = self.project.config.repair_rounds
+        touched = False
         for round_number in range(1, rounds + 1):
+            self._reverify(stage="repair")                     # fresh failures for this round
             ctx = self._context()
-            todo = [c for c in self.changes() if c.decision.status == "needs_review" and has_errors(c.verification)
-                    and not is_human(c) and c.provenance.author_type != "human"
-                    and c.provenance.repair_round < round_number]
+            conflicted = self._open_conflict_ids()
+            todo = [c for c in self.changes() if c.decision.status == "needs_review"
+                    and repairable_failures(c.verification) and not is_human(c)
+                    and c.provenance.author_type != "human" and c.decision.decided_by != "rule:rebase"
+                    and c.id not in conflicted and c.provenance.repair_round < round_number]
             if not todo:
                 break
             for change in todo:
                 atoms = [ctx.atoms[a] for a in change.atom_ids if a in ctx.atoms]
                 candidates = [c for a in change.atom_ids for c in ctx.candidates.get(a, [])]
-                result = repair_change(change, change.failed_checks(), atoms, candidates, self.kb, self.llm,
-                                       self.project, round_number=round_number)
+                result = repair_change(change, repairable_failures(change.verification), atoms, candidates, self.kb,
+                                       self.llm, self.project, round_number=round_number)
                 if result.action == "revise" and result.change is not None:
+                    touched = True
+                    revised = result.change
+                    dropped = [link for link in change.covers if link.atom_id not in revised.atom_ids]
+                    if dropped:                                # a revision must keep covering every atom
+                        revised.covers.extend(dropped)
+                        revised.engine_notes.append("re-attached atoms the repair dropped: "
+                                                    + ", ".join(link.atom_id for link in dropped))
                     change.decision = Decision(status="superseded", decided_by=self.llm.author,
                                                note=f"repaired in round {round_number}")
                     self.store.save_change(self.pid, change)
-                    revised = result.change
                     ctx.changes = self.changes() + [revised]
-                    revised.verification = verify_change_set(
+                    revised.verification = self._check_set(
                         [c for c in ctx.changes if c.decision.status != "superseded"], ctx).get(revised.id, [])
                     if not has_errors(revised.verification):
-                        t2 = self._attribution(revised, ctx)
+                        t2 = self._attribution(revised, ctx, stage="repair")
                         if t2:
                             revised.verification.append(t2)
                     self._decide(revised)
@@ -331,6 +389,7 @@ class Pipeline:
                              subject_type="change", subject_id=revised.id, author=self.llm.author,
                              payload={"supersedes": change.id})
                 elif result.action == "withdraw":
+                    touched = True
                     change.decision = Decision(status="rejected", decided_by=self.llm.author,
                                                note=f"withdrawn by the repairer: {result.note}")
                     self.store.save_change(self.pid, change)
@@ -340,12 +399,14 @@ class Pipeline:
                     change.provenance.repair_round = round_number
                     self.store.save_change(self.pid, change)
                     self.log("repair", "repair_failed", result.note, subject_type="change", subject_id=change.id)
+        if touched:
+            self._consolidate_pass("repair")                   # a revision can land on an element already in use
         self.set_stage("repair", "done")
 
-    def run_consolidate(self) -> None:
-        self.set_stage("consolidate", "running")
-        self._withdraw_release("consolidation ran again")
-        changes, conflicts = consolidate(self.changes())
+    def _consolidate_pass(self, stage: str) -> tuple[set[str], list]:
+        current = self.changes()
+        before = {c.id: len(c.merged_from) for c in current}
+        changes, conflicts = consolidate(current)
         for change in changes:
             self.store.save_change(self.pid, change)
         self.store.replace_conflicts(self.pid, conflicts)
@@ -356,19 +417,17 @@ class Pipeline:
                     change.decision = Decision(status="needs_review", decided_by="rule:consolidate",
                                                note=f"conflict {conflict.id}: {conflict.description}")
                     self.store.save_change(self.pid, change)
-            self.log("consolidate", "conflict", conflict.description, author="rule:consolidate",
-                     payload=conflict.model_dump())
-        merged = sum(1 for c in changes if c.decision.status == "superseded" and c.decision.decided_by == "rule:consolidate")
-        self.log("consolidate", "stage", f"{merged} duplicate change(s) merged, {len(conflicts)} conflict(s).")
-        # Merged changes cover more atoms: verify again so every claim is checked.
-        ctx = self._context()
-        results = verify_change_set(self.changes(), ctx)
-        for change in self.changes():
-            if change.id in results and change.decision.status not in ("superseded", "rejected"):
-                kept_t2 = [r for r in change.verification if r.check == "T2"]
-                change.verification = results[change.id] + kept_t2
-                self._decide(change)
-                self.store.save_change(self.pid, change)
+            self.log(stage, "conflict", conflict.description, author="rule:consolidate", payload=conflict.model_dump())
+        merged = {c.id for c in changes if len(c.merged_from) > before.get(c.id, 0)}
+        # Merged changes cover more atoms: verify the set again and judge them again with all their atoms.
+        self._reverify(stage=stage, rejudge=merged)
+        return merged, conflicts
+
+    def run_consolidate(self) -> None:
+        self.set_stage("consolidate", "running")
+        self._withdraw_release("consolidation ran again")
+        merged, conflicts = self._consolidate_pass("consolidate")
+        self.log("consolidate", "stage", f"{len(merged)} change(s) absorbed duplicates, {len(conflicts)} conflict(s).")
         self.set_stage("consolidate", "done")
 
     def view(self) -> ProfileView:
@@ -427,8 +486,25 @@ class Pipeline:
                     self.set_stage(stage, "failed")
                     self.log(stage, "error", f"{type(exc).__name__}: {exc}")
                     raise
+        if not self.project.config.require_human_signoff and STAGE_ORDER.index(from_stage) <= STAGE_ORDER.index("conformance"):
+            self._auto_release()
         self._update_project(lambda project: project.stage_states.__setitem__(
-            "review", "running" if project.signoff is None else "done"))
+            "review", "running" if project.signoff is None else
+            ("skipped" if project.signoff.by.startswith("rule:") else "done")))
+
+    def _auto_release(self) -> None:
+        """Condition ``require_human_signoff=False``: release a conformant profile without a person. What is
+        still in the review queue is not part of it. Any later decision withdraws the release, as usual."""
+        report = self.store.get_conformance(self.pid)
+        if report is None or report.verdict == "non_conformant" or self.project.pending_rebase is not None:
+            return
+        waiting = sum(1 for c in self.changes() if c.decision.status in ("needs_review", "proposed"))
+        signoff = SignOff(by="rule:auto-release", change_set_hash=self.change_set_hash(),
+                          note="released without human review (require_human_signoff is off)"
+                               + (f"; {waiting} change(s) in the review queue are not part of the profile" if waiting else ""))
+        self._update_project(lambda project: setattr(project, "signoff", signoff))
+        self.log("review", "signoff", signoff.note, author="rule:auto-release")
+        self.run_compile(cascade=False)
 
     # -- coverage and metrics ----------------------------------------------
 
@@ -457,15 +533,23 @@ class Pipeline:
         changes = self.changes()
         live = [c for c in changes if c.decision.status not in ("superseded",)]
         included = [c for c in live if c.included]
+        proposed = [c for c in live if c.decision.status != "rejected"]
         coverage = self.coverage()
         counts: dict[str, int] = {}
         for value in coverage.values():
             counts[value] = counts.get(value, 0) + 1
-        calls = self.store.list_llm_calls(self.pid)
+        calls = self.store.list_llm_calls(self.pid, limit=None)
         kinds: dict[str, int] = {}
         for c in included:
             kinds[c.kind] = kinds.get(c.kind, 0) + 1
-        properties = [c for c in included if c.path and c.kind != "usage_note"]
+
+        def extension_rate(selection: list[ProfileChange]) -> float:
+            """Share of minted terms among the elements a selection adds or constrains (classes included)."""
+            elements = [c for c in selection if c.kind != "usage_note"]
+            return round(sum(1 for c in elements if c.kind in ("mint_property", "mint_class")) / len(elements), 3) \
+                if elements else 0.0
+
+        repair_calls = [c for c in calls if c.stage == "repair" and c.purpose == "repair"]
         return {
             "atoms": len(coverage),
             "coverage": counts,
@@ -474,11 +558,15 @@ class Pipeline:
             "auto_accepted": sum(1 for c in live if c.decision.status == "auto_accepted"),
             "accepted_by_human": sum(1 for c in live if c.decision.status == "accepted"),
             "needs_review": sum(1 for c in live if c.decision.status == "needs_review"),
-            "rejected": sum(1 for c in live if c.decision.status == "rejected"),
-            "extension_rate": round(sum(1 for c in properties if c.kind == "mint_property") / len(properties), 3) if properties else 0.0,
-            "repaired": sum(1 for c in changes if c.provenance.repair_round > 0 and c.decision.status != "superseded"),
+            "rejected_by_human": sum(1 for c in live if c.decision.status == "rejected" and is_human(c)),
+            "withdrawn_by_machine": sum(1 for c in live if c.decision.status == "rejected" and not is_human(c)),
+            "extension_rate": extension_rate(included),
+            "extension_rate_proposed": extension_rate(proposed),
+            "repair_calls": len(repair_calls),
+            "repaired_and_included": sum(1 for c in included if c.supersedes and c.provenance.repair_round > 0),
             "llm_calls": len(calls),
             "llm_calls_cached": sum(1 for c in calls if c.cached),
+            "judge_calls": sum(1 for c in calls if c.purpose == "judge"),
             "input_tokens": sum(c.input_tokens for c in calls),
             "output_tokens": sum(c.output_tokens for c in calls),
         }
@@ -531,7 +619,7 @@ class Pipeline:
         self.store.save_change(self.pid, old)
         ctx = self._context()
         ctx.changes = [c for c in self.changes() if c.id != old.id] + [new]
-        new.verification = verify_change_set(ctx.changes, ctx).get(new.id, [])
+        new.verification = self._check_set(ctx.changes, ctx).get(new.id, [])
         new.decision = Decision(status="accepted", decided_by=f"human:{by}", note=note or "edited and accepted")
         self.store.save_change(self.pid, new)
         self.log("review", "human_edit", f"edited {change_id}: {verbalise_change(new, self.kb)}",

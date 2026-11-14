@@ -140,6 +140,7 @@ class SignOffRequest(BaseModel):
 class KeyRequest(BaseModel):
     provider: str
     api_key: str = ""
+    base_url: str | None = None                  # the endpoint the key is for (OpenAI-compatible); it goes nowhere else
 
 
 EXAMPLES_DIR = Path(__file__).resolve().parents[3] / "examples"
@@ -209,7 +210,7 @@ def set_key(request: KeyRequest) -> list[dict[str, Any]]:
     """Keeps the key in server memory only. It is never stored, logged or returned."""
     if request.provider not in PROVIDERS:
         raise HTTPException(400, "unknown provider")
-    credentials.set(request.provider, request.api_key.strip())
+    credentials.set(request.provider, request.api_key.strip(), request.base_url)
     return provider_status(credentials)
 
 
@@ -284,12 +285,36 @@ def update_project(project_id: str, request: ProjectUpdate) -> dict[str, Any]:
         project = store.get_project(project_id)
         if project is None:
             raise HTTPException(404, "unknown project")
+        before = project.model_copy(deep=True)
         for field in ("name", "description", "profile_title", "config", "llm"):
             value = getattr(request, field)
             if value is not None:
                 setattr(project, field, value)
+        _mark_settings_stale(before, project)
         store.save_project(project)
         return project.model_dump()
+
+
+RETRIEVAL_FIELDS = ("retrieval", "top_k", "use_hints", "exclude_namespaces")
+DECISION_FIELDS = ("verify", "repair_rounds", "attribution_check", "votes", "auto_accept", "auto_accept_min_confidence",
+                   "later_dcat_terms", "require_human_signoff", "replay_cache")
+
+
+def _mark_settings_stale(before: Project, after: Project) -> None:
+    """A run made under other settings is stale from the first stage those settings feed (and unreleased)."""
+    old, new = before.config, after.config
+    if any(getattr(old, f) != getattr(new, f) for f in RETRIEVAL_FIELDS):
+        first = "retrieve"
+    elif before.llm != after.llm or old.votes != new.votes:
+        first = "propose"
+    elif any(getattr(old, f) != getattr(new, f) for f in DECISION_FIELDS):
+        first = "verify"
+    else:
+        return
+    for stage in STAGE_ORDER[STAGE_ORDER.index(first):]:
+        if after.stage_states.get(stage) == "done":
+            after.stage_states[stage] = "stale"
+    after.signoff = None
 
 
 @app.delete("/api/projects/{project_id}")

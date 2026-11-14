@@ -34,7 +34,7 @@ def by_atom(pipe, atom_id):
 
 def test_every_stage_ran_and_left_a_log(pipeline):
     states = pipeline.project.stage_states
-    for stage in ("intake", "retrieve", "propose", "verify", "repair", "consolidate", "compile", "conformance"):
+    for stage in ("intake", "retrieve", "propose", "verify", "consolidate", "repair", "compile", "conformance"):
         assert states[stage] == "done", stage
     stages = {entry.stage for entry in pipeline.store.list_entries("p1", limit=10000)}
     assert {"intake", "retrieve", "propose", "verify", "compile", "conformance"} <= stages

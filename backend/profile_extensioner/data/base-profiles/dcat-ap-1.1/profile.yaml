@@ -11,13 +11,22 @@ source:
   files:
   - path: releases/1.1/shacl-201706.zip
     sha256: 8a143e731682b964183e06cb9bdae22df1a7f4c7b57dc80115a27307e4552ee8
+  - path: releases/1.1/shacl-201706.zip!/shacl-201706/dcat-ap.shapes.ttl
+    sha256: a7e4360607b3af8a0722e7ca656a385abf1cf16e63a821e24d73125e29a6a45e
   - path: releases/1.1/dcat-ap_1.1.rdf
     sha256: 5342abfeaeeebe950b4b03346d648643fda482675de8ec98b9121b554fea8663
+  mirrors:
+  - repository: https://github.com/SEMICeu/dcat-ap_shacl
+    commit: c9683b174edab5933bf8f9ef48bde2c4c29b8fbc
+    path: shacl/dcat-ap.shapes.ttl
+    same_as: shacl-201706/dcat-ap.shapes.ttl
+    sha256: a7e4360607b3af8a0722e7ca656a385abf1cf16e63a821e24d73125e29a6a45e
 shapes:
   constraints:
   - shacl/dcat-ap.shapes.ttl
   ranges: []
   deprecated: []
+  not_loaded: []
 obligations: obligations.yaml
 main_classes:
 - dcat:Catalog

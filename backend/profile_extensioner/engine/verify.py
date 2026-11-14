@@ -8,6 +8,7 @@ Checks (ids are stable; reports and the review queue are keyed to them):
     V4  reuse before mint: a minted term states why no candidate fits
     V5  internal consistency of the constraints
     V6  the compiled shapes are valid SHACL            (run after compile, see ``check_shapes_valid``)
+    V0  (only with verification switched off) every term is an absolute IRI, so the change compiles
     D1  DCAT state: every DCAT term exists in the DCAT version the base builds on (a term only a later
         version defines goes to a human, see ``PipelineConfig.later_dcat_terms``), and a DCAT property
         is used on a class that DCAT lists it for
@@ -509,10 +510,35 @@ def verify_change_set(changes: list[ProfileChange], ctx: VerifyContext) -> dict[
             for change in group:
                 results[change.id].append(_fail(
                     "V5", f"{len(group)} changes constrain {ctx.kb.curie(path)} on {ctx.kb.curie(target)}; "
-                          "there must be one element per class and property.",
-                    problem="duplicate_element", change_ids=[other.id for other in group],
+                          "consolidation merges them, or a person decides.",
+                    problem="duplicate_element", set_level=True, change_ids=[other.id for other in group],
                 ))
     return results
+
+
+def repairable_failures(results: list[CheckResult]) -> list[CheckResult]:
+    """Error-level failures that a repair of ONE change can address (set-level findings are consolidation's)."""
+    return [r for r in results if not r.passed and r.severity == "error" and not r.details.get("set_level")]
+
+
+def check_well_formed(change: ProfileChange, ctx: VerifyContext) -> list[CheckResult]:
+    """V0, the guard that stays when symbolic verification is switched off (an ablation): every term is an
+    absolute IRI, so the change can at least be compiled. It also fills FacetJustification.status (V3's side
+    effect), which the profile delta reports, without judging anything."""
+    bad = [value for value in (change.target_class, change.path, change.facets.range_class, change.facets.range_datatype,
+                               change.super_class, change.sub_property_of) if value and not is_absolute_iri(value)]
+    if not change.target_class:
+        bad.append("(no target class)")
+    check_refinement(change, ctx)          # annotation only: the result is not used when verification is off
+    if bad:
+        return [_fail("V0", f"Not a usable IRI: {', '.join(bad)}", problem="malformed_iri")]
+    return [_ok("V0", "all terms are IRIs (symbolic verification is switched off)")]
+
+
+def guard_change_set(changes: list[ProfileChange], ctx: VerifyContext) -> dict[str, list[CheckResult]]:
+    ctx.changes = changes
+    live = [change for change in changes if change.decision.status not in ("rejected", "superseded")]
+    return {change.id: check_well_formed(change, ctx) for change in live}
 
 
 def verify_assessment(assessment: AtomAssessment, atom: Atom, kb: KnowledgeBase) -> list[CheckResult]:

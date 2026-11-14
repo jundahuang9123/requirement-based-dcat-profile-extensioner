@@ -248,7 +248,9 @@ def test_compiled_outputs_name_the_base_release_and_its_dcat():
     for base, imports, dcat_tr in (
         ("dcat-ap-2.1.1", "releases/2.1.1/dcat-ap_2.1.1_shacl_shapes.ttl", "https://www.w3.org/TR/vocab-dcat-2/"),
         ("dcat-ap-2.0.0", "releases/2.0.0/dcat-ap_2.0.0_shacl_shapes.ttl", "CR-vocab-dcat-2-20191003"),  # built on the CR
-        ("dcat-ap-1.1", None, "REC-vocab-dcat-20140116"),
+        ("dcat-ap-1.1", "SEMICeu/dcat-ap_shacl/c9683b174edab5933bf8f9ef48bde2c4c29b8fbc/shacl/dcat-ap.shapes.ttl",
+         "REC-vocab-dcat-20140116"),                  # the zip member, byte for byte, from SEMIC's SHACL repository
+        ("dcat-ap-1.2", None, "REC-vocab-dcat-20140116"),
     ):
         kb = kb_for(base)
         project = Project(id="p", name="p", base_profile_id=base, profile_namespace="https://example.org/x#",
@@ -258,9 +260,10 @@ def test_compiled_outputs_name_the_base_release_and_its_dcat():
                                                       obligation="recommended")])
         shacl, dsv = compile_shacl(view), compile_dsv(view)
         if imports:
-            assert f"owl:imports <https://raw.githubusercontent.com/SEMICeu/DCAT-AP/" in shacl and imports in shacl
-        else:   # 1.1 publishes its shapes only inside a zip: named, not imported
-            assert "owl:imports" not in shacl and "shacl-201706.zip" in shacl
+            assert "owl:imports <https://raw.githubusercontent.com/SEMICeu/" in shacl and imports in shacl
+        else:   # 1.2 publishes its shapes only inside a zip, with no plain copy anywhere: named, not imported
+            assert "owl:imports" not in shacl and "dcat-ap_1.2_shacl.zip" in shacl
+        assert "prof:isProfileOf <https://" in dsv or "isProfileOf> <https://" in dsv   # never a relative IRI
         assert dcat_tr in shacl and dcat_tr in dsv
 
 

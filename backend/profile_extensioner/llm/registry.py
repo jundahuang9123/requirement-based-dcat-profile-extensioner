@@ -23,33 +23,47 @@ from .base import LLMUnavailable, Provider
 PROVIDERS: tuple[str, ...] = ("mock", "anthropic", "openai-compatible")
 
 
+def _host(url: str | None) -> str:
+    from urllib.parse import urlparse
+
+    return (urlparse(url or "").hostname or "").lower()
+
+
 class Credentials:
-    """In-memory API keys, one per provider."""
+    """In-memory API keys, one per provider. A key for an OpenAI-compatible endpoint is bound to the host it
+    was entered for, so it is never sent to another endpoint a project names."""
 
     def __init__(self) -> None:
         self._lock = threading.Lock()
         self._keys: dict[str, str] = {}
+        self._hosts: dict[str, str] = {}
 
-    def set(self, provider: str, api_key: str) -> None:
+    def set(self, provider: str, api_key: str, base_url: str | None = None) -> None:
         if provider not in PROVIDERS:
             raise ValueError(f"unknown provider: {provider}")
         with self._lock:
             if api_key:
                 self._keys[provider] = api_key
+                self._hosts[provider] = _host(base_url)
             else:
                 self._keys.pop(provider, None)
+                self._hosts.pop(provider, None)
 
     def clear(self, provider: str) -> None:
         with self._lock:
             self._keys.pop(provider, None)
+            self._hosts.pop(provider, None)
 
-    def get(self, provider: str) -> str | None:
+    def get(self, provider: str, base_url: str | None = None) -> str | None:
+        """The key for ``provider`` at ``base_url``: a key bound to another host is not given out."""
         with self._lock:
-            key = self._keys.get(provider)
-        if key:
+            key, bound = self._keys.get(provider), self._hosts.get(provider, "")
+        if key and (not bound or base_url is None or _host(base_url) == bound):
             return key
         if provider == "openai-compatible":
-            return os.environ.get("RBDPE_LLM_API_KEY") or None
+            env_host = _host(os.environ.get("RBDPE_LLM_BASE_URL"))
+            if not env_host or base_url is None or _host(base_url) == env_host:
+                return os.environ.get("RBDPE_LLM_API_KEY") or None
         return None
 
     def source(self, provider: str) -> str:
@@ -89,7 +103,7 @@ def build_provider(settings: LLMSettings, credentials: Credentials, **mock_optio
         from .openai_compatible import OpenAICompatibleProvider
 
         base_url = settings.base_url or os.environ.get("RBDPE_LLM_BASE_URL") or ""
-        return OpenAICompatibleProvider(base_url, credentials.get("openai-compatible"), default_model=settings.model)
+        return OpenAICompatibleProvider(base_url, credentials.get("openai-compatible", base_url), default_model=settings.model)
     raise LLMUnavailable(f"Unknown provider '{settings.provider}'.")
 
 

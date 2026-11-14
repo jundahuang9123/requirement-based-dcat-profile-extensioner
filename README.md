@@ -6,11 +6,11 @@ and tightened constraint **traceable to the atoms it covers**, and **checks that
 the result still conforms to the base profile**.
 
 ```
-requirement atoms ─► Intake ─► Retrieve ─► Propose ─► Verify ─► Repair ─► Consolidate ─► Compile ─► Conformance ─► Review & sign-off
-   (term-free)      lint +    reusable    LLM fills   V1-V6,    LLM,       one element     SHACL,      static rules +   human has the
-                    subject   terms from  typed       trace T1, ≤ N        per class +     LinkML,     pySHACL witness  final say
-                    → class   base +      changes     judge T2  rounds     property        DSV, docs   vs official base
-                              vocabulary
+requirement atoms ─► Intake ─► Retrieve ─► Propose ─► Verify ─► Consolidate ─► Repair ─► Compile ─► Conformance ─► Review & sign-off
+   (term-free)      lint +    reusable    LLM fills   V1-V5,    duplicates      LLM, per-  SHACL,      C1-C8 +          human has the
+                    subject   terms from  typed       D1-D3,    merged and      change     LinkML,     pySHACL witness  final say
+                    → class   base, its   changes     trace T1, re-judged       failures   DSV, docs   vs official base
+                              DCAT, vocab             judge T2                  only
 ```
 
 ## What it does

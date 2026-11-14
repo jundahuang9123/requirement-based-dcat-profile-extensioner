@@ -101,9 +101,11 @@ Stage = Literal[
     "conformance",  # does the extension still conform to its base?
     "review",       # human review queue and final sign-off
 ]
+# Consolidate merges duplicates BEFORE repair: a duplicate element is a set-level finding that only
+# consolidation (or a person) resolves, never a reason to repair or withdraw one change.
 STAGE_ORDER: tuple[str, ...] = (
-    "intake", "retrieve", "propose", "verify", "repair",
-    "consolidate", "compile", "conformance", "review",
+    "intake", "retrieve", "propose", "verify", "consolidate",
+    "repair", "compile", "conformance", "review",
 )
 
 StageState = Literal["pending", "running", "done", "stale", "failed", "skipped"]
@@ -268,6 +270,7 @@ class BaseProfileInfo(BaseModel):
     # empty when the release publishes them only inside an archive (``shape_archives`` then names it).
     shape_urls: list[str] = Field(default_factory=list)
     shape_archives: list[str] = Field(default_factory=list)
+    release_url: str = ""                        # an absolute URL of the release (homepage, else its source tree)
     release_status: str = ""
     dcat: DcatBasis | None = None                # the DCAT state it builds on
     is_latest: bool = False                      # the newest release: the default for a new extension
@@ -591,12 +594,12 @@ class LLMSettings(BaseModel):
     temperature: float | None = None             # openai-compatible only; ignored elsewhere
     max_output_tokens: int = 16000
     timeout_seconds: float = 240.0
-    step_models: dict[str, str] = Field(default_factory=dict)   # optional model per step
+    step_models: dict[str, str] = Field(default_factory=dict)   # optional model per step: propose, repair, judge
 
 
 class PipelineConfig(BaseModel):
-    """Switches of the pipeline. Each component can be turned off on its own,
-    which is what the experiment conditions C2..C5 need."""
+    """Switches of the pipeline. Each component can be turned off on its own, for ablations of the
+    experiment (not to be confused with the conformance rules C1-C8)."""
 
     retrieval: bool = True
     top_k: int = 8
@@ -616,6 +619,9 @@ class PipelineConfig(BaseModel):
     # Replay of earlier model answers with an identical request: "project" (this project's own calls;
     # a new project is an independent run), "global" (any project in the store), "off" (never).
     replay_cache: Literal["project", "global", "off"] = "project"
+    # Benchmark (blind) mode: the workbench hides atom source references from the reviewer, so a person cannot
+    # pass knowledge of the published profile on. Prompts never contain sources, titles or prefixes anyway.
+    blind: bool = False
 
 
 class SignOff(BaseModel):

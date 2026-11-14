@@ -75,3 +75,29 @@ def test_openai_compatible_falls_back_to_json_object(monkeypatch):
     assert "JSON Schema" in bodies[1]["messages"][0]["content"]
     assert AttributionOut.model_validate_json(completion.text).verdict == "supported"
     assert completion.notes
+
+
+
+def test_a_key_goes_only_to_the_endpoint_it_was_entered_for():
+    from profile_extensioner.llm.registry import Credentials
+
+    credentials = Credentials()
+    credentials.set("openai-compatible", "secret", "https://chat.example.org/api/v1")
+    assert credentials.get("openai-compatible", "https://chat.example.org/api/v1") == "secret"
+    assert credentials.get("openai-compatible", "https://elsewhere.example.com/v1") in (None, "")
+
+
+def test_changing_settings_after_a_run_marks_stages_stale():
+    from profile_extensioner.api.app import _mark_settings_stale
+    from profile_extensioner.contracts import Project, SignOff
+
+    before = Project(id="p", name="p", stage_states={s: "done" for s in ("intake", "retrieve", "propose", "verify", "conformance")},
+                     signoff=SignOff(by="rev"))
+    after = before.model_copy(deep=True)
+    after.config.top_k = 3
+    _mark_settings_stale(before, after)
+    assert after.stage_states["intake"] == "done" and after.stage_states["retrieve"] == "stale" and after.signoff is None
+    again = before.model_copy(deep=True)
+    again.config.attribution_check = False
+    _mark_settings_stale(before, again)
+    assert again.stage_states["propose"] == "done" and again.stage_states["verify"] == "stale"

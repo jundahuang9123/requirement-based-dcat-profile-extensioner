@@ -66,7 +66,9 @@ def compile_documentation(view: ProfileView, rows: list[dict[str, str]], conform
         f"New terms live in `{project.profile_prefix}:` = <{project.profile_namespace}>.",
         "",
     ]
-    if project.signoff:
+    if project.signoff and project.signoff.by.startswith("rule:"):
+        lines += [f"**Released automatically, without human review** ({project.signoff.at}): {project.signoff.note}.", ""]
+    elif project.signoff:
         lines += [f"Released by {project.signoff.by} on {project.signoff.at}. {project.signoff.note}".strip(), ""]
     else:
         lines += ["**Draft:** not yet signed off by a human reviewer.", ""]

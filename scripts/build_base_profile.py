@@ -38,7 +38,11 @@ from profile_extensioner.iri import Prefixes  # noqa: E402
 # class targets (shape IRI = class IRI). Every SEMIC release that ships SHACL is listed.
 RELEASE_FILES = {
     "1.1": {"zip": "shacl-201706.zip", "constraints": ["shacl-201706/dcat-ap.shapes.ttl"], "ranges": [],
-            "obligations": "rdf", "implicit": True},
+            "obligations": "rdf", "implicit": True,
+            # the same file, byte for byte, as resolvable RDF (SEMIC's own SHACL repository; sha256 checked)
+            "mirrors": [{"repository": "https://github.com/SEMICeu/dcat-ap_shacl",
+                         "commit": "c9683b174edab5933bf8f9ef48bde2c4c29b8fbc", "path": "shacl/dcat-ap.shapes.ttl",
+                         "same_as": "shacl-201706/dcat-ap.shapes.ttl"}]},
     "1.2": {"zip": "dcat-ap_1.2_shacl.zip", "constraints": ["dcat-ap_1.2_shacl/dcat-ap.shapes.ttl"], "ranges": [],
             "obligations": "rdf", "implicit": True},
     "1.2.1": {"constraints": ["dcat-ap_1.2.1_shacl_shapes.ttl"], "ranges": [], "obligations": "rdf"},
@@ -52,8 +56,10 @@ RELEASE_FILES = {
               "obligations": "rdf", "deprecated": ["dcat-ap_2.1.1_shacl_deprecateduris.ttl"]},
     "3.0.0": {"constraints": ["shacl/dcat-ap-SHACL.ttl"], "ranges": [], "obligations": "html",
               "deprecated": ["html/shacl/deprecateduris.ttl"]},
-    "3.0.1": {"constraints": ["shacl/dcat-ap-SHACL.ttl"], "ranges": ["shacl/ranges.ttl"], "obligations": "html",
-              "deprecated": ["html/shacl/deprecateduris.ttl"]},
+    # shacl/ranges.ttl of 3.0.1 is vendored but NOT loaded: 206 sh:property nodes without sh:path, so a SHACL
+    # engine rejects it (pySHACL: "not a well-formed SHACL PropertyShape"); dcat-ap-SHACL.ttl has the ranges.
+    "3.0.1": {"constraints": ["shacl/dcat-ap-SHACL.ttl"], "ranges": [], "not_loaded": ["shacl/ranges.ttl"],
+              "obligations": "html", "deprecated": ["html/shacl/deprecateduris.ttl"]},
 }
 MAIN_CLASSES = ["dcat:Catalog", "dcat:Dataset", "dcat:Distribution", "dcat:DataService",
                 "dcat:DatasetSeries", "dcat:CatalogRecord"]
@@ -314,9 +320,12 @@ def main(argv: list[str] | None = None) -> int:
         sources.append({"path": f"releases/{args.release}/{files['zip']}", "sha256": sha256(archive)})
         with zipfile.ZipFile(archive) as bundle:
             for relative in files["constraints"] + files["ranges"]:
-                (target / "shacl" / Path(relative).name).write_bytes(bundle.read(relative))
+                member = bundle.read(relative)
+                (target / "shacl" / Path(relative).name).write_bytes(member)
+                sources.append({"path": f"releases/{args.release}/{files['zip']}!/{relative}",
+                                "sha256": hashlib.sha256(member).hexdigest()})
     else:
-        for relative in files["constraints"] + files["ranges"] + files.get("deprecated", []):
+        for relative in files["constraints"] + files["ranges"] + files.get("not_loaded", []) + files.get("deprecated", []):
             source = release_dir / relative
             shutil.copyfile(source, target / "shacl" / source.name)
             sources.append({"path": f"releases/{args.release}/{relative}", "sha256": sha256(source)})
@@ -372,10 +381,18 @@ def main(argv: list[str] | None = None) -> int:
             "ranges": [f"shacl/{Path(name).name}" for name in files["ranges"]],
             # Deprecated URIs the release names (sh:message "replace X with Y"); not used as constraints.
             "deprecated": [f"shacl/{Path(name).name}" for name in files.get("deprecated", [])],
+            # Vendored but not loaded (see RELEASE_FILES for the reason).
+            "not_loaded": [f"shacl/{Path(name).name}" for name in files.get("not_loaded", [])],
         },
         "obligations": "obligations.yaml",
         "main_classes": main_classes_for(args.release),
     }
+    mirrors = []
+    for mirror in files.get("mirrors", []):
+        vendored = target / "shacl" / Path(mirror["same_as"]).name
+        mirrors.append({**mirror, "sha256": sha256(vendored)})
+    if mirrors:
+        profile["source"]["mirrors"] = mirrors
     if (target / "dsv-index.json").exists():
         # DSV of this release published by the Dataspecer team; extensions point at its profiles (dsv:profileOf).
         profile["dsv_index"] = "dsv-index.json"

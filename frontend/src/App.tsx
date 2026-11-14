@@ -129,7 +129,7 @@ function ModelPanel({ project, onSaved, notify }: { project: Project; onSaved: (
       {status && <p className="muted">{status.note} Key: <b>{status.key_source}</b></p>}
       {settings.provider !== 'mock' && (<>
         <label>API key <input type="password" value={key} onChange={(e) => setKey(e.target.value)} placeholder={status?.key_source !== 'none' ? '(a key is set)' : 'paste key'} /></label>
-        <button type="button" onClick={async () => { setProviders(await api.setKey(settings.provider, key)); setKey(''); notify('Key set for this server session'); }}>
+        <button type="button" onClick={async () => { setProviders(await api.setKey(settings.provider, key, settings.base_url)); setKey(''); notify('Key set for this server session'); }}>
           <KeyRound size={15} /> Use key</button>
       </>)}
       {settings.provider === 'openai-compatible' && <label>Base URL <input value={settings.base_url ?? ''} onChange={(e) => setSettings({ ...settings, base_url: e.target.value || null })} placeholder="http://localhost:11434/v1" /></label>}

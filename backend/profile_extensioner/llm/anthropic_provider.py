@@ -32,6 +32,10 @@ class AnthropicProvider:
     def default_model(self) -> str:
         return DEFAULT_MODEL
 
+    def request_signature(self, settings) -> str:
+        """Generation parameters this provider sends (part of the replay-cache key)."""
+        return f"anthropic-messages/1|max={settings.max_output_tokens}|effort={settings.effort}"
+
     def complete(
         self,
         *,

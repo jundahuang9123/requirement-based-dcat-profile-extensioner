@@ -23,12 +23,16 @@ holding the final review right.
 | Situation | Outcome |
 |-----------|---------|
 | All error-level checks pass, the judge finds the change supported (when on), confidence ≥ threshold, a majority of votes agree (when voting) | `auto_accepted`: part of the profile unless a human overrules |
-| An error-level check fails | bounded repair (default 3 rounds); still failing → `needs_review` |
-| Low confidence, no majority, conflict between changes, automatic acceptance switched off | `needs_review` |
+| An error-level check fails | bounded repair (default 3 rounds; every round starts from a fresh verification of the whole set); still failing → `needs_review` |
+| Two changes on the same (class, property) | a set-level finding (V5 `duplicate_element`): **consolidation** merges them before repair, the merged change is verified and judged again with all its atoms; incompatible duplicates become a conflict |
+| The judge did not assess the change (not run, or unavailable) while the judge is on | `needs_review` (never auto-accepted unjudged) |
+| Low confidence, no majority, conflict between changes (stays in review until a human resolves it), automatic acceptance switched off | `needs_review` |
+| A repair revision drops atoms of the change it replaces | the atoms are re-attached (a repair never loses coverage) |
 | A DCAT term only a later DCAT version than the base's defines (D1, policy `review`) | `needs_review`: a human decides |
 | A human decides | final: later machine stages never overwrite it |
 | The base is changed (rebase) | human decisions stay; machine changes with a migration finding go to `needs_review`; all are verified again |
-| Release | only by a human sign-off, only with an empty queue and a current, passing conformance report; any later decision withdraws it |
+| Release | only by a human sign-off, only with an empty queue, no pending rebase plan, and a current, passing conformance report; any later decision withdraws it. Condition `require_human_signoff: false` releases a conformant profile automatically, labelled as such |
+| Condition `verify: false` (ablation) | only the well-formedness guard V0 runs (plus the judge if on); decisions never claim "all checks passed"; conformance C1-C8 still measures the outcome |
 
 ## Checks
 
@@ -83,3 +87,20 @@ the architecture. "What they did" is the paper's; "here" is our adaptation.
 * **Dataspecer**: `extension.dsv.ttl` follows the statements of Dataspecer's DSV
   writer (class and property profiles, cardinality, requirement level), so the
   profile can be published there.
+
+
+## Benchmark hygiene (blind runs)
+
+What the model sees of an atom is its id, statement, subject and modality, nothing else (also the offline
+provider's context). Prompts carry no source reference, no project title, no namespace or prefix
+(`propose-v3`, `repair-v3`, `judge-v2`). For RQ1 reference atoms:
+
+- `scripts/import_rq1_reference.py` writes opaque ids (`A-001` ...) and no source reference, case name or
+  benchmark id; the join back to the reference set is a separate evaluator map (`<out>.evalmap.json`)
+  that the tool never reads. `--modality unspecified` withholds the modality where the reference document
+  is the published profile itself.
+- `scripts/run_reference_case.py` runs a blind project (`PipelineConfig.blind`: the workbench hides
+  sources from the reviewer), project-scoped replay (no answers of earlier runs), neutral title and
+  namespace, records every setting, and scans every stored prompt for canaries (case name, original ids,
+  locators, reference document, published-profile names) before it reports (`LEAKCHECK`).
+- Intake flags atom statements that name a published profile (`contains_profile_name`).

@@ -49,6 +49,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--max-output-tokens", type=int, default=8000)
     parser.add_argument("--replay", default="project", choices=["project", "global", "off"])
     parser.add_argument("--replace", action="store_true", help="delete an earlier project with the same id first")
+    # experiment conditions (ablations); the defaults are the full pipeline
+    parser.add_argument("--no-retrieval", action="store_true", help="no candidate terms for the proposer")
+    parser.add_argument("--no-verify", action="store_true", help="no symbolic checks (a well-formedness guard stays)")
+    parser.add_argument("--no-judge", action="store_true", help="no T2 attribution judge")
+    parser.add_argument("--repair-rounds", type=int, default=3)
+    parser.add_argument("--votes", type=int, default=1)
+    parser.add_argument("--top-k", type=int, default=8)
     args = parser.parse_args(argv)
 
     atoms = parse_atom_set((args.dir / f"{args.case}.atoms.yaml").read_text(encoding="utf-8"))
@@ -67,7 +74,9 @@ def main(argv: list[str] | None = None) -> int:
     store.save_project(Project(
         id=pid, name=NEUTRAL_TITLE, base_profile_id=atoms.base_profile_ids[0], profile_title=NEUTRAL_TITLE,
         profile_namespace=NEUTRAL_NAMESPACE, profile_prefix="ext", llm=llm,
-        config=PipelineConfig(max_parallel_calls=1, replay_cache=args.replay)))
+        config=PipelineConfig(max_parallel_calls=1, replay_cache=args.replay, retrieval=not args.no_retrieval,
+                              verify=not args.no_verify, attribution_check=not args.no_judge,
+                              repair_rounds=args.repair_rounds, votes=args.votes, top_k=args.top_k, blind=True)))
     store.replace_atoms(pid, atoms.atoms)
     pipeline = Pipeline(store, Credentials(), pid)
     started = time.time()
@@ -76,7 +85,8 @@ def main(argv: list[str] | None = None) -> int:
 
     lines = [f"# {pid}: {took} s", "",
              f"SETTINGS base={pipeline.project.base_profile_id} dcat={pipeline.kb.dcat.id} provider={llm.provider} "
-             f"model={model or '-'} effort={llm.effort} max_output_tokens={llm.max_output_tokens} replay={args.replay}", ""]
+             f"model={model or '-'} effort={llm.effort} max_output_tokens={llm.max_output_tokens} replay={args.replay}",
+             f"CONFIG {pipeline.project.config.model_dump_json()}", ""]
     for assessment in store.list_assessments(pid):
         lines.append(f"{assessment.atom_id:9s} {assessment.disposition:16s} {assessment.reason[:220]}")
     lines.append("")
@@ -93,9 +103,35 @@ def main(argv: list[str] | None = None) -> int:
     lines.append(f"METRICS {json.dumps(pipeline.metrics())}")
     lines.append(f"CALLS {len(calls)} " + json.dumps({s: sum(1 for c in calls if c.status == s) for s in {c.status for c in calls}})
                  + f" replayed_from_other_projects={sum(1 for c in calls if c.cached and c.replayed_from_project != pid)}")
+    leaks = leak_scan(store.list_llm_calls(pid, limit=None), args.dir / f"{args.case}.atoms.evalmap.json", atoms)
+    lines.append("LEAKCHECK " + ("clean" if not leaks else "LEAK " + json.dumps(leaks)))
     (args.dir / f"{pid}.txt").write_text("\n".join(lines), encoding="utf-8")
     print("\n".join(lines))
-    return 0
+    return 3 if leaks else 0
+
+
+PROFILE_CANARIES = ("StatDCAT", "GeoDCAT", "HealthDCAT", "mobilityDCAT", "DCAT-AP-JRC", "NAPCORE", "BRegDCAT")
+
+
+def leak_scan(calls, evalmap_path: Path, atoms) -> dict[str, int]:
+    """Count prompts that contain anything identifying the case or its published profile: the case name, the
+    original reference ids, the source locators, the reference document, published-profile names. A canary that
+    also occurs in an atom statement is a property of the input, not a leak of the tool, and is not counted."""
+    canaries: set[str] = set(PROFILE_CANARIES)
+    if evalmap_path.exists():
+        data = json.loads(evalmap_path.read_text(encoding="utf-8"))
+        canaries.add(str(data.get("case") or ""))
+        for entry in (data.get("atoms") or {}).values():
+            canaries |= {entry.get("original_id", ""), entry.get("source_locator", ""), entry.get("reference_document", "")}
+    statements = " ".join(atom.statement for atom in atoms.atoms).lower()
+    canaries = {c for c in canaries if c and len(c) >= 4 and c.lower() not in statements}
+    hits: dict[str, int] = {}
+    for call in calls:
+        text = f"{call.system_prompt}\n{call.user_prompt}".lower()
+        for canary in canaries:
+            if canary.lower() in text:
+                hits[canary] = hits.get(canary, 0) + 1
+    return hits
 
 
 if __name__ == "__main__":
