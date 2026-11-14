@@ -45,9 +45,9 @@ adopted (later, but used by the base).
   % B/engine/verify.py:219-283; ENG §3 severity summary. Per-check conditions: Table 4 (tab:checks, Appendix A).
   \centering\scriptsize
   \setlength{\tabcolsep}{3pt}
-  \begin{tabular}{@{}>{\raggedright\arraybackslash}p{1.75cm}>{\raggedright\arraybackslash}p{3.1cm}%
-      >{\raggedright\arraybackslash}p{2.75cm}>{\raggedright\arraybackslash}p{2.5cm}%
-      >{\raggedright\arraybackslash}p{1.2cm}@{}}
+  \begin{tabular}{@{}>{\raggedright\arraybackslash}p{1.5cm}>{\raggedright\arraybackslash}p{3.0cm}%
+      >{\raggedright\arraybackslash}p{2.6cm}>{\raggedright\arraybackslash}p{3.1cm}%
+      >{\raggedright\arraybackslash}p{1.15cm}@{}}
     \toprule
     Kind & Effect on the base & States & Checks & Element\\
     \midrule
@@ -62,7 +62,7 @@ adopted (later, but used by the base).
       & V1; V2 (range only); V3; V5 % src: @5ffd56e B/engine/verify.py:176 (no domain test when the base states the pair), 291-357, 407-434, 493-510
       & refine\\
     Reuse property % src: @5ffd56e B/engine/propose.py:201-202
-      & constrains an existing property that the base does not state on the class
+      & constrains an existing property the base does not state on the class
       & per facet set: new value, reason % src: @5ffd56e B/engine/propose.py:243-266 (base value not set)
       & V1; V2; V5 % src: @5ffd56e B/engine/verify.py:95-158, 166-211, 319-320 (V3: an addition)
       & reuse\\
@@ -82,7 +82,7 @@ adopted (later, but used by the base).
       & V1; V4 % src: @5ffd56e B/engine/verify.py:105-111, 365-399
       & class addition\\
     Usage note % src: @5ffd56e B/engine/propose.py:196 (the kind the model wrote is kept)
-      & adds guidance to an existing class and property
+      & documents an existing class and property
       & the note
       & V1; V5 (empty note) % src: @5ffd56e B/engine/verify.py:118-121, 408-410
       & none\\
