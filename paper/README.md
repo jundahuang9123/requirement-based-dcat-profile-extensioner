@@ -36,8 +36,8 @@ Generated inputs. Run each command from the repository root. None of them calls 
 
 | Command | Writes | From |
 |---|---|---|
-| `python paper/scripts/make_pilot_tables.py` | `paper/results/pilot-numbers.tex` (`\pilot{}{}{}`, `\pilotkind{}{}{}`), `paper/tables/pilot-runs.tex` | `paper/inputs/pilot-runs-2026-11-13.md`, `paper/inputs/dev-runs-2026-11-14-run3.md` |
-| `python paper/scripts/check_pilot_macros.py paper` | prints mismatches (expected: 176 values, 0 mismatches) | the same two files, parsed independently |
+| `python paper/scripts/make_pilot_tables.py` | `paper/results/pilot-numbers.tex` (`\pilot{}{}{}`, `\pilotkind{}{}{}` for runs 1-3; `\pilotb{}{}{}`, `\pilotbkind{}{}{}` for the blind pilots), `paper/tables/pilot-runs.tex`, `paper/tables/pilot-blind.tex` | `paper/inputs/pilot-runs-2026-11-13.md`, `paper/inputs/dev-runs-2026-11-14-run3.md`, `paper/inputs/pilot-runs-2026-11-14-blind.md` |
+| `python paper/scripts/check_pilot_macros.py paper` | prints mismatches (expected: 296 values, 0 mismatches) | the same three files, parsed independently |
 | `python paper/scripts/tool_facts.py [REPO_ROOT] > paper/inputs/tool-facts*.txt` | tool counts (vocabularies, index size, base elements, obligations, tests) | the code at `REPO_ROOT` (default: this checkout; `tool-facts-main-5ffd56e.txt` was made from a worktree of `main`) |
 | `python paper/scripts/list_markers.py` | the "Open markers" block of this README | the `.tex` sources and `references.bib` |
 
@@ -69,7 +69,8 @@ Every number in the paper either comes from one of these files or is a red `?`/`
 
 | Numbers | Source | How they reach the text |
 |---|---|---|
-| Development runs (Appendix C.1, Table `tab:pilot`) | `inputs/pilot-runs-2026-11-13.md` (rules baseline, runs 1-2), `inputs/dev-runs-2026-11-14-run3.md` (run 3) | `scripts/make_pilot_tables.py` → `\pilot{case}{run}{field}`; checked by `scripts/check_pilot_macros.py` (176 values, 0 mismatches) |
+| Blind development-case pilots at 21c6b5b (Sect. 7, Appendix C.1) | `inputs/pilot-runs-2026-11-14-blind.md` (received from the tool session; the rules rows reproduced here at 21c6b5b, offline, identical in every cell) | `scripts/make_pilot_tables.py` → `\pilotb{case}{run}{field}`, `tables/pilot-blind.tex`; checked by `scripts/check_pilot_macros.py` |
+| Contaminated development runs 1-3 (debugging history) | `inputs/pilot-runs-2026-11-13.md` (rules baseline, runs 1-2), `inputs/dev-runs-2026-11-14-run3.md` (run 3) | `scripts/make_pilot_tables.py` → `\pilot{case}{run}{field}`, `tables/pilot-runs.tex`; checked by `scripts/check_pilot_macros.py` (296 values in all, 0 mismatches) |
 | Tool counts used in the method (12 vendored vocabularies, 11,599 triples, 926-933 index terms per base, nine bases with class/element/obligation counts, 98 tests) | `inputs/tool-facts-main-5ffd56e.txt` (made from a read-only worktree of `main` at 5ffd56e) | typed in the text with a `% src:` comment |
 | Tool counts of the engine that made the development runs (13 vocabularies incl. the DCAT 3 RDF, 912 terms with the 1.1 base, three bases) | `inputs/tool-facts.txt` | typed, `% src:` comment |
 | Synthetic demo (Table `tab:criteria`, Fig. `fig:workbench`): 15 atoms; 4 covered by the base, 5 addressed, 5 pending review, 1 out of scope; 10 changes (5 auto-accepted, 5 in the review queue); conformant to DCAT-AP 3.0.1 | `inputs/demo-materials-testing-lab-2026-11-14.json` (mock provider, offline) | typed, `% src:` comment |
