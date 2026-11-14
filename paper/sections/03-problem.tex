@@ -9,28 +9,30 @@
 \section{Changes for a DCAT-AP Extension}\label{sec:problem}
 
 We distinguish changes by what they do to the base. A change \emph{refines} a property the base states on a class,
-\emph{reuses} one the base does not state there, or \emph{mints} one in the extension's own namespace; a class % src: @5ffd56e B/contracts.py:37-46 (six ChangeKind values)
+\emph{reuses} one the base does not state there, or \emph{mints} one in the extension's own name\-space; a class % src: @5ffd56e B/contracts.py:37-46 (six ChangeKind values)
 change reuses or mints a class, and a \emph{usage note} only adds guidance. Each atom first receives a % src: @5ffd56e B/contracts.py:699-706 (usage notes are not scored)
 \emph{disposition}: covered by the base, needs a change, out of scope (not catalog content) or unclear. This is our % src: @5ffd56e B/contracts.py:65-70 (four AtomDisposition values); B/engine/prompts.py:62-64
 operational classification, informed by the order in which \ac{SEMIC}'s guidance resolves a % src: LIT G3-S01 (four-rung ladder; implemented, Ours): docs/literature-steps.md:74
-requirement~\cite{semicreuse2026}, not a general taxonomy of ontology changes. The atoms are the companion study's
-content atoms, for finding and access~\cite{anon2027rq1}. % src: RQ1 L61-64, L174-182
+requirement~\cite{semicreuse2026}, not a general taxonomy of ontology changes. The benchmark's atoms are the companion
+study's content atoms, for finding and access~\cite{anon2027rq1}. % src: RQ1 L61-64, L174-182, L412-414 (scored content atoms)
 
 The task, in one sentence: given requirement atoms and a pinned \acs{DCAT-AP} release as the base, decide for each
 atom whether the base already meets it, and produce changes that reuse before they mint (E1), trace to the atoms
 they cover with an obligation those atoms license (E2), carry decisions a person can inspect and overrule (E3), and
 keep the extension conformant to the base (E4). % src: @5ffd56e docs/design.md:5-10 (goals); outline Sect. 2 (E1-E4 = pillars 1-4)
 
-An \emph{atom} has an identifier, a subject such as \emph{dataset}, a modality (must, should, may or unspecified), % src: @5ffd56e B/contracts.py:133-151 (Atom)
-an optional source reference and a statement in plain words, without \acp{IRI} or prefixed names. The \emph{base} % src: @5ffd56e B/contracts.py:32 (Modality); B/engine/intake.py:39-51 (an IRI or a prefixed name is an intake error)
+An \emph{atom} has an identifier, a subject such as \emph{dataset}, a modality (must, should, may or unspecified), % src: @5ffd56e B/contracts.py:32 (Modality), 133-151 (Atom)
+an optional source reference and a statement in plain words, without \acp{IRI} or prefixed names. The \emph{base} % src: @5ffd56e B/engine/intake.py:39-51 (an IRI or a prefixed name is an intake error)
 is a \acs{DCAT-AP} release with the \acs{DCAT} version it states it builds on, DCAT~2014 for 1.1 and DCAT~3 for % src: @5ffd56e B/contracts.py:238-250 (DcatBasis); B/data/base-profiles/dcat-ap-1.1/profile.yaml:33; B/data/base-profiles/dcat-ap-3.0.1/profile.yaml:43
 3.0.1~\cite{dcatap11,semicdcatap301}. \verify{release quotes} Its \emph{base elements}, one per class and property, % src: DCS §1.2 (the quotes are recorded in profile.yaml, not re-checked against the releases)
 carry \emph{facets} (obligation, minimum and maximum count, range, node kind, value list, pattern) merged from the % src: @5ffd56e B/contracts.py:194-217 (Facets, BaseElement); B/knowledge/shacl_reader.py:79-106
 official \ac{SHACL} shapes and, as these state only mandatory ones, the specification's obligation levels; a pair % src: @5ffd56e B/knowledge/base_profile.py:233-240; @5ffd56e docs/conformance.md:34-36; KCU §1.3
-listed without a shape has only an obligation. From 2.1.0 on, a property \acs{DCAT} lists for a class but the % src: @5ffd56e B/knowledge/base_profile.py:76-81, 245-266; DCS §3
-release omits is optional there \verify{release text}, a reuse candidate, not a base element. An index of 926 % src: DCS §1.2 (2.1.0, 2.1.1, 3.0.0, 3.0.1: unlisted_dcat_properties optional), §7 item 15; @5ffd56e B/contracts.py:246-248; B/engine/retrieve.py:134-156; B/engine/verify.py:319-320 (constraining it is an addition)
-to 933 terms per base holds 12 vendored vocabularies, the base's terms and all 60 \acs{DCAT} terms, each current, % src: paper/inputs/tool-facts-main-5ffd56e.txt:2, 6-14; DCS §1.1 (60 terms), §2.3; @5ffd56e B/knowledge/__init__.py:80-129
-deprecated, later, removed or adopted (later, but used by the base) for the base's \acs{DCAT}. % src: @5ffd56e B/knowledge/dcat_state.py:127-146; B/knowledge/__init__.py:63-69 (adopted); DCS §2.2
+listed without a shape has only an obligation. % src: @5ffd56e B/knowledge/base_profile.py:76-81, 245-266; DCS §3
+From 2.1.0 on, a property \acs{DCAT} lists for a class but the release omits is optional there % src: DCS §1.2 (2.1.0, 2.1.1, 3.0.0, 3.0.1: unlisted_dcat_properties optional); @5ffd56e B/contracts.py:246-248
+\verify{release text}, a reuse candidate, not a base element. % src: DCS §7 item 15; @5ffd56e B/engine/retrieve.py:134-156; B/engine/verify.py:319-320 (constraining it is an addition)
+An index of 926 to 933 terms per base covers 12 vendored vocabularies, the base's terms and all 60 % src: paper/inputs/tool-facts-main-5ffd56e.txt:2, 6-14 (926 to 933; 12 vocabularies); DCS §1.1 (60 DCAT terms), §2.3; @5ffd56e B/knowledge/__init__.py:80-129
+\acs{DCAT} terms, each current, deprecated, later, removed or adopted (later, but used by the base) for the base's % src: @5ffd56e B/knowledge/dcat_state.py:127-146; B/knowledge/__init__.py:63-69 (adopted); DCS §2.2
+\acs{DCAT}.
 
 \begin{table}[t]
   \caption{Dispositions and change kinds in the order of the reuse ladder. States: what a change records beyond
@@ -38,7 +40,7 @@ deprecated, later, removed or adopted (later, but used by the base) for the base
     check every \acs{DCAT} term a change uses, T1 checks every change, and T2 judges each change without an
     error. Element: what an included change becomes in the ProfileDelta; a usage note sets no constraint and is
     not scored. Program code, not the model, sets the kind from the facts: a mint when the term lies in the
-    extension's namespace, a refinement when the base states the class and property, a reuse otherwise.}
+    extension's name\-space, a refinement when the base states the class and property, a reuse otherwise.}
   \label{tab:kinds}
   % src: kinds and elements @5ffd56e B/contracts.py:37-46, 699-706; kind from the facts B/engine/propose.py:191-204
   % (unchanged since 2b92d77: ISS header); states B/engine/propose.py:240-298, B/contracts.py:343-367; checks
@@ -68,9 +70,9 @@ deprecated, later, removed or adopted (later, but used by the base) for the base
       & V1; V2 (domain or range); V5 % src: @5ffd56e B/engine/verify.py:95-158, 166-211, 319-320 (V3: an addition)
       & reuse\\
     Mint property % src: @5ffd56e B/engine/propose.py:197-198
-      & adds a property in the extension's namespace
+      & adds a property in the extension's name\-space
       & as a reuse, plus why no candidate fits, label, definition % src: @5ffd56e B/engine/propose.py:268-298
-      & V1 (outside the namespace, or an existing term); V4 (no reason, label or definition; a term of the same name); V5 % src: @5ffd56e B/engine/verify.py:122-128, 365-399, 431-433 (no range: a warning)
+      & V1 (outside the name\-space, or an existing term); V4 (no reason, label or definition; a term of the same name); V5 % src: @5ffd56e B/engine/verify.py:122-128, 365-399, 431-433 (no range: a warning)
       & mint\\
     Reuse class % src: @5ffd56e B/engine/propose.py:194-195
       & brings an existing class into the profile
@@ -78,7 +80,7 @@ deprecated, later, removed or adopted (later, but used by the base) for the base
       & V1 % src: @5ffd56e B/engine/verify.py:99-116 (V2-V5 not applicable to class changes)
       & class addition\\
     Mint class % src: @5ffd56e B/engine/propose.py:194-195
-      & adds a class in the extension's namespace
+      & adds a class in the extension's name\-space
       & why no candidate fits, label, definition
       & V1; V4 % src: @5ffd56e B/engine/verify.py:105-111, 365-399
       & class addition\\
@@ -91,7 +93,7 @@ deprecated, later, removed or adopted (later, but used by the base) for the base
   \end{tabular}
 \end{table}
 
-A \emph{change} states one decision on one element, a class and, for a property change, a property with facets. % src: @5ffd56e B/contracts.py:385-420 (ProfileChange)
+A \emph{change} is one decision on one element, a class and, for a property change, a property with facets. % src: @5ffd56e B/contracts.py:385-420 (ProfileChange)
 Its \emph{justification contract} holds \emph{coverage links}, each naming an atom with a reason, a quote of its % src: @5ffd56e B/contracts.py:334-340 (CoverageLink)
 statement and full or partial coverage; a \emph{facet justification} per facet set, with the base value beside the % src: @5ffd56e B/contracts.py:343-356 (FacetJustification; status filled by V3: B/engine/verify.py:310-317)
 new one and a reason; and, for a mint, why no candidate fits (Table~\ref{tab:kinds}). Program code, not the model, % src: @5ffd56e B/contracts.py:363-367 (MintJustification; rejected candidates only when the model names them: ADD §H)
@@ -117,14 +119,14 @@ kind, facets and status against the base. The criteria restate the pillars of Se
 \item[E4 Conformant to the base.] Every constraint is added or tightened, never loosened or contradicted, in a % src: @5ffd56e B/conformance/refinement.py:83-230 (unchanged since 2b92d77: ISS header); B/engine/verify.py:291-357
   legal-refinement order: a minimum may rise, a maximum fall, a range class narrow to a known subclass, a value list or
   node kinds shrink and an obligation rise; a datatype may not change. Minted terms are new, reused terms exist, % src: @5ffd56e B/engine/verify.py:95-158 (V1); B/conformance/check.py:149-168 (C3, C4)
-  \acs{DCAT} terms are the base's or, by default, later ones a person accepts, and base and extension are jointly % src: @5ffd56e B/engine/verify.py:219-283 (D1-D3); B/contracts.py:604-606; B/engine/pipeline.py:260-263; B/conformance/check.py:64-99 (C8)
-  satisfiable. Validated with the official shapes, the extension's shapes, in its own namespace, cannot relax % src: @5ffd56e B/compile/shacl.py:27-32 (validate with the base shapes); B/compile/model.py:43-44 (shape IRIs)
-  them; the conformance rules test the rest (Sect.~\ref{sec:compile}). % src: KCU §4.4 (data valid under base and extension is valid under the base; the base-only branch of C7 cannot fire); @5ffd56e docs/conformance.md:41-65 (C1-C8)
+  \acs{DCAT} terms belong to the base's \acs{DCAT} or, by default, are later ones a person accepts, and base and % src: @5ffd56e B/engine/verify.py:219-283 (D1-D3); B/contracts.py:604-606; B/engine/pipeline.py:260-263; B/conformance/check.py:64-99 (C8)
+  extension are jointly satisfiable. Validated with the official shapes, the extension's shapes, in its own % src: @5ffd56e B/compile/shacl.py:27-32 (validate with the base shapes); B/compile/model.py:43-44 (shape IRIs)
+  name\-space, cannot relax them by construction; the conformance rules test the rest (Sect.~\ref{sec:compile}). % src: KCU §4.4 (data valid under base and extension is valid under the base; the base-only branch of C7 cannot fire); @5ffd56e docs/conformance.md:41-65 (C1-C8)
 \end{description}
 
 A published profile can also rest on modeling choices no requirement states, left unwritten as tacit knowledge, a
-known obstacle in elicitation~\cite{gervasi2013tacit}, and several modelings can meet one atom. A reference % src: RQ1 L223-227 (pattern)
-element no atom asks for is thus beyond the atoms' reach, and the evaluation leaves it outside the denominator,
+known obstacle in elicitation~\cite{gervasi2013tacit}, and several modelings can meet one atom. When no atom asks % src: RQ1 L223-227 (pattern)
+for a reference element, the evaluation therefore places it outside the denominator, as beyond the atoms' reach,
 not as a miss (Sect.~\ref{sec:benchmark}).
 
 A change is \emph{proposed}, then \emph{auto-accepted} by the decision policy, a state the companion workflow % src: @5ffd56e B/contracts.py:81-89 (DecisionStatus); B/engine/pipeline.py:246-267
