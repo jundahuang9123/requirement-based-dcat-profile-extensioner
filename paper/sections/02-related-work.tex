@@ -11,37 +11,38 @@
 % profiles; dsv.ttl and shacl.ttl). Profile editor: its README (LinkML source, SHACL export); not named (anonymity).
 \paragraph{Application profiles and \acs{DCAT-AP} extensions.}
 Profile engineering fixes what a profile contains, functional requirements included
-\cite{nilsson2008singapore,coyle2009dcap}, and how it may change its base, not how a requirement becomes an element.
-\ac{SEMIC}'s guidance resolves a use case by reuse, by tightening a base constraint but never loosening one, or by
-minting in the profile's own namespace, and asks for use cases that justify new elements and tightened constraints,
-not every element \cite{semicreuse2026}.
-Practice keeps decisions at best as issues, resolution logs and links from requirements to use cases
+\cite{nilsson2008singapore,coyle2009dcap}, and how it may change its base, by adding constraints only
+\cite{w3cdcat3}, not how a requirement becomes an element.
+\ac{SEMIC}'s guidance resolves a use case by reuse, by tightening but never loosening a base constraint, or by minting
+in the profile's namespace, and asks use cases to justify new elements and tightened constraints, not every
+element \cite{semicreuse2026}.
+At best, decisions survive as issues, resolution logs and links from requirements to use cases
 \cite{dragan2019maintenance,statdcatap,w3cdcatucr}.
-Dataspecer authors profiles of profiles and publishes them in \ac{DSV} and \ac{SHACL}
-\cite{stenchlak2022dataspecer,klimek2024dataspecer,klimek2026dsv}; by our reading of its code it neither derives
-profiles from requirements nor checks that their cardinalities and ranges refine the base, but its review of what a
-changed base means for a dependent profile is the closest pattern we found for a machine that proposes and a person
-who decides \verify{Dataspecer: code reading at one commit, nothing run}.
-A visual profile editor models \ac{DCAT-AP} extensions in \ac{LinkML} \cite{moxon2026linkml}
+Dataspecer edits profiles of profiles and publishes them in \ac{DSV} and \ac{SHACL}
+\cite{stenchlak2022dataspecer,klimek2024dataspecer,klimek2026dsv}; its code, as we read it, neither derives profiles
+from requirements nor checks that they refine the base, but its review of what a changed base means for a dependent
+profile is the closest pattern we found for machine proposals that a person decides
+\verify{Dataspecer: code reading at one commit, nothing run}.
+A visual profile editor models \ac{DCAT-AP} extensions as \ac{LinkML} schemas \cite{moxon2026linkml}
 \todo{anonymized reference to the profile editor}.
 Neither the guidance nor Dataspecer fixes how an element records the requirement it serves, the base value it
 tightens or the candidates it passed over, and that derivation is what we formalize and automate.
 
 % P2. Sources: docs/research/G2-requirements-engineering.md 2.3 (LOT: requirements specification ends in the
 % ORSD; implementation sprints of conceptualization, ontology reuse, encoding and evaluation; reuse searches
-% existing ontologies with terms from the requirements), 2.4 (ORSD), section 3 (NeOn's nine scenarios, most of
-% them reuse; monfardini2023: scope and evaluation); alharbi2026cq as RQ1 L122-124 reports it.
-% Continues RQ1 L124-126 without repeating it.
+% existing ontologies with terms from the requirements), 2.4 (ORSD), section 3 (NeOn's scenarios 2-7 reuse
+% resources; monfardini2023: scope and evaluation of the conceptualization); alharbi2026cq as RQ1 L122-124
+% reports it. Continues RQ1 L124-126 without repeating it.
 \paragraph{Requirements and reuse in ontology engineering.}
 Ontology engineering specifies requirements before it models and looks for existing resources before it builds:
 NeOn has scenarios that reuse ontological and non-ontological resources \cite{suarez2012neon}, and LOT records
-verified requirements in a specification document \cite{suarez2009orsd} before each sprint searches existing
-ontologies with their terms \cite{poveda2022lot}.
-Competency questions mainly fix scope and evaluate the result \cite{monfardini2023}, and different elicitation
-methods draw different questions from one story \cite{alharbi2026cq}.
+verified requirements in a specification document \cite{suarez2009orsd} before each implementation sprint searches
+existing ontologies with their terms \cite{poveda2022lot}.
+Competency questions mainly fix scope and evaluate the conceptualization \cite{monfardini2023}, and different
+elicitation methods draw different questions from one story \cite{alharbi2026cq}.
 The companion study judges against the base whether a requirement adds anything \cite{anon2027rq1}; this paper asks
-how it adds, by tightening, reusing or minting, which can be judged only against the same base and the vocabularies
-within reach.
+how it adds, by tightening, reusing or minting, a choice bounded by the same base and the vocabularies within
+reach.
 
 % P3. Sources: LIT G1-S03, S04 (:14-15), G1-S17 (:28), G1-S02, S09, S10, S13, S14, S18 (:13, :20-21, :24-25, :29);
 % literature.md section 0 cautions 1 and 3 ("released prompt", "released implementation").
@@ -51,24 +52,24 @@ within reach.
 % RINF Application Guide). zhang2025schema: ACL Anthology abstract (ShEx schemas for YAGO and Wikidata).
 % prokop2024assistant: title only (bib entry checked through search results).
 \paragraph{\acs{LLM}-assisted ontology and shape generation.}
-\acp{LLM} generate whole ontologies, or shapes for terms they are given.
-Models elicit and generate competency questions \cite{zhang2024ontochat,lippolis2025bench4ke}, turn them into \ac{OWL}
-one question per call or along a nine-step procedure in the released prompts of Memoryless CQbyCQ and Ontogenia
+\acp{LLM} generate whole ontologies, or shapes from given terms.
+Models elicit competency questions \cite{zhang2024ontochat,lippolis2025bench4ke}, turn them into \ac{OWL} one
+question per call or along a nine-step procedure in the released prompts of Memoryless CQbyCQ and Ontogenia
 \cite{lippolis2025ontology}, % src: docs/literature-steps.md:14-15 (G1-S03 one CQ per call; G1-S04 nine-step procedure)
 mine schemas from papers with expert feedback \cite{sadruddin2025schema} and assist domain modelers
-\cite{prokop2024assistant}; extracting \ac{DCAT} metadata fills catalog records, not profiles \cite{busch2025dcat}.
+\cite{prokop2024assistant}; \ac{DCAT} metadata extraction fills records, not profiles \cite{busch2025dcat}.
 NL2SHACL-Bench supplies the relevant ontology terms with each constraint description \cite{zhou2026nl2shacl},
-text2shacl writes shapes per property of a railway ontology from its guide \cite{martinez2026text2shacl}, and Zhang et
-al.\ generate ShEx schemas for knowledge graphs \cite{zhang2025schema}.
+text2shacl writes shapes per property of a railway ontology from its application guide
+\cite{martinez2026text2shacl}, and Zhang et al.\ generate ShEx schemas for knowledge graphs \cite{zhang2025schema}.
 Closest to our pipeline is RIGOR, whose released implementation enriches a deterministic mapping of a relational
-database: the model writes only deltas from retrieved context, a model judge approves, corrects or rejects each, a
-failed delta is regenerated at most twice with the issues fed back, % src: docs/literature-steps.md:24 (G1-S13: at most three attempts per table, MAX_JUDGE_RETRIES = 2)
-and every generated class and property records its source table or column \cite{fathallah2026rigor}.
-IDEA2, the companion study's closest work, keeps expert votes and a PROV-O history of drafted competency questions
+database: the model writes only deltas, a model judge reviews each, a failed delta is regenerated at most twice
+with the issues fed back, % src: docs/literature-steps.md:24 (G1-S13: at most three attempts per table, MAX_JUDGE_RETRIES = 2)
+and every generated term records its source table or column \cite{fathallah2026rigor}.
+IDEA2, the companion's closest work, keeps expert votes and a PROV-O history for drafted competency questions
 \cite{alharbi2027idea2}.
-Like RIGOR we let the model change a fixed backbone only through checked deltas; we add typed change records instead of
-model-written syntax, term choice among retrieved candidates of a pinned release, reasons for every mint, obligations
-that a requirement's wording licenses, conformance to the base and a person's sign-off.
+Like RIGOR we let the model change a fixed backbone only through checked deltas; we add typed change records instead
+of model-written syntax, term choice from candidates retrieved for a pinned release, a reason for every mint,
+obligations licensed by a requirement's wording, conformance to the base and a person's sign-off.
 
 % P4. Sources: LIT G4-S05, S06, S14-S17, S22-S24 (:108-127); docs/research/G4-llm-reliability.md 3.2 (judges:
 % agreement with humans, position bias, G-Eval caveat, BatchEval README abstract "sensitive to prompt design",
@@ -76,21 +77,19 @@ that a requirement's wording licenses, conformance to the base and a person's si
 % degrades on counterfactual variants). Code at 5ffd56e: votes default 1 (contracts.py:597), T2 only without an
 % error-level failure (engine/pipeline.py:279), decision rule (engine/pipeline.py:246-267).
 \paragraph{Reliability and evaluation of model outputs.}
-Majority voting explains most of the gains of multi-agent debate \cite{du2024debate,choi2025debate,smit2024mad}, and
+Majority voting explains most of the gains of multi-agent debate \cite{du2024debate,choi2025debate,smit2024mad}.
 \ac{LLM} judges track human ratings \cite{liu2023geval,zheng2023judge} but are swayed by the order of answers
 \cite{zheng2023judge,wang2024fair}, may prefer model-written text, score inconsistently
 \cite{liu2023geval,stureborg2024inconsistent} and depend on the prompt \cite{yuan2024batcheval}.
-These findings motivate one vote by default, % src: @5ffd56e B/contracts.py:597 (votes: int = 1)
-independent votes being optional, symbolic checks before the model judge and machine decisions that a person can
-overrule.
-A cited source need not support the claim \cite{rashkin2023ais,gao2023alce}, so program code checks the trace
-(\term{T1}) and a model judges attribution (\term{T2}).
+These findings motivate independent votes instead of debate, one vote by default, % src: @5ffd56e B/contracts.py:597 (votes: int = 1)
+symbolic checks before the model judge and machine decisions a person can overrule.
+A cited source need not support the statement that cites it \cite{rashkin2023ais,gao2023alce}, so program code checks
+the trace (\term{T1}) and a model judges attribution (\term{T2}).
 Hosted models vary between runs \cite{atil2025nondeterminism,ouyang2025nondeterminism}, benchmarks leak into training
 data \cite{sainz2023contamination}, and models lean on familiar words \cite{mai2024adapt} and falter on counterfactual
-variants of familiar tasks \cite{wu2024reciting}, hence repeated runs on fresh stores and leakage controls
-(Sect.~\ref{sec:setup}).
-Information retrieval ranks systems reliably with incomplete pools and varying assessors
-\cite{zobel1998reliable,voorhees2000variations}, with measures that ignore unjudged items \cite{buckley2004incomplete};
-we take from this only that a change matching no reference element is not necessarily wrong.
+tasks \cite{wu2024reciting}, hence repeated runs on fresh stores and leakage controls (Sect.~\ref{sec:setup}).
+Information retrieval ranks systems reliably despite incomplete and varying judgments
+\cite{zobel1998reliable,voorhees2000variations,buckley2004incomplete}; we take from this only that a change matching no
+reference element is not necessarily wrong.
 Unlike the companion study, we report the share of included changes that match a reference element, a precision
-against one published modeling, and adjudicate the rest instead of counting it as errors (Sect.~\ref{sec:benchmark}).
+against one published modeling, and adjudicate the rest (Sect.~\ref{sec:benchmark}).

@@ -1,20 +1,22 @@
 % Abstract (outline brief 6.0; mirrors RQ1 L10-30). No development-run number here (hard rule 7);
 % the main results enter only through \res once the evaluator has written them.
-% verify (not printed): RG quotes at commit e958ded (docs/conformance.md:12-14 and :47 at 5ffd56e); the gap
-% is stated for the guidance, which records resolutions with the issues, not per element
-% (docs/research/G3-application-profile-practice.md:75-80).
+% Sources of S1: RG@e958ded:262-265 and 376-379, verified verbatim in digests/conformance-dataspecer.md:92-96, :112, :136
+% (use cases justify "relevant design decisions, in particular those that introduce new elements, tighten existing
+% constraints", "rather than documenting each individual profile element"); the gap is stated for the guidance,
+% which records resolutions with the issues, not per element (docs/research/G3-application-profile-practice.md:75-80).
+% No claim about what the published extensions document (outline 6.1, paragraph 3).
 \begin{abstract}
 Interoperable dataset catalogs rest on the \ac{DCAT} and the \ac{DCAT-AP}, and domain extensions build on one
-\acs{DCAT-AP} release by reusing terms, tightening its constraints and minting terms of their own: the guidance
+\acs{DCAT-AP} release by reusing terms, tightening its constraints and minting new ones: the guidance
 asks use cases to justify new elements and tightened constraints, but does not fix how an element records the
 requirement it serves.
 This paper presents a pipeline in which a \ac{LLM} decides, for each requirement atom, whether the base already
-meets it and otherwise fills typed change records that reuse before they mint; program code mints the identifiers
-of new terms and checks every change, from term existence, legal refinement and the DCAT version the base builds
+meets it and otherwise fills typed change records that reuse before they mint; program code mints new identifiers
+and checks every change, from term existence, legal refinement and the DCAT version the base builds
 on to a verbatim quote of the atom and an obligation its modality licenses, a model judge assesses whether the
-atoms support the change, and the model repairs a failing change in at most three rounds. % src: @5ffd56e B/contracts.py:595 (repair_rounds = 3); B/engine/verify.py:482-483 (check order); B/engine/prompts.py:24-72
+atoms support the change, and the model repairs failing changes in at most three rounds. % src: @5ffd56e B/contracts.py:595 (repair_rounds = 3); B/engine/verify.py:482-483 (check order); B/engine/prompts.py:24-72
 Changes the machine cannot settle go to a person, whose decisions are final; the included changes are compiled
-into a \ac{SHACL} delta, \ac{LinkML}, a \ac{DSV} profile and a trace matrix, eight rules, one of them a witness % src: @5ffd56e docs/conformance.md:41-51 and B/conformance/check.py:5-20 (C1-C8; C7 the witness)
+into a \ac{SHACL} delta, \ac{LinkML}, a \ac{DSV} profile and a trace matrix, eight rules, one a witness % src: @5ffd56e docs/conformance.md:41-51 and B/conformance/check.py:5-20 (C1-C8; C7 the witness)
 validated with the official shapes, check that the extension conforms to the base, and only a person's sign-off
 releases it.
 We define reference deltas, each published profile minus its base, for the five extensions of the companion % src: RQ1 L14 and L381-388 (the five published extensions of its benchmark)

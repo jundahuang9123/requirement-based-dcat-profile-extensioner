@@ -14,19 +14,22 @@
     side/.style={-{Stealth[length=1.5mm]}, semithick, dashed},
   ]
   % row 1: build the reference delta (left to right)
-  \node[op] (s1) at (0,0)   {1.\ Pin the base release,\\ its DCAT version and\\ the published profile};
-  \node[op] (s2) at (4.1,0) {2.\ Compare shapes and obligation tables per (class, property), or extract tables by hand};
-  \node[op] (s3) at (8.2,0) {3.\ Drop inherited constraints,\\ classify by kind, set\\ loosened elements apart};
+  \node[op, minimum height=1.4cm] (s1) at (0,0)
+        {1.\ Pin the base release,\\ its DCAT version and\\ the published profile};
+  \node[op, minimum height=1.4cm] (s2) at (4.1,0)
+        {2.\ Compare shapes and\\ obligation tables per\\ (class, property), or\\ extract tables by hand};
+  \node[op, minimum height=1.4cm] (s3) at (8.2,0)
+        {3.\ Drop inherited\\ constraints, classify by\\ kind, set loosened\\ elements apart};
   % row 2: fix the denominator, then match (right to left)
-  \node[op] (s4) at (8.2,-1.75) {4.\ Align atoms to the\\ elements they ask for};
-  \node[op] (s5) at (4.1,-1.75) {5.\ Freeze the\\ reference deltas};
-  \node[op] (s6) at (0,-1.75)   {6.\ Match included changes:\\ strict, relaxed, by meaning};
+  \node[op] (s4) at (8.2,-1.9) {4.\ Align atoms to the\\ elements they ask for};
+  \node[op] (s5) at (4.1,-1.9) {5.\ Freeze the\\ reference deltas};
+  \node[op] (s6) at (0,-1.9)   {6.\ Match included changes:\\ strict, relaxed, by meaning};
   % row 3: the report (filled) and what stays outside the denominator (dashed)
-  \coordinate (r3) at (0,-3.5);
+  \coordinate (r3) at (0,-3.65);
   \node[final, anchor=west] (s7) at (s6.west |- r3)
         {7.\ Report Recovery:\\ aligned elements with a match / aligned elements;\\ Strict beside it};
-  \node[outside] (out) at (8.2,-3.5)
-        {Outside the denominator:\\ elements no atom asks for,\\ loosened elements, usage notes,\\ unhandled constructs};
+  \node[outside] (out) at (8.2,-3.65)
+        {Outside the denominator:\\ elements no atom asks for,\\ loosened elements, usage\\ notes, unhandled constructs};
   % solid path
   \draw[flow] (s1) -- (s2);
   \draw[flow] (s2) -- (s3);

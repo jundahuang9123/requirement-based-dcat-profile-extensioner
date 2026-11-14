@@ -2,6 +2,8 @@
 % Brief: outline-final.md 6.10 and Sect. 4 (Tables 3-5, Figs. 3-4). Source shorthand in the "% src:" comments:
 %   DEMO  = paper/inputs/demo-materials-testing-lab-2026-11-14.json: the synthetic demo run behind Fig. 3 (offline
 %           rules provider "mock", base dcat-ap-3.0.1, commit 0d7aadc; same outcome at 5ffd56e, issues digest P8)
+%   DEMO5 = paper/inputs/demo-materials-testing-lab-5ffd56e-2026-11-14.json: the same demo re-run at 5ffd56e for Fig. 3;
+%           metrics, dispositions and changes equal DEMO's; it adds the intake lint, the per-change checks and C8
 %   ATOMS = examples/materials-testing-lab/atoms.yaml (synthetic atoms; identical at 5ffd56e)
 %   @5ffd56e B/<path> = backend/profile_extensioner/<path> at commit 5ffd56e, the tool the paper describes
 %   CONF5 = docs/conformance.md at 5ffd56e; RQ1 Lx = line x of the RQ1 draft text of 13 Nov 2026 (rq1-main.txt)
@@ -24,8 +26,8 @@ checks of Sect.~\ref{sec:pipeline}, and Fig.~\ref{fig:workbench} shows the workb
   \label{tab:criteria}
   \centering\scriptsize
   \setlength{\tabcolsep}{3pt}
-  \begin{tabular}{@{}>{\raggedright\arraybackslash}p{3.3cm}>{\raggedright\arraybackslash}p{2.75cm}%
-      >{\raggedright\arraybackslash}p{1.65cm}>{\raggedright\arraybackslash}p{1.75cm}%
+  \begin{tabular}{@{}>{\raggedright\arraybackslash}p{3.05cm}>{\raggedright\arraybackslash}p{2.65cm}%
+      >{\raggedright\arraybackslash}p{1.95cm}>{\raggedright\arraybackslash}p{1.8cm}%
       >{\raggedright\arraybackslash}p{1.9cm}@{}}
     \toprule
     Atom (modality) & E1: disposition, kind & E2: licensed / set & E3: decision & E4: against the base\\
@@ -51,14 +53,13 @@ checks of Sect.~\ref{sec:pipeline}, and Fig.~\ref{fig:workbench} shows the workb
       & auto-accepted % src: DEMO:115,120
       & added: the base does not constrain it there\\ % src: DEMO:33 (1 added); @5ffd56e B/engine/verify.py:319-320
     lab-11 ``A dataset must state the number of specimens that were tested.'' (must) % src: ATOMS:79-82
-      & mint \term{lab:numberSpecimens} % src: DEMO:154,161
+      & mint \term{lab:numberSpecimens}, range \term{xsd:string}: the rules provider's choice % src: DEMO:154,161; knowledge-compile-ui digest Sect. 8 item 15
       & mandatory / mandatory % src: DEMO:161
       & waits for review: confidence 0.45 below 0.5 % src: DEMO:155,160
-      & added in the extension's namespace once accepted; \term{xsd:string} is the rules provider's choice\\ % src: DEMO:161; knowledge-compile-ui digest Sect. 8 item 15
+      & added in the extension's namespace once accepted\\
     lab-12 ``A dataset must state its measurement uncertainty and the calibration date of the testing machine.''
-      (must; compound \verify{intake lint; not in the demo record}) % src: ATOMS:85-88; @5ffd56e B/engine/intake.py:72-79 (code reading)
-      & one mint, \term{lab:measurement\allowbreak Uncertainty}, for a two-part atom; the calibration date gets no
-        change % src: DEMO:163-172 (the only change for lab-12)
+      (must; compound) % src: ATOMS:85-88; DEMO5:623-626 (lint: compound); @5ffd56e B/engine/intake.py:72-79
+      & one mint, \term{lab:measurement\allowbreak Uncertainty}; the calibration date gets no change % src: DEMO:163-172 (the only change for lab-12)
       & mandatory / mandatory % src: DEMO:171
       & waits for review (0.45) % src: DEMO:165,170
       & added in the extension's namespace once accepted\\
@@ -77,46 +78,45 @@ checks of Sect.~\ref{sec:pipeline}, and Fig.~\ref{fig:workbench} shows the workb
 \end{table}
 
 \begin{table}[tp]
-  \caption{Checks on every change and on the compiled extension. Program code runs every check except T2, a
-    judgment of the model, made only on a change without an error. Error: it blocks automatic acceptance and % src: @5ffd56e B/engine/pipeline.py:221-244,246-267,279
-    sends the change to repair and, if it still fails, to the queue (B1: the atom is left unclear); on the % src: @5ffd56e B/engine/pipeline.py:207-211,295-339
-    extension, it makes the verdict non-conformant, which blocks the sign-off. Warning: shown to the person and % src: @5ffd56e B/conformance/check.py:264-266; @5ffd56e B/engine/pipeline.py:618-640
-    never blocking, except that a D1 warning withholds automatic acceptance by default. Source: the guideline % src: @5ffd56e B/engine/pipeline.py:260-263; @5ffd56e B/contracts.py:606
-    or work the check follows; derived: our rule. E: the criterion it serves (Sect.~\ref{sec:problem}).}
+  \caption{Checks on every change (upper block) and on the compiled extension (lower block), all by program
+    code except T2, a judgment of the model made only on a change without an error. Error: blocks automatic % src: @5ffd56e B/engine/pipeline.py:221-244,279
+    acceptance and sends the change to repair and, if it still fails, to the queue (B1: the atom is left % src: @5ffd56e B/engine/pipeline.py:246-267,295-339
+    unclear); on the extension, makes the verdict non-conformant, which blocks the sign-off. Warning: never % src: @5ffd56e B/engine/pipeline.py:207-211,618-640; @5ffd56e B/conformance/check.py:264-266
+    blocking, except that a D1 warning withholds automatic acceptance by default. Source: the guideline or % src: @5ffd56e B/engine/pipeline.py:260-263; @5ffd56e B/contracts.py:606
+    work followed; derived: our rule. E: the criterion served (Sect.~\ref{sec:problem}).}
   \label{tab:checks}
   \centering\scriptsize
   \setlength{\tabcolsep}{2pt}
-  \begin{tabular}{@{}>{\raggedright\arraybackslash}p{1.7cm}>{\raggedright\arraybackslash}p{4.9cm}%
-      >{\raggedright\arraybackslash}p{3.4cm}>{\raggedright\arraybackslash}p{1.04cm}%
-      >{\raggedright\arraybackslash}p{0.6cm}@{}}
+  \begin{tabular}{@{}>{\raggedright\arraybackslash}p{1.55cm}>{\raggedright\arraybackslash}p{5.1cm}%
+      >{\raggedright\arraybackslash}p{3.45cm}>{\raggedright\arraybackslash}p{0.95cm}%
+      >{\raggedright\arraybackslash}p{0.55cm}@{}}
     \toprule
     Check & Error & Warning & Source & E\\
     \midrule
-    \multicolumn{5}{@{}l}{\textit{On every change}}\\
     V1 terms exist % src: @5ffd56e B/engine/verify.py:96-158
-      & an unknown class, property, range or super-term; a mint outside the namespace or of an existing term; a
-        class used as a property
+      & an unknown term, range or super-term; a mint outside the namespace or of an existing term; a class used
+        as a property
       & a term outside the retrieved candidates; a vocabulary value that is not an IRI
       & derived & E4\\
     V2 domain and range % src: @5ffd56e B/engine/verify.py:166-211
-      & a declared domain or range that excludes the class, with a known class hierarchy; a class range on a
-        literal property, or a datatype on an object property
-      & the same misfit with no known hierarchy
+      & a declared domain or range that excludes the class (hierarchy known); a class range on a literal
+        property or the reverse
+      & the same misfit, hierarchy unknown
       & derived & E4\\
     D1 DCAT version % src: @5ffd56e B/engine/verify.py:229-245,259-273; @5ffd56e B/contracts.py:606
-      & a DCAT term only earlier versions define; a DCAT property on a class the base's DCAT does not list it
-        for, if the term declares no domain
-      & a term only a later DCAT defines: a person decides (\emph{forbid}: error; \emph{allow}: a note)
-      & \cite[\S4]{w3cdcat3} & E4\\
-    D2 deprecated terms % src: @5ffd56e B/engine/verify.py:246-257
+      & a term only earlier DCAT versions define; a DCAT property without a declared domain on a class the
+        base's DCAT does not list it for
+      & a term only a later DCAT defines: a person decides (\emph{forbid}: error)
+      & \cite[\S4]{w3cdcat3} & E4\\ % src: DCAT 3 Sect. 4, the profile definition (@5ffd56e B/data/dcat/dcat-3/spec.html:2631)
+    D2 deprecation % src: @5ffd56e B/engine/verify.py:246-257
       & a term the base's DCAT or the base deprecates
       & --
-      & \cite[\S4]{w3cdcat3} & E4\\
-    D3 inverse properties % src: @5ffd56e B/engine/verify.py:274-280; @5ffd56e B/knowledge/dcat_state.py:81,198-200; @5ffd56e B/data/dcat/dcat-3/model.json (11 pairs, 6 with a dcat: inverse; none in dcat-2014 or dcat-2)
+      & \cite[\S4]{w3cdcat3} & E4\\ % src: DCAT 3 Sect. 4, the profile definition (@5ffd56e B/data/dcat/dcat-3/spec.html:2631)
+    D3 inverses % src: @5ffd56e B/engine/verify.py:274-280; @5ffd56e B/knowledge/dcat_state.py:81,198-200; @5ffd56e B/data/dcat/dcat-3/model.json (11 pairs, 6 with a dcat: inverse; none in dcat-2014 or dcat-2)
       & --
-      & every use of one of the six \term{dcat:} inverses (bases on DCAT~3)
-      & \cite[\S7]{w3cdcat3} & E4\\
-    V3 legal refinement % src: @5ffd56e B/engine/verify.py:291-357
+      & every use of one of the six \term{dcat:} inverse properties (bases on DCAT~3)
+      & \cite[\S7]{w3cdcat3} & E4\\ % src: DCAT 3 Sect. 7, inverse properties (@5ffd56e B/data/dcat/dcat-3/spec.html:5962-5968)
+    V3 refinement % src: @5ffd56e B/engine/verify.py:291-357
       & a facet or obligation that loosens or contradicts the base; a refinement that tightens nothing
       & a facet not shown to narrow the base's
       & \cite{semicreuse2026} & E1, E4\\
@@ -125,16 +125,16 @@ checks of Sect.~\ref{sec:pipeline}, and Fig.~\ref{fig:workbench} shows the workb
       & a candidate scoring 6.0 or more left unaddressed
       & \cite{semicreuse2026}, \cite{fathallah2026rigor,lippolis2025ontology} & E1\\
     V5 consistency % src: @5ffd56e B/engine/verify.py:407-434,493-510
-      & a negative minimum, a maximum below 1 or under the minimum; an obligation the minimum contradicts; two
-        ranges; a node kind that does not fit; an empty usage note; two live changes on one class and property
+      & a negative or inverted cardinality or a maximum below 1; an obligation the minimum contradicts; two
+        ranges; an unfit node kind; two live changes on one class and property
       & a minted property without a range
       & derived & E1, E4\\
     T1 trace % src: @5ffd56e B/engine/verify.py:442-475
-      & no atom, or an inactive one; a link without a reason; a quote not verbatim in the atom; an obligation
-        above the licensed one; a facet without a reason
+      & no atom or an inactive one; a link or facet without a reason; a quote not verbatim; an unlicensed
+        obligation
       & --
       & \cite{fathallah2026rigor} & E2\\
-    T2 attribution (model) % src: @5ffd56e B/engine/pipeline.py:221-244
+    T2 judge % src: @5ffd56e B/engine/pipeline.py:221-244
       & unsupported, or a facet named unsupported
       & partially supported; judge unavailable
       & \cite{rashkin2023ais} & E2\\
@@ -143,14 +143,12 @@ checks of Sect.~\ref{sec:pipeline}, and Fig.~\ref{fig:workbench} shows the workb
       & --
       & \cite{lippolis2025ontology} & E1\\
     \midrule
-    \multicolumn{5}{@{}l}{\textit{On the compiled extension}}\\
-    C1 legal refinement % src: @5ffd56e B/conformance/check.py:111-142 (obligation compared only where the base has a shape: :119-120)
-      & a constraint or obligation that loosens the base (obligations only where the base has a shape)
+    C1 refinement % src: @5ffd56e B/conformance/check.py:111-142 (obligation compared only where the base has a shape: :119-120)
+      & a loosened constraint or obligation (obligations only where the base has a shape)
       & --
       & \cite{semicreuse2026} & E4\\
     C2 no contradiction % src: @5ffd56e B/conformance/check.py:143-147; @5ffd56e B/conformance/refinement.py:116,128,133,166,177,195; CONF5:44
-      & no data can meet it together with the base: a minimum above the base's maximum or the reverse, another
-        datatype, disjoint node kinds or value lists
+      & unsatisfiable with the base: crossing bounds, another datatype, disjoint node kinds or value lists
       & --
       & derived & E4\\
     C3 own namespace % src: @5ffd56e B/conformance/check.py:149-158
@@ -171,12 +169,12 @@ checks of Sect.~\ref{sec:pipeline}, and Fig.~\ref{fig:workbench} shows the workb
       & \cite{w3cshacl} & E4\\
     C7 witness % src: @5ffd56e B/conformance/check.py:212-247,257-261; base-only branch unreachable: knowledge-compile-ui digest Sect. 4.4
       & -- (its base-only branch cannot fire)
-      & the witness fails base and extension together (Sect.~\ref{sec:compile}), or validation does not run
+      & the witness fails base and extension (Sect.~\ref{sec:compile}) or does not run
       & derived & E4\\
     C8 DCAT state % src: @5ffd56e B/conformance/check.py:64-99
       & a DCAT term the base's DCAT deprecates or no longer defines
-      & a later DCAT term, which by default only a person can accept
-      & \cite[\S4]{w3cdcat3} & E4\\
+      & a later DCAT term, by default accepted only by a person
+      & \cite[\S4]{w3cdcat3} & E4\\ % src: DCAT 3 Sect. 4, the profile definition (@5ffd56e B/data/dcat/dcat-3/spec.html:2631)
     \bottomrule
   \end{tabular}
 \end{table}
@@ -201,27 +199,39 @@ per case; test-case atom counts as in Table~\ref{tab:cases} (Q11)}
   \label{tab:cases-full}
   \centering\scriptsize
   \setlength{\tabcolsep}{2.5pt}
-  \begin{tabular}{@{}>{\raggedright\arraybackslash}p{1.75cm}>{\raggedright\arraybackslash}p{1.3cm}rrrrrrrrr@{}}
+  \begin{tabular}{@{}>{\raggedright\arraybackslash}p{1.95cm}>{\raggedright\arraybackslash}p{1.3cm}rrrrrrrrr@{}}
     \toprule
     & & \multicolumn{4}{c}{Elements} & & & \multicolumn{3}{c}{Atoms}\\
     \cmidrule(lr){3-6}\cmidrule(l){9-11}
     Case (base) & Reference (source) & reuse & refine & mint & class & loosened & Aligned & A-gold & A-rq1
       & counterf.\\
     \midrule
-    mobilityDCAT-AP (\tbd) & \tbd{} (\tbd) & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd{} (\tbd) & 39 & \tbd % src: RQ1 L382 (Table 1, Atoms)
-      & \tbd\\
-    GeoDCAT-AP (\tbd) & \tbd{} (\tbd) & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd{} (\tbd) & 37 & \tbd % src: RQ1 L383
-      & \tbd\\
-    HealthDCAT-AP (\tbd) & \tbd{} (\tbd) & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd{} (\tbd) & 89 & \tbd % src: RQ1 L384
-      & \tbd\\
-    \textit{Test cases} & & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd{} (\tbd) & 165 & \tbd & \tbd\\ % src: RQ1 L385 (39+37+89)
+    % Base, reference and source: author decisions (Q3, Q23), \tbd here. Counts: \res slots for the RQ2 evaluator
+    % (scopes as in Table 2: mobility, geo, health, test, stat, jrc, five; condition "all"); they print \tbd until
+    % defined. A-gold: the companion's scored content atoms (RQ1 Table 1, "Atoms").
+    mobilityDCAT-AP (\tbd) & \tbd{} (\tbd) & \res{mobility}{all}{reuse} & \res{mobility}{all}{refine} & \res{mobility}{all}{mint} & \res{mobility}{all}{class} & \res{mobility}{all}{loosened}
+      & \res{mobility}{all}{N} (\res{mobility}{all}{unaligned}) & 39 % src: RQ1 L382 (Table 1, Atoms)
+      & \res{mobility}{all}{arq1} & \res{mobility}{all}{counterfactual}\\
+    GeoDCAT-AP (\tbd) & \tbd{} (\tbd) & \res{geo}{all}{reuse} & \res{geo}{all}{refine} & \res{geo}{all}{mint} & \res{geo}{all}{class} & \res{geo}{all}{loosened}
+      & \res{geo}{all}{N} (\res{geo}{all}{unaligned}) & 37 % src: RQ1 L383
+      & \res{geo}{all}{arq1} & \res{geo}{all}{counterfactual}\\
+    HealthDCAT-AP (\tbd) & \tbd{} (\tbd) & \res{health}{all}{reuse} & \res{health}{all}{refine} & \res{health}{all}{mint} & \res{health}{all}{class} & \res{health}{all}{loosened}
+      & \res{health}{all}{N} (\res{health}{all}{unaligned}) & 89 % src: RQ1 L384
+      & \res{health}{all}{arq1} & \res{health}{all}{counterfactual}\\
+    \textit{Test cases} &  & \res{test}{all}{reuse} & \res{test}{all}{refine} & \res{test}{all}{mint} & \res{test}{all}{class} & \res{test}{all}{loosened}
+      & \res{test}{all}{N} (\res{test}{all}{unaligned}) & 165 % src: RQ1 L385 (39+37+89)
+      & \res{test}{all}{arq1} & \res{test}{all}{counterfactual}\\
     \midrule
-    StatDCAT-AP (\tbd) & \tbd{} (\tbd) & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd{} (\tbd) & 14 & \tbd % src: RQ1 L386
-      & \tbd\\
-    DCAT-AP-JRC (\tbd) & \tbd{} (\tbd) & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd{} (\tbd) & 17 & \tbd % src: RQ1 L387
-      & \tbd\\
+    StatDCAT-AP (\tbd) & \tbd{} (\tbd) & \res{stat}{all}{reuse} & \res{stat}{all}{refine} & \res{stat}{all}{mint} & \res{stat}{all}{class} & \res{stat}{all}{loosened}
+      & \res{stat}{all}{N} (\res{stat}{all}{unaligned}) & 14 % src: RQ1 L386
+      & \res{stat}{all}{arq1} & \res{stat}{all}{counterfactual}\\
+    DCAT-AP-JRC (\tbd) & \tbd{} (\tbd) & \res{jrc}{all}{reuse} & \res{jrc}{all}{refine} & \res{jrc}{all}{mint} & \res{jrc}{all}{class} & \res{jrc}{all}{loosened}
+      & \res{jrc}{all}{N} (\res{jrc}{all}{unaligned}) & 17 % src: RQ1 L387
+      & \res{jrc}{all}{arq1} & \res{jrc}{all}{counterfactual}\\
     \midrule
-    All five & & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd{} (\tbd) & 196 & \tbd & \tbd\\ % src: RQ1 L388 (165+14+17)
+    All five &  & \res{five}{all}{reuse} & \res{five}{all}{refine} & \res{five}{all}{mint} & \res{five}{all}{class} & \res{five}{all}{loosened}
+      & \res{five}{all}{N} (\res{five}{all}{unaligned}) & 196 % src: RQ1 L388 (165+14+17)
+      & \res{five}{all}{arq1} & \res{five}{all}{counterfactual}\\
     \bottomrule
   \end{tabular}
 \end{table}

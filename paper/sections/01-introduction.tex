@@ -10,73 +10,75 @@ build on \acs{DCAT-AP} and inherit its classes, properties and obligations: GeoD
 geospatial and statistical data~\cite{geodcatap10,statdcatap}, mobilityDCAT-AP for mobility
 data~\cite{scrocca2025mobilitydcat}, HealthDCAT-AP for the \ac{EHDS}~\cite{derycke2025healthdcat} and DCAT-AP-JRC
 for research data~\cite{perego2016jrc}. What an extension adds is a set of changes to its base: existing
-properties used where the base states nothing, base constraints tightened and terms minted in the extension's own
+properties used where the base states nothing, base constraints tightened and terms minted in its own
 namespace~\cite{semicreuse2026}.
-% src for the three kinds of change: @5ffd56e docs/conformance.md:12-14, :45 (RG lines 376-379, 471-474)
+% src: w3cdcat3 as vendored, B/data/dcat/dcat-3/spec.html:107 ("designed to facilitate interoperability between data
+% catalogs"); the five extensions as RQ1 L45-51 cites them; the three kinds of change: @5ffd56e
+% docs/conformance.md:12-14, :45 (RG lines 376-379, 471-474)
 
 Defining such an extension is a requirements problem before it is a modeling problem~\cite{anon2027rq1}; once
 the requirements are settled, it is a modeling problem under the constraints the base imposes. A requirement is
-met by the base as it stands, by a tightened base constraint, by a reused term or by a new one; mobilityDCAT-AP,
-for example, makes the update frequency mandatory where its base has it optional~\cite{mobilitydcatspec}.
+met by the base as it stands, by a tightened constraint (mobilityDCAT-AP tightens the update frequency from
+optional to mandatory~\cite{mobilitydcatspec}), by a reused term or by a new one.
 % src: RQ1 L59-61 (the companion's own example)
 \todo{author: keep the companion's mobilityDCAT-AP example (a test case) or use the generic wording ``raising an
 optional property to mandatory'' (Q17)}
-The guidance of the \ac{SEMIC} orders these choices, rules out loosening a base constraint, ``as the result would
-no longer be compliant with DCAT-AP'', and expects use cases to justify new elements and tightened
-constraints~\cite{semicreuse2026}. \verify{verbatim against the guidelines}
-% src: @5ffd56e docs/conformance.md:12-14 (RG lines 376-379) and :47 (RG lines 262-264)
-The base itself profiles a DCAT version as it stood when the release was made: \acs{DCAT-AP}~1.1 builds on % src: @5ffd56e B/data/base-profiles/dcat-ap-1.1/profile.yaml:33
-DCAT~2014 and \acs{DCAT-AP}~3.0.1 on DCAT~3. \verify{release quotes} % src: @5ffd56e B/data/base-profiles/dcat-ap-3.0.1/profile.yaml:43
+The guidance of the \ac{SEMIC} orders these choices, rules out loosening, ``as the result would no longer be
+compliant with DCAT-AP'', and expects use cases to justify new elements and tightened
+constraints~\cite{semicreuse2026}.
+% src: @5ffd56e docs/conformance.md:12-14 (RG lines 376-379) and :47 (RG lines 262-264); both quotes verified
+% verbatim at RG@e958ded in digests/conformance-dataspecer.md:92-96 and :136 (so no printed verify marker)
+The base itself profiles DCAT as it stood when the release was made: \acs{DCAT-AP}~1.1 builds on % src: @5ffd56e B/data/base-profiles/dcat-ap-1.1/profile.yaml:33
+DCAT~2014~\cite{dcatap11}, 3.0.1 on DCAT~3~\cite{semicdcatap301}. \verify{release quotes} % src: @5ffd56e B/data/base-profiles/dcat-ap-3.0.1/profile.yaml:43
 
-Existing authoring tools and generators help with the modeling, not with this derivation
-(Sect.~\ref{sec:related}). Dataspecer generates \ac{DSV} and \ac{SHACL} from profiles of profiles that people
-author \verify{new bib entry: Dataspecer}, but in a reading of its code it uses no language model and does not
-check that a profile refines its base; generators based on \acp{LLM} write ontologies from competency questions or
-relational schemas~\cite{lippolis2025ontology,fathallah2026rigor}, and shape generators are given the
-terms \verify{new bib entry: NL2SHACL-Bench}. Of those we examined, none derives an extension of a pinned base
-release from requirements and records, for every element, the requirement it serves and the base value it
-changes. \verify{each ``none'' claim}
-% src: docs/research/B1-dataspecer.md:29 (finding 7: no refinement check); visual-profile-editor
-% docs/dataspecer-spike.md:9-30, 67-75 (SHACL from profiles; no LLM features, medium confidence: code reading only)
+Existing tools and generators help with the modeling, not with this derivation
+(Sect.~\ref{sec:related}). Dataspecer~\cite{stenchlak2022dataspecer,klimek2024dataspecer} generates
+\ac{DSV}~\cite{klimek2026dsv} and \ac{SHACL}~\cite{w3cshacl} from profiles of profiles that people author but, by
+our reading of its code, does not check that their cardinalities and ranges refine the base; \acp{LLM} write
+ontologies from competency questions or schemas, or shapes for given
+terms~\cite{lippolis2025ontology,fathallah2026rigor,zhou2026nl2shacl}. Of those we examined, none derives an
+extension of a pinned base from requirements and records for each element the requirement it serves and the base
+value it changes. \verify{each ``none'' claim}
+% src: docs/research/B1-dataspecer.md:29 (finding 7) and :1069-1085 (no refinement check; the only guard is the
+% controlled-vocabulary qualifier); visual-profile-editor docs/dataspecer-spike.md:9-30 (SHACL from profiles);
+% digests/conformance-dataspecer.md:277-283, 311-317 (profiles of profiles; refinement). No claim about model
+% features: the Dataspecer group's LLM work is separate (prokop2024assistant; digest :331-335). Ontology
+% generation as RQ1 L136-137 describes it; NL2SHACL-Bench gives the ontology terms (digest :425).
 
-Such records are needed after the first release too, because a base does not stand still. \acs{DCAT-AP}~3.0.1
-relaxed three cardinalities of 3.0.0 \verify{new bib entry: DCAT-AP 3.0.1}, and 68 issues on \acs{DCAT-AP}, % src: @5ffd56e docs/conformance.md:22-23 (three cardinalities, from the 3.0.1 CHANGELOG); RQ1 L71-73 (68 issues)
-StatDCAT-AP and GeoDCAT-AP were reviewed for maintenance in less than nine months~\cite{dragan2019maintenance}. % src: RQ1 L71-73
-\verify{3.0.1 CHANGELOG}
-When the base moves to another release, and possibly to another DCAT version, an extension has to find the elements
-that rest on what changed, and a profile that names neither the requirement behind an element nor the base value
-it tightened cannot show it. With such a record, the rebase of Sect.~\ref{sec:impl} compares each change under
-the old and the new base.
+Such records are needed after the first release too, because a base does not stand still.
+\acs{DCAT-AP}~3.0.1 relaxed three cardinalities of 3.0.0~\cite{semicdcatap301}, and 68 issues on \acs{DCAT-AP}, % src: @5ffd56e docs/conformance.md:22-23; verified at the 3.0.1 CHANGELOG:28-31 in digests/conformance-dataspecer.md:181-186 (two issues, three class-property pairs)
+StatDCAT-AP and GeoDCAT-AP were reviewed for maintenance in less than nine months~\cite{dragan2019maintenance}. % src: RQ1 L71-73 (68 issues, under nine months)
+After each such change, an extension has to find the elements that rest on what changed, and a profile that
+names neither the requirement behind an element nor the base value it tightened cannot show it; the rebase of
+Sect.~\ref{sec:impl} compares each change under both bases.
 % src: @5ffd56e B/engine/rebase.py:73-180; B/engine/pipeline.py:557-609; docs/dcat-versions.md:185-210
 
-This paper addresses the gap with a pipeline in which an \acs{LLM} acts as a bounded decider: for each
-requirement atom it decides whether the base already meets it and otherwise fills typed change records from
-retrieved candidate terms, while program code mints identifiers and compiles the extension. Four pillars shape % src: @5ffd56e docs/design.md:5-10 (the design goals; outline section 2)
-the design: (1)~reuse first and minimal, (2)~traced, with an obligation the atom's wording licenses,
-(3)~decided by the model, with the final say for a person and every step open to inspection, and
-(4)~conformant to the base; Sect.~\ref{sec:problem} turns them into the criteria E1--E4. The companion workflow
-ends with needs that cite their passages; this pipeline starts from atoms and ends with changes that cite them,
-each with a verbatim quote of its atoms, the base value beside each new one and the decisions behind it, so that
-when an atom or the base changes a reviewer can find the changes that rest on it. Program code checks every
-change and the compiled extension, a model only judges whether the atoms support a change, and only a person
-releases the extension; automatic acceptance is a decision policy, not a claim that the checks establish
-correctness.
+This paper addresses the gap with a pipeline in which an \acs{LLM} acts as a bounded decider: per requirement
+atom, it decides whether the base already meets it and otherwise fills typed change records from retrieved
+candidates, and program code mints identifiers, checks every change and compiles and checks the extension.
+Four pillars shape the design: (1)~reuse first and minimal, (2)~traced, with an obligation the atom's wording % src: @5ffd56e docs/design.md:5-10 (the design goals; outline section 2)
+licenses, (3)~decided by the model, with the final say for a person and every step open to inspection, and
+(4)~conformant to the base (criteria E1--E4, Sect.~\ref{sec:problem}). The companion workflow ends with needs % src: outline section 2 (E1-E4 = pillars 1-4)
+that cite their passages; this pipeline starts from atoms and ends with changes that cite them, each with a
+verbatim quote, the base value beside each new one and the decisions behind it. Among the checks, only whether
+the atoms support a change is judged by a model, and automatic acceptance is a decision policy, not a claim that
+the checks establish correctness.
 % src: @5ffd56e B/engine/prompts.py:24-72; B/engine/verify.py:482-483; B/engine/pipeline.py:221-267, 611-640;
 % docs/design.md:14-31
 
 We ask, for the modeling part of profile engineering: \emph{How much of what a published DCAT-AP extension adds
 to its base does a pipeline reconstruct from the requirement atoms behind it that reuses before it mints and
-keeps every change reviewable from the atoms it covers, its relation to the base and its decisions, while the
+keeps every change reviewable from its atoms, its relation to the base and its decisions, while the
 extension stays conformant to the base, and what do retrieval, repair and the judge contribute?} We compare the
-full pipeline with a rules baseline and a closed-book model, and remove retrieval, repair and the judge in turn.
+full pipeline with a rules baseline and a closed-book model and remove each component in turn.
 \todo{conditions: final set (Q7)}
 % src: @5ffd56e B/contracts.py:592-596 (the switches retrieval, repair_rounds, attribution_check)
 
 This paper makes three contributions:
 \begin{itemize}
-\item a formulation of an extension as a justified delta over a pinned \acs{DCAT-AP} release and the DCAT version
-  it builds on, with six change kinds, a justification contract and a legal-refinement order, and a pipeline that % src: @5ffd56e B/contracts.py:39-46 (ChangeKind)
-  implements it, grounded step by step in requirements-engineering and ontology-generation work
+\item a formulation of an extension as a justified delta over a pinned \acs{DCAT-AP} release and its DCAT version,
+  with six change kinds, a justification contract and a legal-refinement order, and a pipeline that implements it, % src: @5ffd56e B/contracts.py:39-46 (ChangeKind)
+  grounded step by step in work on requirements engineering and ontology generation
   (Sects.~\ref{sec:problem} and~\ref{sec:pipeline});
 \item reference deltas for the five published extensions of the companion benchmark, defined as each published % src: RQ1 L381-388
   profile minus its base and matched to the generated changes element by element (Sect.~\ref{sec:benchmark});

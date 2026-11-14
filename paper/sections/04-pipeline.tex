@@ -1,8 +1,9 @@
 % Sect. 4 Pipeline (outline brief 6.4). Describes the tool at commit 5ffd56e of the main branch ("Work inside the
 % DCAT state each DCAT-AP release builds on; keep all versions; rebase"), which is not merged into the paper branch
 % (TODO in Sect. 4.4). In the src comments, B = backend/profile_extensioner at 5ffd56e; CONF5, DCS, ENG, ISS, KCU,
-% LITD are the outline's shorthands (docs/conformance.md at 5ffd56e; scratchpad digests dcat-state, engine,
-% issues-at-main, knowledge-compile-ui, literature). Mirrors RQ1 Sect. 4 (L236-355): intro, Fig. 1, four subsections.
+% LIT, LITD are the outline's shorthands (docs/conformance.md at 5ffd56e; scratchpad digests dcat-state, engine,
+% issues-at-main, knowledge-compile-ui; docs/literature-steps.md; literature digest). Mirrors RQ1 Sect. 4
+% (L236-355): intro, Fig. 1, three subsections that follow the rows of the figure, then the implementation.
 \section{Pipeline}\label{sec:pipeline}
 
 \begin{figure}[t]
@@ -11,151 +12,120 @@
   \caption{The pipeline. Dashed operations call the model; with the rules baseline, offline rules take their place
     (Sect.~\ref{sec:setup}). Light: the person's operation. A change that fails a check at error level goes to
     repair~(5), at most three rounds, and, still failing, to the review queue~(9), as do conflicts, changes below % src: @5ffd56e B/contracts.py:595 (repair_rounds 3); B/engine/pipeline.py:246-267, 295-338, 347-353
-    the confidence threshold and changes that use a term of a later \acs{DCAT}. Proposer, repairer and judge use the
+    the confidence threshold and, by default, changes that use a term of a later \acs{DCAT}. Proposer, repairer and judge use the
     same model, so the judge is not independent of the proposer.}
   \label{fig:pipeline}
 \end{figure}
 
-Figure~\ref{fig:pipeline} shows the nine operations in three rows. % src: paper/figures/pipeline.tex (nodes o1-o9, three rows); @5ffd56e B/contracts.py:104-107 (nine stages)
-The model acts as proposer~(3), judge~(4) and repairer~(5), a person decides in the last operation~(9), and
-program code does the rest; the supplementary material follows one atom of a synthetic demo through them.
+Figure~\ref{fig:pipeline} shows the nine operations in three rows: the model acts as proposer~(3), judge~(4) and % src: paper/figures/pipeline.tex (nodes o1-o9, three rows); @5ffd56e B/contracts.py:104-107 (nine stages); B/engine/prompts.py:1 (three roles)
+repairer~(5), a person decides in the last~(9), and program code does the rest. The supplementary material follows % src: paper/figures/pipeline.tex (operation numbers 3, 4, 5, 9)
+one atom of a synthetic demo through them.
 \todo{supplementary material: one atom of the synthetic demo through the nine operations}
 The pipeline also runs without a model, with offline rules in the dashed operations (Sect.~\ref{sec:setup}). % src: @5ffd56e B/llm/mock.py:1-10
-Every model call records the version of its prompt. % src: @5ffd56e B/engine/prompts.py:8-9, 20-22 (propose-v2, repair-v2, judge-v1)
 
 \subsection{Read and propose}\label{sec:read}
 
-Intake checks every atom against the contract of Sect.~\ref{sec:problem}, never rewrites it, and maps its subject
-to a class of the base. % src: @5ffd56e B/engine/intake.py:1-7, 108-131
-An \ac{IRI} or a prefixed name in the statement is an error, which leaves the atom unclear and without a proposal; % src: @5ffd56e B/engine/intake.py:39-51, 115-116; B/engine/pipeline.py:184-185
-compound statements, a modality the wording contradicts, a subject that is not a plain word and statements of
-fewer than four words are warnings, and vague words and an unspecified modality are noted. % src: @5ffd56e B/engine/intake.py:52-87 (too_short: fewer than 4 words, :86)
-These wording checks adapt characteristics of a well-formed individual requirement \cite{iso29148}. % LIT G2-S02 (partial, Ours)
+Intake checks the form of every atom (Sect.~\ref{sec:problem}) without rewriting it and maps its subject to a % src: @5ffd56e B/engine/intake.py:1-7, 108-131
+class of the base. An \ac{IRI} or a prefixed name in the statement is an error, and the atom stays unclear % src: @5ffd56e B/engine/intake.py:39-51, 115-116; B/engine/pipeline.py:184-185
+without a proposal; a subject that is not a plain word, a very short statement, a compound statement and a % src: @5ffd56e B/engine/intake.py:52-87 (warnings; vague words and an unspecified modality are info)
+modality the wording contradicts are warnings, the last two adapted from characteristics of a well-formed % LIT G2-S02 (partial, Ours): compound = singular, modality mismatch = unambiguous
+requirement \cite{iso29148}.
 
-Retrieval is lexical and deterministic, a score weighted by field and by term rarity, without embeddings. % src: @5ffd56e B/knowledge/vocab_index.py:8, 332-343, 352-367 (label 3, local name 2, definition 1; idf); KCU §2.4
-The base's elements on the atom's class are boosted and listed first, and properties that the base's \acs{DCAT}
-lists for the class but the base does not profile are boosted by a factor of 1.4; the 1.x bases leave no such % src: @5ffd56e B/engine/retrieve.py:40-41, 52, 108-156, 259-263; DCS §2.4 (rung 2 empty for 1.x)
-property. Terms that only a later \acs{DCAT} defines are down-weighted by a factor of 0.5 and marked with their % src: @5ffd56e B/engine/retrieve.py:42, 82-88; B/engine/prompts.py:136-138
-version, and terms the base deprecates and vocabularies made for one domain are down-weighted as well. % src: @5ffd56e B/engine/retrieve.py:43, 47-49, 165-168, 186-190
-The proposer sees up to eight properties and three classes. % src: @5ffd56e B/contracts.py:593 (top_k 8); B/engine/retrieve.py:54 (MAX_CLASS_CANDIDATES 3)
+Retrieval is deterministic: a field-weighted lexical score, without embeddings. The base's elements on the atom's % src: @5ffd56e B/knowledge/vocab_index.py:8, 332-343, 352-367 (label 3, local name 2, definition 1; idf); KCU §2.4
+class are boosted and, when they match reasonably, listed first; properties that the base's \acs{DCAT} lists for % src: @5ffd56e B/engine/retrieve.py:40, 52, 108-132, 259-263 (BASE_FIRST_SHARE 0.35)
+the class but the base does not profile are boosted ($\times$1.4; the 1.x bases have none); terms that only a later % src: @5ffd56e B/engine/retrieve.py:41, 134-156; DCS §2.4 (rung 2 empty for 1.x)
+\acs{DCAT} defines are marked with their version and down-weighted ($\times$0.5), and terms the base deprecates % src: @5ffd56e B/engine/retrieve.py:42, 82-88; B/engine/prompts.py:136-138
+and vocabularies made for one domain are down-weighted too. % src: @5ffd56e B/engine/retrieve.py:43, 47-49, 186-190
 
-The proposer is called once per atom, without the changes proposed for other atoms, and fills a typed record by a % src: @5ffd56e B/engine/pipeline.py:188-191 (no pending changes passed); ISS E7.2
-numbered procedure: restate the information needed, fix the class, and walk the ladder of E1 from the base slice to % src: @5ffd56e B/engine/prompts.py:30-48
-a mint, taking a later-\acs{DCAT} term only when nothing else fits and, before minting, saying why each plausible
-candidate does not fit; every constraint needs a reason, and the answer a confidence.
-Program code expands names, mints identifiers, sets the kind from the facts and normalizes the facets, and a
-refinement inherits from the base what it leaves unset, except the obligation. % src: @5ffd56e B/engine/propose.py:175-306 (unchanged since 2b92d77, ISS header)
-B1 checks each covered-by-base claim: the named base elements must exist and be at least as strong as the
-obligation the atom licenses, or the atom stays unclear. % src: @5ffd56e B/engine/verify.py:513-533; B/engine/pipeline.py:200-211
-Independent votes with a majority are optional, one by default. % src: @5ffd56e B/contracts.py:597; B/engine/propose.py:69-101
-The ladder is our reading of the situations that SEMIC's guidance lists, in sequence, for a use case
-\cite{semicreuse2026}, informed by NeOn's reuse scenarios \cite{suarez2012neon}. % LIT G3-S01, G2-S07 (implemented, Ours)
-One atom per memoryless call and the question whether the base already answers it come from the released Memoryless
-CQbyCQ prompt \cite{lippolis2025ontology}, reuse of retrieved terms only from RIGOR's released implementation % LIT G1-S03 (Ours: the merge), G1-S05
-\cite{fathallah2026rigor}, and votes rather than debate from findings that debate does not reliably beat voting % LIT G1-S08; G4-S06 (Ours)
-\cite{choi2025debate,smit2024mad}.
-Here the model chooses the properties, within typed records; it never writes \ac{SHACL} or mints an identifier, and
-a change that quotes no atom fails the trace check.
+The proposer is called once per atom, without the other atoms' changes, and fills a typed record by a numbered % src: @5ffd56e B/engine/pipeline.py:188-191 (no pending changes passed); ISS E7.2
+procedure: it restates the information needed, fixes the class and walks the ladder of E1 from the base slice to a % src: @5ffd56e B/engine/prompts.py:30-48
+mint, taking a later-\acs{DCAT} term only when no other term carries the information and minting only after saying why each plausible
+candidate fails; every constraint needs a reason, and the answer a confidence. Program code then builds the change
+records of Sect.~\ref{sec:problem}, and a refinement inherits from the base what it leaves unset, except the % src: @5ffd56e B/engine/propose.py:175-306 (unchanged since 2b92d77, ISS header)
+obligation. B1 checks each covered-by-base claim as E1 requires, and a failed claim leaves the atom unclear. % src: @5ffd56e B/engine/verify.py:513-533; B/engine/pipeline.py:200-211
+One atom per memoryless call that first asks whether the base already meets it follows the released Memoryless % LIT G1-S03 (Ours: the merge), G1-S05
+CQbyCQ prompt \cite{lippolis2025ontology}, and reuse limited to retrieved terms follows RIGOR's released % LIT G1-S08
+implementation \cite{fathallah2026rigor}; the ladder is our reading of SEMIC's guidance \cite{semicreuse2026}. Here the model % LIT G3-S01 (implemented, Ours)
+chooses the properties, within typed records, and never writes \ac{SHACL} or mints an identifier.
 
 \subsection{Check and repair}\label{sec:check}
 
-Program code checks every change in a fixed order: V1 that its terms exist, V2 that domain and range fit, union
-domains included, D1 to D3 that it keeps to the base's \acs{DCAT}, V3 that it legally refines the base, V4 that it
-reuses before it mints, V5 that its constraints are consistent, and T1 its trace (Table~\ref{tab:checks} in the % src: @5ffd56e B/engine/verify.py:3-18, 166-211, 482-483; ISS E7.1 (union domains fixed)
-appendix); a set-level V5 error marks every live change on the same class and property. % src: @5ffd56e B/engine/verify.py:493-510
-By default D1 makes a term that only a later \acs{DCAT} defines a warning that sends the change to a person, and a % src: @5ffd56e B/contracts.py:604-606 (later_dcat_terms review|forbid|allow); B/engine/verify.py:228-242
-term that only an earlier one defines an error, as it does a \acs{DCAT} property without a declared domain on a % src: @5ffd56e B/engine/verify.py:243-245, 259-273
-class that the base's \acs{DCAT} does not list it for; D2 makes a term that the base's \acs{DCAT} or the base
-deprecates an error; and D3 warns on every use of the six inverse properties in the \acs{DCAT} namespace. % src: @5ffd56e B/engine/verify.py:246-257, 274-280; DCS §2.6 (11 DCAT 3 pairs, 5 outside the dcat: namespace)
-Only a change without an error reaches the judge T2, which reads the atoms and the change in the plain-language % src: @5ffd56e B/engine/pipeline.py:279-282
-form the reviewer sees and is told to judge from the atoms as written, not from published profiles: supported % src: @5ffd56e B/engine/prompts.py:84-94, 261-273; B/engine/verbalise.py
-passes, unsupported or a named unsupported constraint is an error, and partially supported or an unavailable judge
-is only a warning. % src: @5ffd56e B/engine/pipeline.py:221-244
-We adapt symbolic checks before any model judgment from the released code of a recent blackboard orchestration of
-\acp{LLM} \cite{chmielewski2026blackboard}\verify{chmielewski2026blackboard: known from its released code only; no
-DOI or URL in the entry}, and make a missing trace an error where RIGOR's released implementation warns % LIT G4-S04 (Ours), G1-S18 (Ours)
-\cite{fathallah2026rigor}; V3 applies SEMIC's rule that a profile may tighten its base but never loosen it
-\cite{semicreuse2026}, and checking the quote apart from judging the support follows attribution research % LIT G3-S02; G4-S17 (partial)
-\cite{rashkin2023ais,gao2023alce}.
+Program code checks every change in a fixed order (Table~\ref{tab:checks} in the appendix): V1 term existence, V2 % src: @5ffd56e B/engine/verify.py:3-18, 166-211, 482-483; ISS E7.1 (union domains fixed)
+domain and range, union domains included, D1 to D3 the \acs{DCAT} state, V3 legal refinement, V4 reuse before mint,
+V5 consistency and T1 the trace; a set-level V5 error marks every live change on the same class and property. % src: @5ffd56e B/engine/verify.py:493-510
+By default a term that only a later \acs{DCAT} defines gives a D1 warning that sends the change to a person; a % src: @5ffd56e B/contracts.py:604-606 (later_dcat_terms review|forbid|allow); B/engine/verify.py:228-242
+term only an earlier \acs{DCAT} defines and a \acs{DCAT} property without a declared domain on a class the base's % src: @5ffd56e B/engine/verify.py:243-245, 259-273
+\acs{DCAT} does not list it for are D1 errors, terms the base's \acs{DCAT} or the base deprecates are D2 errors, % src: @5ffd56e B/engine/verify.py:246-257
+and D3 warns on every use of the six inverse properties in the \acs{DCAT} namespace. Only a change without an % src: @5ffd56e B/engine/verify.py:274-280; DCS §2.6 (11 DCAT 3 pairs, 5 outside the dcat: namespace)
+error reaches the judge T2, which is told to judge from the atoms as written, not from published profiles: % src: @5ffd56e B/engine/pipeline.py:279-282; B/engine/prompts.py:84-94
+supported passes, unsupported or a named unsupported constraint is an error, and partially supported or an
+unavailable judge is a warning. We adapt checking before judging from the released code of a recent blackboard orchestration % src: @5ffd56e B/engine/pipeline.py:221-244; LIT G4-S04 (Ours)
+of \acp{LLM} \cite{chmielewski2026blackboard}\verify{chmielewski2026blackboard: known from its released code only;
+the entry has no DOI or URL}, and make a missing trace an error where RIGOR's released implementation warns % LIT G1-S18 (Ours)
+\cite{fathallah2026rigor}.
 
-A change with an error goes to repair for at most three rounds, with the failed checks listed in a correction % src: @5ffd56e B/contracts.py:595; B/engine/pipeline.py:295-338; B/engine/prompts.py:238-242
-section as in RIGOR's released implementation \cite{fathallah2026rigor} and nothing else in scope, as in IDEA2's % LIT G1-S13; G2-S13, G2-S14
-released reformulation prompt \cite{alharbi2027idea2}; the repairer revises the change, whose new version is
-verified, judged and decided again, or withdraws it. % src: @5ffd56e B/engine/pipeline.py:311-333
-Consolidation then merges compatible changes on one class and property, with the strongest obligation and the
-tightest bounds, and queues incompatible ones as a conflict. % src: @5ffd56e B/engine/consolidate.py:25-95 (unchanged since 2b92d77); B/engine/pipeline.py:340-366
-A change is auto-accepted when no check failed at error level, automatic acceptance is on, its self-reported
-confidence is at least 0.5, a majority agrees if there are several votes, and no D1 warning asks for a person; % src: @5ffd56e B/engine/pipeline.py:246-267; B/contracts.py:598-599
-otherwise it waits for review. Other warnings never block, and the threshold is our setting. % LITD §7 (no cited work supports self-reported confidence as calibrated)
+A change with an error goes to repair, at most three rounds, scoped to its failed checks as in the released code % src: @5ffd56e B/contracts.py:595; B/engine/pipeline.py:295-338; B/engine/prompts.py:238-242
+of RIGOR and IDEA2 \cite{fathallah2026rigor,alharbi2027idea2}: the repairer revises % LIT G1-S13; G2-S13
+it, and the new version is verified, judged and decided again, or withdraws it. Consolidation then merges % src: @5ffd56e B/engine/pipeline.py:311-333
+compatible changes on one class and property, with the strongest obligation and the tightest bounds, and queues
+incompatible ones as a conflict. A change is auto-accepted when no check failed at error level, automatic % src: @5ffd56e B/engine/consolidate.py:25-95 (unchanged since 2b92d77); B/engine/pipeline.py:340-366
+acceptance is on, its self-reported confidence is at least 0.5, a majority agrees if there are several votes, and % src: @5ffd56e B/engine/pipeline.py:246-267; B/contracts.py:598-599
+no D1 warning asks for a person; otherwise it waits for review. Other warnings never block, and the threshold is % LITD §7 (no cited work supports self-reported confidence as calibrated)
+our setting.
 \todo{tool: state or fix: duplicates on one class and property go to repair before consolidation would merge them;
 a change cleared by consolidation is decided without a judge verdict on its merged atoms (ENG §7.2-7.3; ISS E7.2,
 E7.3; Q22)}
-Every check result is stored with the change; proposer, repairer and judge use the same model, so the judge is not
-independent of the proposer.
 
 \subsection{Compile and release}\label{sec:compile}
 
-Only included changes compile, into seven artefacts. % src: @5ffd56e B/compile/model.py:47-49; B/engine/pipeline.py:382-392 (seven artefacts)
-The \ac{SHACL} delta holds only what the extension adds or tightens, one node shape per target class: range,
-cardinality and value-list constraints at Violation, a recommended property as a separate shape with
-\term{sh:minCount}~1 at Warning, and on each property shape the reason and one \term{prov:wasDerivedFrom} link per % src: @5ffd56e B/compile/shacl.py:3-8, 40-91
-covered atom. It states \term{dcterms:conformsTo} the dated \acs{DCAT} Recommendation and names the \acs{DCAT} % src: @5ffd56e B/compile/shacl.py:35-38
-state in a comment; its \term{owl:imports} names the release page for the 3.0.x bases and is absent for the 1.x
-and 2.x bases, so a validator loads the official shapes itself. V6 checks that the delta is valid \acs{SHACL}. % src: @5ffd56e B/compile/shacl.py:33-34; B/data/base-profiles/*/profile.yaml:6; ISS K10, K11; B/engine/pipeline.py:376
-The other artefacts are the minted vocabulary, \ac{LinkML} \cite{moxon2026linkml} with per-class slot usage for a
-visual profile editor\verify{the LinkML output validates with LinkML tooling (not installed)}, a \ac{DSV} profile
-\cite{klimek2026dsv} that on a 3.0.1 base profiles Dataspecer's \acs{DSV} of \acs{DCAT-AP}~3.0.1 % src: KCU §3.3-3.4; @5ffd56e B/compile/linkml_dsv.py:37-194
-\cite{klimek2024dataspecer}\verify{import of the DSV output into Dataspecer}, the ProfileDelta, a trace matrix and
-documentation.
+Only included changes compile, into seven artifacts. The \ac{SHACL} delta holds only what the extension adds or % src: @5ffd56e B/compile/model.py:47-49; B/engine/pipeline.py:382-392 (seven artefacts)
+tightens, with a separate \term{sh:minCount}~1 shape at Warning for a recommended property and, on each property shape, the reason and % src: @5ffd56e B/compile/shacl.py:3-8, 40-91
+a \term{prov:wasDerivedFrom} link per covered atom. Its \term{dcterms:conformsTo} names the dated Recommendation of
+the base's \acs{DCAT}, and its \term{owl:imports} names the release page for the % src: @5ffd56e B/compile/shacl.py:33-38
+3.0.x bases and is absent for the others, so a validator loads the official shapes itself. The other artifacts % src: @5ffd56e B/data/base-profiles/*/profile.yaml:6 (homepage only for 3.0.0, 3.0.1); ISS K10, K11
+are the minted vocabulary, \ac{LinkML} \cite{moxon2026linkml} for a visual profile editor\verify{the LinkML output
+is valid LinkML (LinkML tooling not installed) and opens in the profile editor}, a \ac{DSV} profile \cite{klimek2026dsv} that, on a 3.0.1 % src: KCU §3.3-3.4; @5ffd56e B/compile/linkml_dsv.py:37-194
+base, profiles the \acs{DSV} of \acs{DCAT-AP}~3.0.1 that Dataspecer generated \cite{klimek2024dataspecer}\verify{import of the DSV % src: @5ffd56e B/data/base-profiles/dcat-ap-3.0.1/dsv-index.json:2-3 (mff-uk DSV, generated by Dataspecer); KCU §3.4
+output into Dataspecer}, the ProfileDelta, a trace matrix and documentation.
 
-Eight rules then check conformance: C1 that every constraint is added or tightened, C2 that none contradicts the % src: @5ffd56e B/conformance/check.py:5-21, 111-177, 250-266; CONF5:41-51
-base, C3 that minted terms are new and in the extension's namespace, C4 that reused property paths exist, C5 that
-every change traces to an active atom, C6 that the shapes are valid \acs{SHACL} \cite{w3cshacl,sommer2026pyshacl},
-C7 that a witness exists, and C8 that every \acs{DCAT} term belongs to the base's \acs{DCAT}, a deprecated or
-removed term being an error and a later one a warning. % src: @5ffd56e B/conformance/check.py:64-99
-C7 builds an instance of every constrained class with values for every property of minimum one and validates it
-with pySHACL, without inference, against base and extension and against the base alone; it warns when no valid % src: @5ffd56e B/conformance/check.py:181-247 (depth < 3, :195; inference "none", :225); KCU §4.3
-witness results, and Sect.~\ref{sec:discussion} discusses its limits. The verdict is non-conformant when a rule
-fails at error level, and conformant with warnings when only C7 or C8 warn. % src: @5ffd56e B/conformance/check.py:264-266
-Conformance by inheritance follows DCAT's definition of a profile and SEMIC's guidance \cite{w3cdcat3,semicreuse2026}, % LIT G3-S10
-and we adapt the executable test of a requirement \cite{poveda2022lot,lippolis2025oeassist} to the extension as a % LIT G2-S17, G1-S12 (partial, Ours)
-whole.
+Eight rules then test what E4 asks: C1 legal refinement, C2 joint satisfiability, C3 % src: @5ffd56e B/conformance/check.py:5-21, 111-177, 250-266; CONF5:41-51
+and C4 the minted and reused terms, C5 the trace, C6 \acs{SHACL} validity, which V6 already logs at compilation \cite{w3cshacl}, C7 a witness, and C8
+the \acs{DCAT} state, failing on a deprecated or removed \acs{DCAT} term and warning on a later one. C7 builds an % src: @5ffd56e B/conformance/check.py:64-99
+instance of each constrained class with a value for every required property and validates it with pySHACL % src: @5ffd56e B/conformance/check.py:181-247 (min count >= 1, :204-209; inference "none", :225); KCU §4.3
+\cite{sommer2026pyshacl}, without inference,
+against base and extension and against the base alone, warning when no valid witness results
+(Sect.~\ref{sec:discussion}). The verdict is non-conformant when a rule fails at error level and conformant with % src: @5ffd56e B/conformance/check.py:264-266
+warnings when only C7 or C8 warn.
 
-The run stops at the review queue, which holds the changes waiting for review and the conflicts: a person can
-accept, reject, set back to undecided or edit any change and override any atom's disposition, and release requires % src: @5ffd56e B/engine/pipeline.py:493-555
-an empty queue, a current conformance report that is not non-conformant and a recorded sign-off with a hash of
-the included changes. % src: @5ffd56e B/engine/pipeline.py:611-635
-An edit is a new version, verified and recorded as accepted; no later machine stage overwrites a person's
-decision, and any later decision withdraws the sign-off. % src: @5ffd56e B/engine/pipeline.py:115-126, 246-248, 283-285, 301-303, 512-536, 637-638; ENG §4
-Every machine decision is shown with its checks and evidence, against the over-trust in suggestions reported for
-OE-Assist \cite{lippolis2025oeassist}, and the sign-off gate follows LOT's activity flow \cite{poveda2022lot}. % LIT G1-S16, G2-S25
-\todo{tool: state or fix: unclear and unaddressed atoms never enter the queue and do not block the sign-off (ENG §7.11;
-ISS E7.11; Q22)}
+The run stops at the review queue of waiting changes and conflicts: a person can accept,
+reject, set back to undecided or edit any change and override any atom's disposition, and release requires an % src: @5ffd56e B/engine/pipeline.py:493-555
+empty queue, a current conformance report that is not non-conformant and a recorded sign-off with a hash of the
+included changes. An edit is a new version, verified and recorded as accepted; no later machine stage overwrites a % src: @5ffd56e B/engine/pipeline.py:611-635, 512-536
+person's decision, and any later decision withdraws the sign-off. Each machine decision is shown with its % src: @5ffd56e B/engine/pipeline.py:115-126, 246-248, 283-285, 301-303, 637-638; ENG §4
+evidence, against the over-trust in suggestions reported for OE-Assist \cite{lippolis2025oeassist}. % LIT G1-S16
+\todo{tool: state or fix: unclear and unaddressed atoms never enter the queue and do not block the sign-off
+(ENG §7.11; ISS E7.11; Q22)}
 
 \subsection{Implementation and traceability}\label{sec:impl}
 
-The pipeline runs in an open research workbench (Fig.~\ref{fig:workbench} in the appendix) that runs any stage
-alone and shows every intermediate result, from the atoms' lint and candidates to each change with its checks, % src: @5ffd56e frontend/src/App.tsx:203-207, 241, 302; KCU §7
-quotes, justifications, rejected candidates and model calls, and the conformance report with its witness.
-An append-only SQLite blackboard records every rule, model call and human action, each call with its full
-prompts, answer, tokens and status, and serves a replay cache; the stages cooperate only through it, as the % src: @5ffd56e B/store/blackboard.py:1-11, 341-351; B/llm/client.py:1-12; KCU §5.3-5.4
-knowledge sources of Hearsay-II do \cite{erman1980hearsay,nii1986blackboard}, in a fixed order. % LIT G4-S01
-Model output is validated against its schema with one corrective retry, the model is reached through Anthropic, % src: @5ffd56e B/llm/client.py:5, 128-148; B/llm/registry.py:78-93; KCU §5.1-5.2, §5.7
-OpenAI-compatible endpoints or offline rules, and keys stay in server memory. The trace matrix shows completeness,
-not correctness. The bases are the nine \acs{DCAT-AP} releases with \acs{SHACL}, 1.1 to 3.0.1, unmodified from the % src: DCS §3; paper/inputs/tool-facts-main-5ffd56e.txt:6-14 (nine bases)
-official repository at one commit with their hashes\verify{1.1 and 1.2 record only the hash of the zip file},
-beside \acs{DCAT}~2014, 2 and 3 as official \acs{RDF} and specification text; the 98 tests never call a model. % src: DCS §1.1; paper/inputs/tool-facts-main-5ffd56e.txt:24 (98 collected)
-\verify{98 tests pass at the frozen commit}
+The pipeline runs in an open research workbench (Fig.~\ref{fig:workbench} in the appendix), where any stage can % src: @5ffd56e frontend/src/App.tsx:203-207, 241, 302; KCU §7
+run alone and every intermediate result is on screen. An append-only SQLite blackboard records what every rule, model and
+person did, each model call with its prompts, answer and tokens, and serves a replay cache; % src: @5ffd56e B/store/blackboard.py:1-11, 341-351; B/llm/client.py:1-12; KCU §5.3-5.4
+the stages cooperate only through it, as the knowledge sources of Hearsay-II do % LIT G4-S01
+\cite{erman1980hearsay,nii1986blackboard}, though in a fixed order. The trace matrix shows completeness, not correctness. The official % src: KCU §3.6
+files of the nine \acs{DCAT-AP} releases with \acs{SHACL}, 1.1 to 3.0.1, and of \acs{DCAT}~2014, 2 and 3 are kept % src: DCS §1.1, §3; paper/inputs/tool-facts-main-5ffd56e.txt:6-14 (nine bases)
+unmodified, with hashes\verify{1.1 and 1.2 record only the hash of the % src: DCS §1.1
+zip file}; the 98 tests never call a model.\verify{98 tests pass at the frozen commit} % src: paper/inputs/tool-facts-main-5ffd56e.txt:24 (98 collected)
 
 When the base release changes, a rebase moves the extension onto another release and its \acs{DCAT}: every change
-is compared under both bases and gets findings (now in the base, base changed, deprecated by the base, a \acs{DCAT} % src: @5ffd56e B/engine/rebase.py:73-180; B/contracts.py:616-637
-term now current, later or outdated, a mint now reusable, a lost covered-by-base claim), human decisions stay,
-machine changes whose finding asks for a decision are flagged for review, and the extension is verified, compiled % src: @5ffd56e B/engine/pipeline.py:557-609
-and checked again, which withdraws the sign-off. \todo{tool: the consolidation that follows a rebase re-decides
-flagged machine changes, and a lost covered-by-base claim is reported but not re-proposed (ISS NEW-1, NEW-2; Q22)}
+is compared under both bases, human decisions stay, machine changes with a finding that asks for a decision are % src: @5ffd56e B/engine/rebase.py:73-180; B/engine/pipeline.py:557-609
+flagged for review, and the extension is checked again, which withdraws the sign-off.
+\todo{tool: the consolidation that follows a rebase re-decides flagged machine changes, and a lost covered-by-base
+claim is reported but not re-proposed (ISS NEW-1, NEW-2; Q22)}
 \todo{described commit: 5ffd56e, not yet in the paper branch (Q14)}
 
-We took the design from 99 steps that we extracted from the works we cite and fact-checked against their released % src: docs/literature-steps.md:6
-code, prompts, slides and specifications; 33 are implemented, 30 in part and 36 planned, and of the 50 from % src: docs/literature-steps.md:6 (33/30/36); G1 rows :12-36 (13 implemented, 9 in part), G2 rows :42-66 (9, 8): 50 steps, 22 and 17
-ontology generation and requirements engineering, 22 are implemented and 17 in part (Table~\ref{tab:steps} in the
+We took the design from 99 steps that we extracted from related work and fact-checked against their released % src: docs/literature-steps.md:3, 6
+code, prompts, slides and specifications, some only against abstracts; 33 are implemented, 30 in part and 36 % LITD §0 caution 1 (abstract level for several G2 and G4 sources)
+planned, and of the 50 from % src: docs/literature-steps.md:6 (33/30/36); G1 rows :12-36 (13 implemented, 9 in part), G2 rows :42-66 (9, 8): 50 steps, 22 and 17
+ontology generation and requirements engineering, 22 are implemented and 17 in part (Table~\ref{tab:steps} in the % src: docs/literature-steps.md:12-36, 42-66 (G1 13+9, G2 9+8; recounted, outline 7.1)
 appendix). The workbench is available at \todo{anonymized repository link}.
