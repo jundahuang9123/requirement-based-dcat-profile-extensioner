@@ -85,7 +85,7 @@ workbench of Sect.~\ref{sec:impl}.
   \label{tab:checks}
   \centering\scriptsize
   \setlength{\tabcolsep}{2pt}
-  \begin{tabular}{@{}>{\raggedright\arraybackslash}p{2.25cm}>{\raggedright\arraybackslash}p{8.13cm}%
+  \begin{tabular}{@{}>{\raggedright\arraybackslash}p{2.08cm}>{\raggedright\arraybackslash}p{8.29cm}%
       >{\raggedright\arraybackslash}p{0.9cm}>{\raggedright\arraybackslash}p{0.5cm}@{}}
     \toprule
     Check & Conditions: error; \emph{warning} & Source & E\\
@@ -106,7 +106,7 @@ workbench of Sect.~\ref{sec:impl}.
       & a term the base or the base's DCAT deprecates
       & \cite[\S4]{w3cdcat3} & E4\\ % src: DCAT 3 Sect. 4, the profile definition (@5ffd56e B/data/dcat/dcat-3/spec.html:2631)
     D3 inverses % src: @5ffd56e B/engine/verify.py:274-280; @5ffd56e B/knowledge/dcat_state.py:81,198-200; @5ffd56e B/data/dcat/dcat-3/model.json (11 pairs, 6 with a dcat: inverse; none in dcat-2014 or dcat-2)
-      & \emph{warning:} a use of the six \term{dcat:} inverse properties (bases on DCAT~3)
+      & \emph{warning:} any of the six \term{dcat:} inverse properties (bases on DCAT~3)
       & \cite[\S7]{w3cdcat3} & E4\\ % src: DCAT 3 Sect. 7, inverse properties (@5ffd56e B/data/dcat/dcat-3/spec.html:5962-5968)
     V3 refinement % src: @5ffd56e B/engine/verify.py:291-357
       & a loosened or contradicted facet or obligation; a refinement that tightens nothing; \emph{warning:} a
@@ -118,7 +118,7 @@ workbench of Sect.~\ref{sec:impl}.
       & \cite{semicreuse2026}, \cite{fathallah2026rigor,lippolis2025ontology} & E1\\
     V5 consistency % src: @5ffd56e B/engine/verify.py:407-434,493-510
       & a negative or inverted cardinality or a maximum below 1; an obligation the minimum contradicts; two
-        ranges; an unfit node kind; two live changes on one element; \emph{warning:} a mint without a range
+        ranges; an unfit node kind; two changes on one element; \emph{warning:} a mint without a range
       & derived & E1, E4\\
     T1 trace % src: @5ffd56e B/engine/verify.py:442-475
       & no atom or an inactive one; a link or facet without a reason; a quote not verbatim; an unlicensed
