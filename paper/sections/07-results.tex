@@ -11,9 +11,9 @@
 % Source shorthand in the % src: comments: outline-final.md Sect. 0.1 (B = backend/profile_extensioner/).
 \section{Results}\label{sec:results}
 
-\paragraph{The outputs.} Summed over the three test cases, an FP run includes \res{test}{FP}{included} changes and % src: RQ1 L381-385 (three test cases); sums of median runs: sections/06-setup.tex (Measures)
-leaves \res{test}{FP}{queue} waiting for review (Fig.~\ref{fig:results}a); \res{test}{FP}{matched} of the included
-changes match a reference element (\res{test}{FP}{matchedShare}). RB includes \res{test}{RB}{included} changes, of
+\paragraph{The outputs.} Summed over the three test cases, an FP run includes \res{test}{FP}{included} changes, of % src: RQ1 L381-385 (three test cases); sums of median runs: sections/06-setup.tex (Measures)
+which \res{test}{FP}{matched} match a reference element (\res{test}{FP}{matchedShare}; Fig.~\ref{fig:results}a), and
+leaves \res{test}{FP}{queue} waiting for review. RB includes \res{test}{RB}{included} changes, of
 which \res{test}{RB}{matched} match, and CB writes \res{test}{CB}{included}, of which \res{test}{CB}{matched} match.
 \todo{after results: comparisons; changes by kind; the ablations beside FP; the adjudicated unmatched changes
 (Sect.~\ref{sec:discussion})}
@@ -64,17 +64,16 @@ strictly (\res{test}{FP}{strictShare}; Fig.~\ref{fig:results}b). The changes of 
 \res{test}{RB}{recovery} and \res{test}{CB}{recovery}, those of $-$RET, $-$REP and $-$T2 \res{test}{noRET}{recovery},
 \res{test}{noREP}{recovery} and \res{test}{noTT}{recovery}. Conditions are compared within each case, by their
 ranges over the three runs (Table~\ref{tab:results-full} in the appendix). % src: three runs per condition and case: sections/06-setup.tex (Models, repetitions and reproducibility); outline-final 6.6
-\todo{after results: comparisons on the ranges, on Recovery and on Strict; Recovery by element kind; Recovery
-without the refine elements}
+\todo{after results: comparisons on the ranges; Recovery by element kind and without the refine elements}
 
 \paragraph{Stability.} The sets of reference elements credited to FP on Recovery in the runs of a test case have a
-mean pairwise Jaccard overlap of \res{test}{FP}{jaccard}. \todo{after results: the same on Strict and for the
-other conditions; elements credited in every run and in at least one}
+mean pairwise Jaccard overlap of \res{test}{FP}{jaccard}. \todo{after results: Strict; the other conditions;
+elements credited in every run and in at least one}
 
-\paragraph{The check of the judge.} On the samples audited in each test case, the person's labels agree with the
+\paragraph{The check of the judge.} In the samples audited per test case, the person's labels agree with the
 judge's verdicts on \res{test}{FP}{auditVerdicts} and with the dispositions covered by the base or out of scope on % src: audit design: sections/06-setup.tex (Checks of model judgments); outline-final 6.6
 \res{test}{FP}{auditDispositions}. \todo{audit: agreement of T2 verdicts and dispositions with the person's labels}
-A change that the judge wrongly finds unsupported goes to repair, where it can be revised or withdrawn; a withdrawn % src: @5ffd56e B/engine/pipeline.py:239-243 (unsupported is an error), 279, 295-302 (repair takes changes with errors)
+A change the judge wrongly finds unsupported goes to repair, where it can be revised or withdrawn; a withdrawn % src: @5ffd56e B/engine/pipeline.py:239-243 (unsupported is an error), 279, 295-302 (repair takes changes with errors)
 change leaves the extension but stays on the blackboard with the repairer's reason, so such an error can lose a % src: @5ffd56e B/engine/pipeline.py:327-332 (withdrawn: rejected by the model, note with the reason); B/contracts.py:89 (INCLUDED_STATUSES)
 change from the extension, though not from the record.
 
@@ -82,21 +81,21 @@ change from the extension, though not from the record.
 deltas' \res{test}{all}{extrateRef}, and \res{test}{FP}{unjustifiedMints} of its mints are unjustified (E1). Its
 review load adds \res{test}{FP}{conflicts} open conflicts to the \res{test}{FP}{queue} changes waiting for review
 (E3), and its conformance verdicts are \res{test}{FP}{verdicts}, with \res{test}{FP}{c7warnings} C7 warnings (E4).
-\todo{after results: the other conditions; decisions by who made them; unclear and unaddressed atoms; failing and
-warning rules; C7 warnings by cause; terms of a later DCAT sent to a person}
+\todo{after results: the other conditions; decisions by author; unclear and unaddressed atoms; failing and warning
+rules; C7 causes; later-DCAT terms sent to a person}
 
 \paragraph{The development cases.} The two development cases are small: the companion benchmark scores 17 content % src: RQ1 L386-387 (Table 1, Atoms: StatDCAT-AP 14, DCAT-AP-JRC 17)
 atoms for DCAT-AP-JRC and 14 for StatDCAT-AP (Table~\ref{tab:cases}). \todo{development cases: leak-free,
 DCAT-pinned reruns: atoms addressed; changes included by kind; extension rate; conformance; review load; calls and
-tokens} Earlier runs on these cases, made while the pipeline was built, are not results: every prompt named the case % src: ADD §C; @5ffd56e B/engine/prompts.py:105-115 (source line), 177, 231, 265 (propose, repair, judge); @5ffd56e scripts/import_rq1_reference.py:57-58
-and the section of the published profile each atom came from, and they ran the engine before DCAT-state pinning; % src: PILOT:24-27; RUN3:14-15 (2b92d77, about a52df71 for run 1)
+tokens} Earlier runs on these cases are not results: every prompt named the case and the section of the published % src: ADD §C; @5ffd56e B/engine/prompts.py:105-115 (source line), 177, 231, 265 (propose, repair, judge); @5ffd56e scripts/import_rq1_reference.py:57-58
+profile each atom came from, and they ran an engine from before DCAT-state pinning; % src: PILOT:24-27; RUN3:14-15 (2b92d77, about a52df71 for run 1)
 Appendix~\ref{app:devruns} keeps them as a debugging history (Table~\ref{tab:pilot}). These runs and the records the
 blackboard kept of them exposed that leak, DCAT~2 and DCAT~3 terms auto-accepted on a base that builds on DCAT~2014, % src: <S>/notes-rerun-local.md:36-39 (local notes of run 3; no atom id here); RUN3:14 (DCAT-AP 1.1 base); DCS §1.2 (1.1 builds on DCAT 2014)
 a domain check (V2) blind to union domains, three base obligations lost to \ac{IRI} typos in the \acs{DCAT-AP}~1.1 % src: NOTES 1 (V2, owl:unionOf); ISS E7.1; ENG §7.10 and ISS E7.10 (3 keys: contactPoint https, mediaType, acrualPeriodicity); KCU §1 notes
 release data, duplicates sent to repair before consolidation, and C7 warnings caused by the witness generator. % src: ENG §7.2; ISS E7.2; RUN3:36-38 (C7: depth limit, value-list member); ISS K1
-\verify{how each was found: stored prompts, probes or code reading} \verify{later-DCAT terms: a generic statement
-from the local notes of run 3, no atom identifier} Removing the first is a precondition of the evaluation; the
-next three led to the DCAT-state pinning, union domains in V2 and corrected base data; the last two are open % src: ISS E7.1, E7.10 (fixed at 5ffd56e); ISS E7.2, K1 (still present at 5ffd56e); ADD §C
+\verify{how each was found: stored prompts, probes or code reading; the later-DCAT terms rest on the local notes
+of run 3} Removing the first is a precondition of the evaluation; the next three led to the DCAT-state pinning,
+union domains in V2 and corrected base data; the last two are open % src: ISS E7.1, E7.10 (fixed at 5ffd56e); ISS E7.2, K1 (still present at 5ffd56e); ADD §C
 (Sect.~\ref{sec:discussion}). \todo{leak fix commit}
 
 \paragraph{Cost.} At the median, an FP run on a test case makes \res{test}{FP}{calls} model calls without cached
