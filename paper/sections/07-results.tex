@@ -23,11 +23,11 @@ which \res{test}{RB}{matched} match, and CB writes \res{test}{CB}{included}, of 
 % Placeholder frame (outline-final.md Sect. 0.4 and 4): every cell is a \res slot and prints \tbd until the
 % evaluator writes main-numbers.tex. Rows and order: outline-final.md Sect. 4 (Fig. 2), full pipeline first as in
 % RQ1 Fig. 2 (RQ1 L533-537). Shares in parentheses, as RQ1 Fig. 2 prints them.
-\begin{tabular}{@{}l r r@{\hspace{18pt}}r r@{}}
+\begin{tabular}{@{}l *{2}{>{\centering\arraybackslash}p{32pt}}@{\hspace{16pt}}*{2}{>{\centering\arraybackslash}p{64pt}}@{}}
 \toprule
  & \multicolumn{2}{c}{\textbf{(a)} Changes per run}
  & \multicolumn{2}{c@{}}{\textbf{(b)} Aligned reference elements, $N={}$\res{test}{all}{N}} \\
-\cmidrule(r{12pt}){2-3}\cmidrule(l){4-5}
+\cmidrule(r){2-3}\cmidrule(l){4-5}
  & included & matched & Recovery & Strict \\
 \midrule
 FP & \res{test}{FP}{included} & \res{test}{FP}{matched} (\res{test}{FP}{matchedShare})
@@ -49,8 +49,8 @@ CB & \res{test}{CB}{included} & \res{test}{CB}{matched} (\res{test}{CB}{matchedS
 \end{tabular}
 
 \smallskip
-\todo{evaluator: once the results exist, one stacked bar per condition and panel: (a) matched strictly, in the
-relaxed sense, by meaning, unmatched; (b) strict, relaxed, by meaning, not matched}
+\todo{evaluator: after the results, a stacked bar per condition: (a) matched strictly, relaxed, by meaning,
+unmatched; (b) strict, relaxed, by meaning, not matched}
 \caption{Two views of the results, summed over the three test cases (per case, and the development cases:
 Table~\ref{tab:results-full} in the appendix). (a)~The changes a run includes and those that match a reference
 element. (b)~The \res{test}{all}{N} aligned reference elements by the best match of any included change. Each case
@@ -67,12 +67,12 @@ ranges over the three runs (Table~\ref{tab:results-full} in the appendix). % src
 \todo{after results: comparisons on the ranges, on Recovery and on Strict; Recovery by element kind; Recovery
 without the refine elements}
 
-\paragraph{Stability.} Between any two FP runs of a test case, the sets of reference elements credited on Recovery
-have a mean pairwise Jaccard overlap of \res{test}{FP}{jaccard}. \todo{after results: the same on Strict and for the
+\paragraph{Stability.} The sets of reference elements credited to FP on Recovery in the runs of a test case have a
+mean pairwise Jaccard overlap of \res{test}{FP}{jaccard}. \todo{after results: the same on Strict and for the
 other conditions; elements credited in every run and in at least one}
 
-\paragraph{The check of the judge.} On the samples of each test case, the person's labels agree with the judge's
-verdicts on \res{test}{FP}{auditVerdicts} and with the dispositions covered by the base or out of scope on
+\paragraph{The check of the judge.} On the samples audited in each test case, the person's labels agree with the
+judge's verdicts on \res{test}{FP}{auditVerdicts} and with the dispositions covered by the base or out of scope on % src: audit design: sections/06-setup.tex (Checks of model judgments); outline-final 6.6
 \res{test}{FP}{auditDispositions}. \todo{audit: agreement of T2 verdicts and dispositions with the person's labels}
 A change that the judge wrongly finds unsupported goes to repair, where it can be revised or withdrawn; a withdrawn % src: @5ffd56e B/engine/pipeline.py:239-243 (unsupported is an error), 279, 295-302 (repair takes changes with errors)
 change leaves the extension but stays on the blackboard with the repairer's reason, so such an error can lose a % src: @5ffd56e B/engine/pipeline.py:327-332 (withdrawn: rejected by the model, note with the reason); B/contracts.py:89 (INCLUDED_STATUSES)
@@ -95,8 +95,8 @@ blackboard kept of them exposed that leak, DCAT~2 and DCAT~3 terms auto-accepted
 a domain check (V2) blind to union domains, three base obligations lost to \ac{IRI} typos in the \acs{DCAT-AP}~1.1 % src: NOTES 1 (V2, owl:unionOf); ISS E7.1; ENG §7.10 and ISS E7.10 (3 keys: contactPoint https, mediaType, acrualPeriodicity); KCU §1 notes
 release data, duplicates sent to repair before consolidation, and C7 warnings caused by the witness generator. % src: ENG §7.2; ISS E7.2; RUN3:36-38 (C7: depth limit, value-list member); ISS K1
 \verify{how each was found: stored prompts, probes or code reading} \verify{later-DCAT terms: a generic statement
-from the local notes of run 3, no atom identifier} Removing the leak is a precondition of the evaluation, the next
-three findings led to the DCAT-state pinning, union domains in V2 and corrected base data, and the last two are open % src: ISS E7.1, E7.10 (fixed at 5ffd56e); ISS E7.2, K1 (still present at 5ffd56e); ADD §C
+from the local notes of run 3, no atom identifier} Removing the first is a precondition of the evaluation; the
+next three led to the DCAT-state pinning, union domains in V2 and corrected base data; the last two are open % src: ISS E7.1, E7.10 (fixed at 5ffd56e); ISS E7.2, K1 (still present at 5ffd56e); ADD §C
 (Sect.~\ref{sec:discussion}). \todo{leak fix commit}
 
 \paragraph{Cost.} At the median, an FP run on a test case makes \res{test}{FP}{calls} model calls without cached
