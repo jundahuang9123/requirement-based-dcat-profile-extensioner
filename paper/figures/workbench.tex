@@ -1,0 +1,27 @@
+% Workbench figure (appendix). Screenshots of the synthetic demo examples/materials-testing-lab/atoms.yaml
+% with the offline rules provider (mock), taken on 14 Nov 2026 at commit 0d7aadc; numbers in
+% paper/inputs/demo-materials-testing-lab-2026-11-14.json. No benchmark content.
+\begin{figure}[t]
+  \centering
+  \begin{minipage}[t]{0.485\textwidth}
+    \vspace{0pt}
+    \includegraphics[width=\linewidth]{figures/wb-canvas-dataset.png}\\[0.6ex]
+    {\scriptsize (a) Canvas card of \term{dcat:Dataset}}\\[1.2ex]
+    \includegraphics[width=\linewidth]{figures/wb-inspector-mint-bottom.png}\\[0.6ex]
+    {\scriptsize (c) Inspector, continued: rejected candidates and checks}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.485\textwidth}
+    \vspace{0pt}
+    \includegraphics[width=\linewidth]{figures/wb-inspector-mint-top.png}\\[0.6ex]
+    {\scriptsize (b) Inspector of one minted property}
+  \end{minipage}
+  \caption{The workbench on a synthetic demo: fifteen invented atoms of a materials-testing laboratory on
+    \acs{DCAT-AP}~3.0.1, run with the offline rules provider instead of a model, so the choices shown are a
+    lexical baseline's (\term{xsd:string} for a count, for instance). (a)~Rows that tighten a base constraint
+    (REFINE), add an existing term (REUSE) or mint one (NEW), each with obligation, cardinality and the number of
+    atoms it covers; shaded rows wait for review. (b)~The decision and why the machine left it open (confidence
+    0.45 below 0.5), the covered atom with its verbatim quote, and one justification per constraint, with the
+    base value beside the new one. (c)~The candidates the mint rejected, with their lexical scores, and the
+    checks.}
+  \label{fig:workbench}
+\end{figure}

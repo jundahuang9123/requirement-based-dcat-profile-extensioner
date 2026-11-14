@@ -1,0 +1,11 @@
+# tool facts at commit bfad3f8
+vendored vocabularies: 13
+vocabulary prefixes: adms, dcat, dcatap, dcterms, eli, foaf, locn, odrl, prov, skos, spdx, time, vcard
+vendored triples (MANIFEST): 13294
+index terms without base: 911 (246 classes, 665 properties)
+index terms with base dcat-ap-1.1: 912 (246 classes, 666 properties)
+index terms with base dcat-ap-3.0.0: 919 (253 classes, 666 properties)
+index terms with base dcat-ap-3.0.1: 912 (246 classes, 666 properties)
+base dcat-ap-1.1: 4 target classes, 64 (class, property) elements; obligations of the elements {'mandatory': 9, 'optional': 37, 'recommended': 15, 'unknown': 3}; obligation table rows {'mandatory': 15, 'optional': 44, 'recommended': 19}; unhandled SHACL constructs 6
+base dcat-ap-3.0.0: 40 target classes, 131 (class, property) elements; obligations of the elements {'mandatory': 20, 'optional': 72, 'recommended': 39}; obligation table rows {'mandatory': 20, 'optional': 72, 'recommended': 39}; unhandled SHACL constructs 0
+base dcat-ap-3.0.1: 33 target classes, 131 (class, property) elements; obligations of the elements {'mandatory': 20, 'optional': 72, 'recommended': 39}; obligation table rows {'mandatory': 20, 'optional': 72, 'recommended': 39}; unhandled SHACL constructs 1
