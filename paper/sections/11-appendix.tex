@@ -11,12 +11,18 @@
 % Table columns are ragged right (>{\raggedright\arraybackslash}p{}), so narrow cells do not stretch.
 
 \section{Illustrations}\label{app:illustrations}
+% No appendix float above this heading, on the last page of the references (placeins is not loaded).
+\suppressfloats[t]
 
 Table~\ref{tab:criteria} applies the criteria of Sect.~\ref{sec:problem} to synthetic atoms,
 Table~\ref{tab:checks} lists the checks of Sect.~\ref{sec:pipeline}, and Fig.~\ref{fig:workbench} shows the
 workbench of Sect.~\ref{sec:impl}.
 
-\begin{table}[t]
+% Fig. 3 comes first in the source: as the tallest float it takes a float page of its own, after which Table 3
+% and Fig. 4, and Table 4 and Table 5, can share float pages.
+\input{figures/workbench}
+
+\begin{table}[tp]
   \caption{The criteria applied to synthetic atoms, invented for a fictional materials-testing laboratory, not
     benchmark content. The outcomes are those of the offline rules provider, a lexical baseline, not a model, on % src: DEMO5:1-7
     \acs{DCAT-AP}~3.0.1 in the run behind Fig.~\ref{fig:workbench}; every change shown is on \term{dcat:Dataset}. % src: DEMO5:93,249,301,509,561
@@ -41,12 +47,12 @@ workbench of Sect.~\ref{sec:impl}.
       & refine \term{dcterms:publisher} % src: DEMO5:86,93
       & mandatory / mandatory % src: DEMO5:93
       & auto-accepted, one warning % src: DEMO5:87,92 (the warning is V2's: DEMO5:101-104)
-      & recommended $\rightarrow$~mandatory: tightened\\ % src: DEMO5:93
+      & tightened: recommended $\rightarrow$ mandatory\\ % src: DEMO5:93
     lab-06 ``A dataset should state the testing standard that the measurements followed.'' % src: ATOMS:49-52
       & refine \term{dcterms:conformsTo} % src: DEMO5:242,249
       & recommended / recommended % src: DEMO5:249
       & auto-accepted % src: DEMO5:243,248
-      & optional $\rightarrow$ recommended: tightened\\ % src: DEMO5:249
+      & tightened: optional $\rightarrow$ recommended\\ % src: DEMO5:249
     lab-07 ``A dataset should list the people who contributed to carrying out the tests.'' % src: ATOMS:55-58
       & reuse \term{dcterms:contributor} % src: DEMO5:294,301
       & recommended / recommended % src: DEMO5:301
@@ -59,7 +65,7 @@ workbench of Sect.~\ref{sec:impl}.
       & added once accepted\\
     lab-12 ``A dataset must state its measurement uncertainty and the calibration date of the testing machine.''
       (compound) % src: ATOMS:85-88; DEMO5:623-626 (lint: compound); @5ffd56e B/engine/intake.py:72-79
-      & one mint, \term{lab:measurement\allowbreak Uncertainty}; none for the calibration date % src: DEMO5:554-561 (the only change for lab-12)
+      & one mint, \term{lab:measurement\allowbreak Uncertainty}; none for the date % src: DEMO5:554-561 (the only change for lab-12)
       & mandatory / mandatory % src: DEMO5:561
       & waits for review % src: DEMO5:555,560
       & added once accepted\\
@@ -77,7 +83,7 @@ workbench of Sect.~\ref{sec:impl}.
   \end{tabular}
 \end{table}
 
-\begin{table}[t]
+\begin{table}[tp]
   \caption{Checks on every change (upper block) and on the compiled extension (lower block), all by program % src: @5ffd56e B/engine/pipeline.py:221-244 (T2, the model judge)
     code except T2, a judgment of the model. Conditions: those giving an error and, after \emph{warning}, those
     giving a warning; Sect.~\ref{sec:pipeline} gives the effects. Source: the guideline or work followed;
@@ -160,27 +166,25 @@ workbench of Sect.~\ref{sec:impl}.
   \end{tabular}
 \end{table}
 
-\input{figures/workbench}
-
 \section{The Benchmark in Full}\label{app:benchmark}
 
 Table~\ref{tab:cases-full} details the cases of Sect.~\ref{sec:benchmark}, and Fig.~\ref{fig:reference} traces a
 published profile to Recovery. \todo{cases in full: Q3, Q9, Q11, Q21, Q23}
 
 \begin{table}[tp]
-  \caption{Reference deltas and input atoms per case, test cases first; terms as in Sect.~\ref{sec:benchmark}.
-    Reference: in parentheses, how the reference delta is obtained, shapes compared or tables extracted by hand.
-    Elements: reference elements by kind, loosened ones apart. Aligned: in parentheses, the elements no atom asks
-    for. Atoms: reference atoms, the companion's scored content atoms \cite{anon2027rq1}; extracted atoms; and the
-    counterfactual atoms of L4 (Sect.~\ref{sec:setup}).}
+  \caption{Reference deltas and input atoms per case, test cases first, in the terms of
+    Sect.~\ref{sec:benchmark}. Reference: in parentheses, the source of the delta, shapes compared or tables
+    extracted by hand. Elements: by kind, loosened ones apart. Aligned: in parentheses, the elements no atom asks
+    for. Atoms: reference atoms \cite{anon2027rq1}, extracted atoms and the counterfactual atoms of L4
+    (Sect.~\ref{sec:setup}).}
   \label{tab:cases-full}
   \centering\scriptsize
-  \setlength{\tabcolsep}{2.5pt}
-  \begin{tabular}{@{}>{\raggedright\arraybackslash}p{1.95cm}>{\raggedright\arraybackslash}p{1.3cm}rrrrrrrrr@{}}
+  \setlength{\tabcolsep}{2pt}
+  \begin{tabular}{@{}>{\raggedright\arraybackslash}p{2.8cm}>{\raggedright\arraybackslash}p{1.19cm}rrrrrrrrr@{}}
     \toprule
     & & \multicolumn{4}{c}{Elements} & & & \multicolumn{3}{c}{Atoms}\\
     \cmidrule(lr){3-6}\cmidrule(l){9-11}
-    Case (base) & Reference (source) & reuse & refine & mint & class & loosened & Aligned & refer. & extr.
+    Case (base) & Reference (source) & reuse & refine & mint & class & loosened & Aligned & ref. & extr.
       & counterf.\\
     \midrule
     % Base, reference and source: author decisions (Q3, Q23), \tbd here. Counts: \res slots for the RQ2 evaluator
