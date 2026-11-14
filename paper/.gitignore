@@ -1,0 +1,16 @@
+# Local-only paper material (reference-derived examples). Junda: keep the draft with these
+# examples on the authoring side and in chat, not in the repository.
+sections/local/
+# LaTeX build products
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+*.toc
+*.run.xml
+*-blx.bib
+build-local/

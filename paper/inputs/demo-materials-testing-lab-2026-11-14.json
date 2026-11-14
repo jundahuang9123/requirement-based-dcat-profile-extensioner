@@ -1,0 +1,191 @@
+{
+ "what": "Synthetic demo run behind the workbench figure (examples/materials-testing-lab/atoms.yaml, offline rules provider \"mock\"). Not benchmark data.",
+ "date": "2026-11-14",
+ "commit": "0d7aadc",
+ "base_profile_id": "dcat-ap-3.0.1",
+ "provider": "mock",
+ "metrics": {
+  "atoms": 15,
+  "coverage": {
+   "covered_by_base": 4,
+   "addressed": 5,
+   "pending_review": 5,
+   "out_of_scope": 1
+  },
+  "changes_included": 5,
+  "changes_by_kind": {
+   "refine_property": 4,
+   "reuse_property": 1
+  },
+  "auto_accepted": 5,
+  "accepted_by_human": 0,
+  "needs_review": 5,
+  "rejected": 0,
+  "extension_rate": 0.0,
+  "repaired": 0,
+  "llm_calls": 25,
+  "llm_calls_cached": 0,
+  "input_tokens": 0,
+  "output_tokens": 0
+ },
+ "conformance": {
+  "verdict": "conformant",
+  "summary": "Conforms to DCAT-AP 3.0.1: 1 element(s) added, 4 tightened, 0 loosened. 0 failing rule(s), 0 warning(s).",
+  "checks": [
+   {
+    "id": "C1",
+    "passed": true,
+    "severity": "error"
+   },
+   {
+    "id": "C2",
+    "passed": true,
+    "severity": "error"
+   },
+   {
+    "id": "C3",
+    "passed": true,
+    "severity": "error"
+   },
+   {
+    "id": "C4",
+    "passed": true,
+    "severity": "error"
+   },
+   {
+    "id": "C5",
+    "passed": true,
+    "severity": "error"
+   },
+   {
+    "id": "C6",
+    "passed": true,
+    "severity": "error"
+   },
+   {
+    "id": "C7",
+    "passed": true,
+    "severity": "error"
+   }
+  ]
+ },
+ "changes": [
+  {
+   "kind": "refine_property",
+   "status": "auto_accepted",
+   "atoms": [
+    "lab-02"
+   ],
+   "decided_by": "rule:policy",
+   "note": "all checks passed; 1 warning(s) to look at",
+   "verbalised": "On dcat:Dataset, the base property dcterms:publisher is tightened: obligation recommended -> mandatory; min_count not set -> 1. Result: mandatory; 1..1; foaf:Agent."
+  },
+  {
+   "kind": "refine_property",
+   "status": "auto_accepted",
+   "atoms": [
+    "lab-03"
+   ],
+   "decided_by": "rule:policy",
+   "note": "all checks passed",
+   "verbalised": "On dcat:Distribution, the base property dcterms:license is tightened: obligation recommended -> mandatory; min_count not set -> 1. Result: mandatory; 1..1; dcterms:LicenseDocument."
+  },
+  {
+   "kind": "refine_property",
+   "status": "auto_accepted",
+   "atoms": [
+    "lab-05"
+   ],
+   "decided_by": "rule:policy",
+   "note": "all checks passed",
+   "verbalised": "On dcat:Distribution, the base property dcat:byteSize is tightened: obligation optional -> mandatory; min_count not set -> 1. Result: mandatory; 1..1; xsd:nonNegativeInteger."
+  },
+  {
+   "kind": "refine_property",
+   "status": "auto_accepted",
+   "atoms": [
+    "lab-06"
+   ],
+   "decided_by": "rule:policy",
+   "note": "all checks passed",
+   "verbalised": "On dcat:Dataset, the base property dcterms:conformsTo is tightened: obligation optional -> recommended. Result: recommended; 0..n; dcterms:Standard."
+  },
+  {
+   "kind": "reuse_property",
+   "status": "auto_accepted",
+   "atoms": [
+    "lab-07"
+   ],
+   "decided_by": "rule:policy",
+   "note": "all checks passed",
+   "verbalised": "The existing property dcterms:contributor is added to dcat:Dataset [recommended; 0..n; any value]."
+  },
+  {
+   "kind": "mint_property",
+   "status": "needs_review",
+   "atoms": [
+    "lab-08"
+   ],
+   "decided_by": "rule:policy",
+   "note": "confidence 0.45 below 0.5",
+   "verbalised": "New property lab:publication \"publication\" on dcat:Dataset [optional; 0..n; xsd:string]: The publication of the dataset."
+  },
+  {
+   "kind": "mint_property",
+   "status": "needs_review",
+   "atoms": [
+    "lab-09"
+   ],
+   "decided_by": "rule:policy",
+   "note": "confidence 0.45 below 0.5",
+   "verbalised": "New property lab:materialTestedSpecimens \"material tested specimens\" on dcat:Dataset [mandatory; 1..n; xsd:string]: The material tested specimens of the dataset."
+  },
+  {
+   "kind": "mint_property",
+   "status": "needs_review",
+   "atoms": [
+    "lab-10"
+   ],
+   "decided_by": "rule:policy",
+   "note": "confidence 0.45 below 0.5",
+   "verbalised": "New property lab:testingMachine \"testing machine\" on dcat:Dataset [recommended; 0..n; xsd:string]: The testing machine of the dataset."
+  },
+  {
+   "kind": "mint_property",
+   "status": "needs_review",
+   "atoms": [
+    "lab-11"
+   ],
+   "decided_by": "rule:policy",
+   "note": "confidence 0.45 below 0.5",
+   "verbalised": "New property lab:numberSpecimens \"number specimens\" on dcat:Dataset [mandatory; 1..n; xsd:string]: The number specimens of the dataset."
+  },
+  {
+   "kind": "mint_property",
+   "status": "needs_review",
+   "atoms": [
+    "lab-12"
+   ],
+   "decided_by": "rule:policy",
+   "note": "confidence 0.45 below 0.5",
+   "verbalised": "New property lab:measurementUncertainty \"measurement uncertainty\" on dcat:Dataset [mandatory; 1..n; xsd:decimal]: The measurement uncertainty of the dataset."
+  }
+ ],
+ "dispositions": {
+  "lab-01": "covered_by_base",
+  "lab-02": "needs_change",
+  "lab-03": "needs_change",
+  "lab-04": "covered_by_base",
+  "lab-05": "needs_change",
+  "lab-06": "needs_change",
+  "lab-07": "needs_change",
+  "lab-08": "needs_change",
+  "lab-09": "needs_change",
+  "lab-10": "needs_change",
+  "lab-11": "needs_change",
+  "lab-12": "needs_change",
+  "lab-13": "covered_by_base",
+  "lab-14": "covered_by_base",
+  "lab-15": "out_of_scope"
+ }
+}

@@ -1,0 +1,57 @@
+% RQ2 paper: from requirement atoms to a DCAT-AP extension.
+% Companion of the RQ1 paper (ESWC 2027 submission); same skeleton, same voice.
+% Build: see paper/README.md (latexmk -pdf main.tex). Class: Springer LNCS (llncs).
+\documentclass[runningheads]{llncs}
+
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{xcolor}
+\usepackage{xspace}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,fit,calc,backgrounds}
+\usepackage{acronym}
+\usepackage[hidelinks]{hyperref}
+
+% Draft markers, in the style of the RQ1 draft ("[TODO: ...]"). Search the source for \todo and \verify.
+\newcommand{\todo}[1]{\textcolor{red}{\textbf{[TODO: #1]}}}
+\newcommand{\verify}[1]{\textcolor{red}{\textbf{[verify: #1]}}}
+% Vocabulary terms and identifiers (prefixed names, check ids).
+\newcommand{\term}[1]{\texttt{#1}}
+
+\input{acronyms}
+\input{results/pilot-numbers}
+
+\begin{document}
+
+\title{TITLE}
+\titlerunning{RUNNING TITLE}
+\author{Anonymous Author(s)}
+\authorrunning{Anonymous Author(s)}
+\institute{Anonymous Institution}
+
+\maketitle
+
+\input{sections/00-abstract}
+\input{sections/01-introduction}
+\input{sections/02-related-work}
+\input{sections/03-problem}
+\input{sections/04-pipeline}
+\input{sections/05-benchmark}
+\input{sections/06-setup}
+\input{sections/07-results}
+\input{sections/08-discussion}
+\input{sections/09-conclusion}
+\input{sections/10-statements}
+
+\bibliographystyle{splncs04}
+\bibliography{references}
+
+\appendix
+\input{sections/11-appendix}
+
+\end{document}
