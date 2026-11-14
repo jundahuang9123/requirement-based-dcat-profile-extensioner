@@ -1,7 +1,10 @@
 % Main results of the RQ2 evaluation: written by the RQ2 evaluator; never type numbers here.
 % \res{<scope>}{<condition>}{<measure>} prints \tbd until the evaluator defines res@<scope>@<condition>@<measure>.
-% Scopes: test, dev, mobility, geo, health, stat, jrc. Conditions: FP, RB, CB, noRET, noREP, noTT (and SX, TC, TR, HR
-% if they are built). Measures: see the outline (N, included, queue, matched, matchedShare, recovery, strict, ...).
+% Scopes: test (the three test cases summed), dev, five (all five cases), mobility, geo, health, stat, jrc.
+% Conditions: FP, RB, CB, noRET, noREP, noTT (and SX, TC, TR, HR if they are built); "all" for properties of a case
+% (elements, N, unaligned, extrateRef, arq1, counterfactual). Measures used in the text and tables are listed by
+% python paper/scripts/list_markers.py (README, "Main-result slots"). Per-case cells hold the median of the runs and,
+% where the runs differ, " [min--max]"; shares print as integer percent with \%.
 \makeatletter
 \newcommand{\res}[3]{\@ifundefined{res@#1@#2@#3}{\tbd}{\@nameuse{res@#1@#2@#3}}}
 \makeatother
