@@ -41,7 +41,7 @@ export type Change = {
   decision: { status: DecisionStatus; decided_by: string; note: string; decided_at: string };
 };
 export type ConformanceReport = {
-  base_profile_id: string; verdict: string; summary: string; delta_counts: Record<string, number>; witness_turtle: string;
+  base_profile_id: string; dcat_version?: string; verdict: string; summary: string; delta_counts: Record<string, number>; witness_turtle: string;
   checks: { id: string; title: string; passed: boolean; severity: string; message: string; source: string;
     items: { target_class?: string | null; path?: string | null; change_id?: string | null; facet?: string | null;
       base_value?: string | null; new_value?: string | null; status?: string | null; message: string }[] }[];
@@ -53,13 +53,18 @@ export type LLMSettings = {
 export type PipelineConfig = {
   retrieval: boolean; top_k: number; verify: boolean; repair_rounds: number; attribution_check: boolean; votes: number;
   auto_accept: boolean; auto_accept_min_confidence: number; require_human_signoff: boolean; use_hints: boolean;
-  exclude_namespaces: string[]; max_parallel_calls: number;
+  exclude_namespaces: string[]; max_parallel_calls: number; later_dcat_terms: 'review' | 'forbid' | 'allow';
 };
+export type RebaseItem = { change_id: string | null; atom_id: string | null; term: string | null; finding: string;
+  severity: 'info' | 'warning' | 'error'; suggestion: string; replacement: string | null; message: string };
+export type RebaseReport = { from_base: string; to_base: string; from_dcat: string; to_dcat: string; by: string; note: string;
+  at: string; items: RebaseItem[]; summary: string };
 export type Project = {
   id: string; name: string; description: string; base_profile_id: string; profile_title: string;
   profile_namespace: string; profile_prefix: string; created_at: string; updated_at: string;
   config: PipelineConfig; llm: LLMSettings; stage_states: Record<string, StageState>;
   signoff: { by: string; note: string; at: string; change_set_hash: string } | null;
+  rebases?: RebaseReport[];
 };
 export type Snapshot = {
   project: Project; atoms: Atom[]; assessments: Assessment[]; candidates: Record<string, Candidate[]>;
@@ -72,8 +77,21 @@ export type Entry = { seq: number; stage: string; kind: string; subject_type: st
 export type Call = { id: string; stage: string; purpose: string; subject_id: string; provider: string; model: string; prompt_version: string;
   system_prompt: string; user_prompt: string; response_text: string; input_tokens: number; output_tokens: number; duration_ms: number;
   cached: boolean; status: string; error: string; created_at: string };
-export type BaseElement = { target_class: string; path: string; label: string; definition: string; facets: Facets };
-export type BaseProfile = { info: { id: string; title: string }; classes: { iri: string; label: string; obligation: string }[]; elements: BaseElement[] };
+export type BaseElement = { target_class: string; path: string; label: string; definition: string; facets: Facets; source?: string };
+export type DcatBasis = {
+  dcat: string; label: string; tr: string; cited_as: string; dcat_status_at_release: string;
+  unlisted_dcat_properties: 'optional' | 'not_stated'; evidence: { file?: string; section?: string; quote?: string }[]; notes: string[];
+};
+export type DcatVersion = { id: string; label: string; title: string; tr: string; status_history: Record<string, string>[]; is_latest: boolean };
+export type BaseProfileInfo = {
+  id: string; title: string; version: string; class_count: number; element_count: number;
+  release_date: string; release_status: string; dcat: DcatBasis | null; is_latest: boolean;
+};
+export type BaseProfile = {
+  info: BaseProfileInfo; classes: { iri: string; label: string; obligation: string }[]; elements: BaseElement[];
+  dcat?: { version: DcatVersion; basis: DcatBasis; summary: string;
+    unprofiled_properties: Record<string, { path: string; curie: string; label: string; listed_on: string; definition: string }[]> };
+};
 export type ProviderStatus = { provider: string; label: string; needs_key: boolean; key_source: string; default_model: string | null; note: string };
 
 async function call<T>(method: string, path: string, body?: unknown): Promise<T> {
@@ -92,7 +110,8 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
 export const api = {
   projects: () => call<Project[]>('GET', '/projects'),
   examples: () => call<string[]>('GET', '/examples'),
-  baseProfiles: () => call<{ id: string; title: string; class_count: number; element_count: number }[]>('GET', '/base-profiles'),
+  baseProfiles: () => call<BaseProfileInfo[]>('GET', '/base-profiles'),
+  dcatVersions: () => call<DcatVersion[]>('GET', '/dcat-versions'),
   baseProfile: (id: string) => call<BaseProfile>('GET', `/base-profiles/${id}`),
   createProject: (body: Record<string, unknown>) => call<Project>('POST', '/projects', body),
   deleteProject: (id: string) => call('DELETE', `/projects/${id}`),
@@ -103,6 +122,8 @@ export const api = {
   runAsync: (id: string, body: { from_stage?: string; only?: string; atom_ids?: string[] }) => call('POST', `/projects/${id}/run-async`, body),
   entries: (id: string, after = 0) => call<Entry[]>('GET', `/projects/${id}/entries?after=${after}`),
   calls: (id: string, subject?: string) => call<Call[]>('GET', `/projects/${id}/calls${subject ? `?subject_id=${encodeURIComponent(subject)}` : ''}`),
+  rebase: (id: string, baseProfileId: string, by: string, note = '') =>
+    call<RebaseReport>('POST', `/projects/${id}/rebase`, { base_profile_id: baseProfileId, by, note }),
   decide: (id: string, changeId: string, status: string, by: string, note: string) =>
     call<Change>('POST', `/projects/${id}/changes/${changeId}/decision`, { status, by, note }),
   edit: (id: string, changeId: string, change: Change, by: string, note: string) =>

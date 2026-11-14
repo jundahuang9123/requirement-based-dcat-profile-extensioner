@@ -1,0 +1,558 @@
+{
+ "classes": {
+  "http://www.w3.org/2004/02/skos/core#Concept": {
+   "definition": "A category or a theme used to describe datasets in the catalog.",
+   "label": "Concept",
+   "properties": [],
+   "subclass_of": [],
+   "usage_note": "It is recommended to use either skos:inScheme or skos:topConceptOf on every skos:Concept used to classify datasets to link it to the concept scheme it belongs to. This concept scheme is typically associated with the catalog using dcat:themeTaxonomy"
+  },
+  "http://www.w3.org/2004/02/skos/core#ConceptScheme": {
+   "definition": "The knowledge organization system (KOS) used to represent themes/categories of datasets in the catalog.",
+   "label": "Concept scheme",
+   "properties": [],
+   "subclass_of": [],
+   "usage_note": ""
+  },
+  "http://www.w3.org/ns/dcat#Catalog": {
+   "definition": "A data catalog is a curated collection of metadata about datasets.",
+   "label": "Catalog",
+   "properties": [
+    {
+     "definition": "A name given to the catalog.",
+     "domain": [],
+     "label": "title",
+     "path": "http://purl.org/dc/terms/title",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Literal"
+     ],
+     "range_text": "rdfs:Literal",
+     "usage_note": ""
+    },
+    {
+     "definition": "A free-text account of the catalog.",
+     "domain": [],
+     "label": "description",
+     "path": "http://purl.org/dc/terms/description",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Literal"
+     ],
+     "range_text": "rdfs:Literal",
+     "usage_note": ""
+    },
+    {
+     "definition": "Date of formal issuance (e.g., publication) of the catalog.",
+     "domain": [],
+     "label": "release date",
+     "path": "http://purl.org/dc/terms/issued",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Literal"
+     ],
+     "range_text": "rdfs:Literal encoded using the relevant ISO 8601 Date and Time compliant string and typed using the appropriate XML Schema datatype [ xmlschema-2 ]",
+     "usage_note": ""
+    },
+    {
+     "definition": "Most recent date on which the catalog was changed, updated or modified.",
+     "domain": [],
+     "label": "update/modification date",
+     "path": "http://purl.org/dc/terms/modified",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Literal"
+     ],
+     "range_text": "rdfs:Literal encoded using the relevant ISO 8601 Date and Time compliant string and typed using the appropriate XML Schema datatype [ xmlschema-2 ]",
+     "usage_note": ""
+    },
+    {
+     "definition": "The language of the catalog. This refers to the language used in the textual metadata describing titles, descriptions, etc. of the datasets in the catalog.",
+     "domain": [],
+     "label": "language",
+     "path": "http://purl.org/dc/terms/language",
+     "range": [
+      "http://purl.org/dc/terms/LinguisticSystem"
+     ],
+     "range_text": "dct:LinguisticSystem Resources defined by the Library of Congress ( 1 , 2 ) SHOULD be used. If a ISO 639-1 (two-letter) code is defined for language, then its corresponding IRI SHOULD be used; if no ISO 639-1 code is defined, then IRI corresponding to the ISO 639-2 (three-letter) code SHOULD be used.",
+     "usage_note": "Multiple values can be used. The publisher might also choose to describe the language on the dataset level (see dataset language )."
+    },
+    {
+     "definition": "The homepage of the catalog.",
+     "domain": [],
+     "label": "homepage",
+     "path": "http://xmlns.com/foaf/0.1/homepage",
+     "range": [
+      "http://xmlns.com/foaf/0.1/Document"
+     ],
+     "range_text": "foaf:Document",
+     "usage_note": "foaf:homepage is an inverse functional property (IFP) which means that it should be unique and precisely identify the catalog. This allows smushing various descriptions of the catalog when different URIs are used."
+    },
+    {
+     "definition": "The entity responsible for making the catalog online.",
+     "domain": [],
+     "label": "publisher",
+     "path": "http://purl.org/dc/terms/publisher",
+     "range": [],
+     "range_text": "",
+     "usage_note": "Resources of type foaf:Agent are recommended as values for this property."
+    },
+    {
+     "definition": "The geographical area covered by the catalog.",
+     "domain": [],
+     "label": "spatial/geographic",
+     "path": "http://purl.org/dc/terms/spatial",
+     "range": [
+      "http://purl.org/dc/terms/Location"
+     ],
+     "range_text": "dct:Location",
+     "usage_note": ""
+    },
+    {
+     "definition": "The knowledge organization system (KOS) used to classify catalog's datasets.",
+     "domain": [
+      "http://www.w3.org/ns/dcat#Catalog"
+     ],
+     "label": "themes",
+     "path": "http://www.w3.org/ns/dcat#themeTaxonomy",
+     "range": [
+      "http://www.w3.org/2004/02/skos/core#ConceptScheme"
+     ],
+     "range_text": "skos:ConceptScheme",
+     "usage_note": ""
+    },
+    {
+     "definition": "This links to the license document under which the catalog is made available and not the datasets . Even if the license of the catalog applies to all of its datasets and distributions, it should be replicated on each distribution.",
+     "domain": [],
+     "label": "license",
+     "path": "http://purl.org/dc/terms/license",
+     "range": [
+      "http://purl.org/dc/terms/LicenseDocument"
+     ],
+     "range_text": "dct:LicenseDocument",
+     "usage_note": ""
+    },
+    {
+     "definition": "This describes the rights under which the catalog can be used/reused and not the datasets . Even if theses rights apply to all the catalog datasets and distributions, it should be replicated on each distribution.",
+     "domain": [],
+     "label": "rights",
+     "path": "http://purl.org/dc/terms/rights",
+     "range": [
+      "http://purl.org/dc/terms/RightsStatement"
+     ],
+     "range_text": "dct:RightsStatement",
+     "usage_note": ""
+    },
+    {
+     "definition": "A dataset that is part of the catalog.",
+     "domain": [
+      "http://www.w3.org/ns/dcat#Catalog"
+     ],
+     "label": "dataset",
+     "path": "http://www.w3.org/ns/dcat#dataset",
+     "range": [
+      "http://www.w3.org/ns/dcat#Dataset"
+     ],
+     "range_text": "dcat:Dataset",
+     "usage_note": ""
+    },
+    {
+     "definition": "A catalog record that is part of the catalog.",
+     "domain": [
+      "http://www.w3.org/ns/dcat#Catalog"
+     ],
+     "label": "catalog record",
+     "path": "http://www.w3.org/ns/dcat#record",
+     "range": [
+      "http://www.w3.org/ns/dcat#CatalogRecord"
+     ],
+     "range_text": "dcat:CatalogRecord",
+     "usage_note": ""
+    }
+   ],
+   "subclass_of": [],
+   "usage_note": "Typically, a web-based data catalog is represented as a single instance of this class."
+  },
+  "http://www.w3.org/ns/dcat#CatalogRecord": {
+   "definition": "A record in a data catalog, describing a single dataset.",
+   "label": "Catalog record",
+   "properties": [
+    {
+     "definition": "A name given to the record.",
+     "domain": [],
+     "label": "title",
+     "path": "http://purl.org/dc/terms/title",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Literal"
+     ],
+     "range_text": "rdfs:Literal",
+     "usage_note": ""
+    },
+    {
+     "definition": "free-text account of the record.",
+     "domain": [],
+     "label": "description",
+     "path": "http://purl.org/dc/terms/description",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Literal"
+     ],
+     "range_text": "rdfs:Literal",
+     "usage_note": ""
+    },
+    {
+     "definition": "The date of listing the corresponding dataset in the catalog.",
+     "domain": [],
+     "label": "listing date",
+     "path": "http://purl.org/dc/terms/issued",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Literal"
+     ],
+     "range_text": "rdfs:Literal encoded using the relevant ISO 8601 Date and Time compliant string and typed using the appropriate XML Schema datatype [ xmlschema-2 ]",
+     "usage_note": "This indicates the date of listing the dataset in the catalog and not the publication date of the dataset itself."
+    },
+    {
+     "definition": "Most recent date on which the catalog entry was changed, updated or modified.",
+     "domain": [],
+     "label": "update/modification date",
+     "path": "http://purl.org/dc/terms/modified",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Literal"
+     ],
+     "range_text": "rdfs:Literal encoded using the relevant ISO 8601 Date and Time compliant string and typed using the appropriate XML Schema datatype [ xmlschema-2 ]",
+     "usage_note": "This indicates the date of last change of a catalog entry, i.e. the catalog metadata description of the dataset, and not the date of the dataset itself."
+    },
+    {
+     "definition": "Links the catalog record to the dcat:Dataset resource described in the record.",
+     "domain": [],
+     "label": "primary topic",
+     "path": "http://xmlns.com/foaf/0.1/primaryTopic",
+     "range": [],
+     "range_text": "",
+     "usage_note": "foaf:primaryTopic property is functional: each catalog record can have at most one primary topic i.e. describes one dataset."
+    }
+   ],
+   "subclass_of": [],
+   "usage_note": "This class is optional and not all catalogs will use it. It exists for catalogs where a distinction is made between metadata about a dataset and metadata about the dataset's entry in the catalog . For example, the publication date property of the dataset reflects the date when the information was originally made available by the publishing agency, while the publication date of the catalog record is the date when the dataset was added to the catalog. In cases where both dates differ, or where only the latter is known, the publication date should only be specified for the catalog record. Notice that the W3C PROV Ontology [ prov-o ] allows describing further provenance information such as the details of the process and the agent involved in a particular change to a dataset."
+  },
+  "http://www.w3.org/ns/dcat#Dataset": {
+   "definition": "A collection of data, published or curated by a single agent, and available for access or download in one or more formats.",
+   "label": "Dataset",
+   "properties": [
+    {
+     "definition": "A name given to the dataset.",
+     "domain": [],
+     "label": "title",
+     "path": "http://purl.org/dc/terms/title",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Literal"
+     ],
+     "range_text": "rdfs:Literal",
+     "usage_note": ""
+    },
+    {
+     "definition": "free-text account of the dataset.",
+     "domain": [],
+     "label": "description",
+     "path": "http://purl.org/dc/terms/description",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Literal"
+     ],
+     "range_text": "rdfs:Literal",
+     "usage_note": ""
+    },
+    {
+     "definition": "Date of formal issuance (e.g., publication) of the dataset.",
+     "domain": [],
+     "label": "release date",
+     "path": "http://purl.org/dc/terms/issued",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Literal"
+     ],
+     "range_text": "rdfs:Literal encoded using the relevant ISO 8601 Date and Time compliant string and typed using the appropriate XML Schema datatype [ xmlschema-2 ]",
+     "usage_note": "This property should be set using the first known date of issuance."
+    },
+    {
+     "definition": "Most recent date on which the dataset was changed, updated or modified.",
+     "domain": [],
+     "label": "update/modification date",
+     "path": "http://purl.org/dc/terms/modified",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Literal"
+     ],
+     "range_text": "rdfs:Literal encoded using the relevant ISO 8601 Date and Time compliant string and typed using the appropriate XML Schema datatype [ xmlschema-2 ]",
+     "usage_note": "The value of this property indicates a change to the actual dataset, not a change to the catalog record. An absent value may indicate that the dataset has never changed after its initial publication, or that the date of last modification is not known, or that the dataset is continuously updated."
+    },
+    {
+     "definition": "The language of the dataset.",
+     "domain": [],
+     "label": "language",
+     "path": "http://purl.org/dc/terms/language",
+     "range": [
+      "http://purl.org/dc/terms/LinguisticSystem"
+     ],
+     "range_text": "dct:LinguisticSystem Resources defined by the Library of Congress ( 1 , 2 ) SHOULD be used. If a ISO 639-1 (two-letter) code is defined for language, then its corresponding IRI SHOULD be used; if no ISO 639-1 code is defined, then IRI corresponding to the ISO 639-2 (three-letter) code SHOULD be used.",
+     "usage_note": "This overrides the value of the catalog language in case of conflict. If the dataset is available in multiple languages, use multiple values for this property. If each language is available separately, define an instance of dcat:Distribution for each language and describe the specific language of each distribution using dct:language (i.e. the dataset will have multiple dct:language values and each distribution will have one of these languages as value of its dct:language property)."
+    },
+    {
+     "definition": "An entity responsible for making the dataset available.",
+     "domain": [],
+     "label": "publisher",
+     "path": "http://purl.org/dc/terms/publisher",
+     "range": [],
+     "range_text": "",
+     "usage_note": "Resources of type foaf:Agent are recommended as values for this property."
+    },
+    {
+     "definition": "The frequency at which dataset is published.",
+     "domain": [],
+     "label": "frequency",
+     "path": "http://purl.org/dc/terms/accrualPeriodicity",
+     "range": [
+      "http://purl.org/dc/terms/Frequency"
+     ],
+     "range_text": "dct:Frequency (A rate at which something recurs)",
+     "usage_note": ""
+    },
+    {
+     "definition": "A unique identifier of the dataset.",
+     "domain": [],
+     "label": "identifier",
+     "path": "http://purl.org/dc/terms/identifier",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Literal"
+     ],
+     "range_text": "rdfs:Literal",
+     "usage_note": "The identifier might be used as part of the URI of the dataset, but still having it represented explicitly is useful."
+    },
+    {
+     "definition": "Spatial coverage of the dataset.",
+     "domain": [],
+     "label": "spatial/geographical coverage",
+     "path": "http://purl.org/dc/terms/spatial",
+     "range": [
+      "http://purl.org/dc/terms/Location"
+     ],
+     "range_text": "dct:Location (A spatial region or named place)",
+     "usage_note": ""
+    },
+    {
+     "definition": "The temporal period that the dataset covers.",
+     "domain": [],
+     "label": "temporal coverage",
+     "path": "http://purl.org/dc/terms/temporal",
+     "range": [
+      "http://purl.org/dc/terms/PeriodOfTime"
+     ],
+     "range_text": "dct:PeriodOfTime (An interval of time that is named or defined by its start and end dates)",
+     "usage_note": ""
+    },
+    {
+     "definition": "The main category of the dataset. A dataset can have multiple themes.",
+     "domain": [
+      "http://www.w3.org/ns/dcat#Dataset"
+     ],
+     "label": "theme/category",
+     "path": "http://www.w3.org/ns/dcat#theme",
+     "range": [
+      "http://www.w3.org/2004/02/skos/core#Concept"
+     ],
+     "range_text": "skos:Concept",
+     "usage_note": "The set of skos:Concept s used to categorize the datasets are organized in a skos:ConceptScheme describing all the categories and their relations in the catalog."
+    },
+    {
+     "definition": "A keyword or tag describing the dataset.",
+     "domain": [
+      "http://www.w3.org/ns/dcat#Dataset"
+     ],
+     "label": "keyword/tag",
+     "path": "http://www.w3.org/ns/dcat#keyword",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Literal"
+     ],
+     "range_text": "rdfs:Literal",
+     "usage_note": ""
+    },
+    {
+     "definition": "Link a dataset to relevant contact information which is provided using VCard [ vcard-rdf ].",
+     "domain": [
+      "http://www.w3.org/ns/dcat#Dataset"
+     ],
+     "label": "contact point",
+     "path": "http://www.w3.org/ns/dcat#contactPoint",
+     "range": [
+      "http://www.w3.org/2006/vcard/ns#Kind"
+     ],
+     "range_text": "vcard:Kind",
+     "usage_note": ""
+    },
+    {
+     "definition": "Connects a dataset to its available distributions.",
+     "domain": [
+      "http://www.w3.org/ns/dcat#Dataset"
+     ],
+     "label": "dataset distribution",
+     "path": "http://www.w3.org/ns/dcat#distribution",
+     "range": [
+      "http://www.w3.org/ns/dcat#Distribution"
+     ],
+     "range_text": "dcat:Distribution",
+     "usage_note": ""
+    },
+    {
+     "definition": "A Web page that can be navigated to in a Web browser to gain access to the dataset, its distributions and/or additional information.",
+     "domain": [
+      "http://www.w3.org/ns/dcat#Dataset"
+     ],
+     "label": "landing page",
+     "path": "http://www.w3.org/ns/dcat#landingPage",
+     "range": [
+      "http://xmlns.com/foaf/0.1/Document"
+     ],
+     "range_text": "foaf:Document",
+     "usage_note": "If the distribution(s) are accessible only through a landing page (i.e. direct download URLs are not known), then the landing page link SHOULD be duplicated as accessURL on a distribution. (see example 4.4 )"
+    }
+   ],
+   "subclass_of": [
+    "http://purl.org/dc/dcmitype/Dataset"
+   ],
+   "usage_note": "This class represents the actual dataset as published by the dataset publisher. In cases where a distinction between the actual dataset and its entry in the catalog is necessary (because metadata such as modification date and maintainer might differ), the catalog record class can be used for the latter."
+  },
+  "http://www.w3.org/ns/dcat#Distribution": {
+   "definition": "Represents a specific available form of a dataset. Each dataset might be available in different forms, these forms might represent different formats of the dataset or different endpoints. Examples of distributions include a downloadable CSV file, an API or an RSS feed",
+   "label": "Distribution",
+   "properties": [
+    {
+     "definition": "A name given to the distribution.",
+     "domain": [],
+     "label": "title",
+     "path": "http://purl.org/dc/terms/title",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Literal"
+     ],
+     "range_text": "rdfs:Literal",
+     "usage_note": ""
+    },
+    {
+     "definition": "free-text account of the distribution.",
+     "domain": [],
+     "label": "description",
+     "path": "http://purl.org/dc/terms/description",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Literal"
+     ],
+     "range_text": "rdfs:Literal",
+     "usage_note": ""
+    },
+    {
+     "definition": "Date of formal issuance (e.g., publication) of the distribution.",
+     "domain": [],
+     "label": "release date",
+     "path": "http://purl.org/dc/terms/issued",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Literal"
+     ],
+     "range_text": "rdfs:Literal encoded using the relevant ISO 8601 Date and Time compliant string and typed using the appropriate XML Schema datatype [ xmlschema-2 ]",
+     "usage_note": "This property should be set using the first known date of issuance."
+    },
+    {
+     "definition": "Most recent date on which the distribution was changed, updated or modified.",
+     "domain": [],
+     "label": "update/modification date",
+     "path": "http://purl.org/dc/terms/modified",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Literal"
+     ],
+     "range_text": "rdfs:Literal encoded using the relevant ISO 8601 Date and Time compliant string and typed using the appropriate XML Schema datatype [ xmlschema-2 ]",
+     "usage_note": ""
+    },
+    {
+     "definition": "This links to the license document under which the distribution is made available.",
+     "domain": [],
+     "label": "license",
+     "path": "http://purl.org/dc/terms/license",
+     "range": [
+      "http://purl.org/dc/terms/LicenseDocument"
+     ],
+     "range_text": "dct:LicenseDocument",
+     "usage_note": ""
+    },
+    {
+     "definition": "Information about rights held in and over the distribution.",
+     "domain": [],
+     "label": "rights",
+     "path": "http://purl.org/dc/terms/rights",
+     "range": [
+      "http://purl.org/dc/terms/RightsStatement"
+     ],
+     "range_text": "dct:RightsStatement",
+     "usage_note": "dct:license, which is a sub-property of dct:rights, can be used to link a distribution to a license document. However, dct:rights allows linking to a rights statement that can include licensing information as well as other information that supplements the licence such as attribution."
+    },
+    {
+     "definition": "A landing page, feed, SPARQL endpoint or other type of resource that gives access to the distribution of the dataset",
+     "domain": [
+      "http://www.w3.org/ns/dcat#Distribution"
+     ],
+     "label": "access URL",
+     "path": "http://www.w3.org/ns/dcat#accessURL",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Resource"
+     ],
+     "range_text": "rdfs:Resource",
+     "usage_note": "Use accessURL, and not downloadURL, when it is definitely not a download or when you are not sure whether it is. If the distribution(s) are accessible only through a landing page (i.e. direct download URLs are not known), then the landing page link SHOULD be duplicated as accessURL on a distribution. (see example 4.4 )"
+    },
+    {
+     "definition": "A file that contains the distribution of the dataset in a given format",
+     "domain": [
+      "http://www.w3.org/ns/dcat#Distribution"
+     ],
+     "label": "download URL",
+     "path": "http://www.w3.org/ns/dcat#downloadURL",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Resource"
+     ],
+     "range_text": "rdfs:Resource",
+     "usage_note": "dcat:downloadURL is a specific form of dcat:accessURL. Nevertheless, DCAT does not define dcat:downloadURL as a subproperty of dcat:accessURL not to enforce this entailment as DCAT profiles may wish to impose a stronger separation where they only use accessURL for non-download locations."
+    },
+    {
+     "definition": "The size of a distribution in bytes.",
+     "domain": [
+      "http://www.w3.org/ns/dcat#Distribution"
+     ],
+     "label": "byteSize",
+     "path": "http://www.w3.org/ns/dcat#byteSize",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Literal",
+      "http://www.w3.org/2001/XMLSchema#decimal"
+     ],
+     "range_text": "rdfs:Literal typed as xsd:decimal .",
+     "usage_note": "The size in bytes can be approximated when the precise size is not known."
+    },
+    {
+     "definition": "The media type of the distribution as defined by IANA .",
+     "domain": [
+      "http://www.w3.org/ns/dcat#Distribution"
+     ],
+     "label": "media type",
+     "path": "http://www.w3.org/ns/dcat#mediaType",
+     "range": [
+      "http://purl.org/dc/terms/MediaTypeOrExtent"
+     ],
+     "range_text": "dct:MediaTypeOrExtent",
+     "usage_note": "This property SHOULD be used when the media type of the distribution is defined in IANA , otherwise dct:format MAY be used with different values."
+    },
+    {
+     "definition": "The file format of the distribution.",
+     "domain": [],
+     "label": "format",
+     "path": "http://purl.org/dc/terms/format",
+     "range": [
+      "http://purl.org/dc/terms/MediaTypeOrExtent"
+     ],
+     "range_text": "dct:MediaTypeOrExtent",
+     "usage_note": "dcat:mediaType SHOULD be used if the type of the distribution is defined by IANA ."
+    }
+   ],
+   "subclass_of": [],
+   "usage_note": "This represents a general availability of a dataset it implies no information about the actual access method of the data, i.e. whether it is a direct download, API, or some through Web page. The use of dcat:downloadURL property indicates directly downloadable distributions."
+  }
+ },
+ "generated_from": "spec.html",
+ "inverse_properties": [],
+ "version": "dcat-2014"
+}

@@ -13,6 +13,8 @@ source:
     sha256: 990d3e42721de6a4be8cc338a7171559f195e62dea89c0b56531356b78cc026f
   - path: releases/3.0.1/shacl/ranges.ttl
     sha256: a6eed0fae8d0f5ca977fe2098ca12081ac60b0efe1ddce802d5c08e49505ebcc
+  - path: releases/3.0.1/html/shacl/deprecateduris.ttl
+    sha256: 30a20a51a487c40ab7ae04f5905f02ef28238ec5cb390e37053334d835021948
   - path: releases/3.0.1/index.html
     sha256: cfa6c5e3bd05bfa731e6a8b4848062d9dfb56303ed40b12efa467847a9171e12
 shapes:
@@ -20,6 +22,8 @@ shapes:
   - shacl/dcat-ap-SHACL.ttl
   ranges:
   - shacl/ranges.ttl
+  deprecated:
+  - shacl/deprecateduris.ttl
 obligations: obligations.yaml
 main_classes:
 - dcat:Catalog
@@ -28,5 +32,25 @@ main_classes:
 - dcat:DataService
 - dcat:DatasetSeries
 - dcat:CatalogRecord
-# DSV of this release published by the Dataspecer team; extensions point at its profiles (dsv:profileOf).
 dsv_index: dsv-index.json
+# The W3C DCAT state this release builds on (scripts/build_base_profile.py DCAT_BASIS).
+release:
+  date: '2025-07-10'
+  status: SEMIC Draft Specification (as stated in the release text; verify)
+  evidence: 'releases/3.0.1/index.html: ''This application profile has the status SEMIC Draft Specification published
+    at 2025-07-10.'''
+dcat_basis:
+  dcat: dcat-3
+  cited_as: '[[vocab-dcat-3]] (W3C DCAT Version 3)'
+  dcat_status_at_release: W3C Recommendation (2024-08-22)
+  evidence:
+  - file: releases/3.0.1/index.html
+    quote: The Application Profile specified in this document is based on the specification of the Data Catalog
+      Vocabulary (DCAT) [[vocab-dcat-3]] developed under the responsibility of the [[[DXWG]]] (DXWG) at W3C.
+  - file: releases/3.0.1/index.html
+    quote: Any property that is mentioned in DCAT applicable to a class but not explicitly is listed DCAT-AP is
+      considered an optional field for DCAT-AP for that class.
+  notes:
+  - releases/3.0.1/html/shacl/imports.ttl imports https://www.w3.org/ns/dcat2.ttl (the DCAT 2 RDF), although the
+    text is based on DCAT 3.
+  unlisted_dcat_properties: optional

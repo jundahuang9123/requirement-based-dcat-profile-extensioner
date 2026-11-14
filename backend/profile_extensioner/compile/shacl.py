@@ -32,6 +32,10 @@ def compile_shacl_graph(view: ProfileView, *, include_trace: bool = True) -> Gra
         "Validate data against these shapes together with the base shapes.", lang="en")))
     if kb.base.info.homepage:
         graph.add((profile, OWL.imports, URIRef(kb.base.info.homepage)))
+    # The DCAT state the base builds on (profile.yaml dcat_basis): the extension is a profile of THAT DCAT.
+    if kb.dcat.version.tr:
+        graph.add((profile, DCTERMS.conformsTo, URIRef(kb.dcat.version.tr)))
+    graph.add((profile, RDFS.comment, Literal(kb.dcat.summary(kb.base.info.title), lang="en")))
 
     for target in view.target_classes():
         shape = URIRef(view.shape_iri(target))

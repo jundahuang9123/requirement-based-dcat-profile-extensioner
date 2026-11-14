@@ -30,7 +30,7 @@ MODALITY = {
     "recommended": "should",
     "optional": "may",
 }
-BASES = {"DCAT-AP 1.1": "dcat-ap-1.1", "DCAT-AP 3.0.0": "dcat-ap-3.0.0", "DCAT-AP 3.0.1": "dcat-ap-3.0.1"}
+BASES = {f"DCAT-AP {r}": f"dcat-ap-{r}" for r in ("1.1", "1.2", "1.2.1", "2.0.0", "2.0.1", "2.1.0", "2.1.1", "3.0.0", "3.0.1")}
 
 
 def main(argv: list[str] | None = None) -> int:

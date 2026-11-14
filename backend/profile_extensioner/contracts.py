@@ -185,6 +185,10 @@ class Term(BaseModel):
     property_type: Literal["object", "datatype", "annotation", "unknown"] = "unknown"
     deprecated: bool = False
     source: str = ""                             # vendored file the term was read from
+    # DCAT terms only, relative to the DCAT version the base builds on: "current" (defined there),
+    # "deprecated" (defined there, deprecated), "later" (only in a later DCAT version), "removed".
+    dcat_status: str = ""
+    dcat_since: str = ""                         # the DCAT version that introduced the term
 
 
 class Facets(BaseModel):
@@ -220,6 +224,32 @@ class BaseClass(BaseModel):
     obligation: Obligation = "unknown"           # mandatory / recommended / optional class in the base
 
 
+class DcatVersionInfo(BaseModel):
+    """One vendored W3C DCAT version (``data/dcat/versions.yaml``)."""
+
+    id: str                                      # dcat-2014 | dcat-2 | dcat-3
+    label: str                                   # DCAT 2014
+    title: str = ""
+    tr: str = ""                                 # dated W3C Recommendation URL
+    status_history: list[dict[str, str]] = Field(default_factory=list)   # status, date, tr / snapshot
+    is_latest: bool = False
+
+
+class DcatBasis(BaseModel):
+    """The W3C DCAT state a base profile builds on, as the release states it (profile.yaml ``dcat_basis``)."""
+
+    dcat: str                                    # id of a vendored DCAT version, e.g. dcat-2014
+    label: str = ""                              # DCAT 2014
+    tr: str = ""
+    cited_as: str = ""
+    dcat_status_at_release: str = ""             # W3C status of DCAT on the release date
+    # What the release says about DCAT properties it does not list for a class:
+    # "optional" (DCAT-AP 3.x: such a property is an optional field of the class) or "not_stated".
+    unlisted_dcat_properties: Literal["optional", "not_stated"] = "not_stated"
+    evidence: list[dict[str, str]] = Field(default_factory=list)
+    notes: list[str] = Field(default_factory=list)
+
+
 class BaseProfileInfo(BaseModel):
     """Catalogue entry for a base profile that can be extended."""
 
@@ -232,6 +262,10 @@ class BaseProfileInfo(BaseModel):
     shape_files: list[str] = Field(default_factory=list)
     class_count: int = 0
     element_count: int = 0
+    release_date: str = ""                       # date of the release, as the release states it
+    release_status: str = ""
+    dcat: DcatBasis | None = None                # the DCAT state it builds on
+    is_latest: bool = False                      # the newest release: the default for a new extension
 
 
 class Candidate(BaseModel):
@@ -250,6 +284,8 @@ class Candidate(BaseModel):
     in_base_on_class: bool = False               # the base already constrains this path on the atom's class
     base_classes: list[str] = Field(default_factory=list)   # classes on which the base uses this path
     base_facets: Facets | None = None            # the base's constraints when in_base_on_class
+    dcat_listed_on_class: bool = False           # the base's DCAT lists this property for the atom's class
+    dcat_status: str = ""                        # see Term.dcat_status
     matched: list[str] = Field(default_factory=list)   # query word stems that matched
     why: str = ""                                # how it was found (matched words, boost reasons)
 
@@ -479,6 +515,7 @@ class ConformanceCheck(BaseModel):
 
 class ConformanceReport(BaseModel):
     base_profile_id: str
+    dcat_version: str = ""                       # the DCAT version the base builds on, e.g. dcat-2014
     verdict: Literal["conformant", "conformant_with_warnings", "non_conformant", "not_checked"] = "not_checked"
     summary: str = ""
     checks: list[ConformanceCheck] = Field(default_factory=list)
@@ -564,6 +601,9 @@ class PipelineConfig(BaseModel):
     use_hints: bool = False                      # show upstream vocabulary hints to the proposer
     exclude_namespaces: list[str] = Field(default_factory=list)   # leakage control: hide these from the index
     max_parallel_calls: int = 4
+    # DCAT terms that only exist in a DCAT version later than the one the base builds on (check D1):
+    # "review" = allowed only by a human decision, "forbid" = an error, "allow" = a note.
+    later_dcat_terms: Literal["review", "forbid", "allow"] = "review"
 
 
 class SignOff(BaseModel):
@@ -571,6 +611,42 @@ class SignOff(BaseModel):
     note: str = ""
     change_set_hash: str = ""
     at: str = Field(default_factory=now_iso)
+
+
+class RebaseItem(BaseModel):
+    """One finding of moving an extension onto another base (and so, possibly, another DCAT)."""
+
+    change_id: str | None = None
+    atom_id: str | None = None
+    term: str | None = None
+    finding: Literal[
+        "now_in_base",          # the new base defines (class, path) itself
+        "base_dropped",         # the old base defined it, the new one does not: the change becomes an addition
+        "base_changed",         # both bases define it, with different constraints
+        "dcat_now_current",     # a DCAT term that was later than the old base's DCAT is part of the new one
+        "dcat_now_later",       # a DCAT term the new base's (older) DCAT does not define
+        "dcat_outdated",        # deprecated or removed in the new base's DCAT
+        "deprecated_by_base",   # the new base deprecates the term (and may name its replacement)
+        "mint_now_reusable",    # a minted term has a counterpart in the new base or its DCAT
+        "class_not_in_base",    # the target class is not a class of the new base
+        "covered_claim_lost",   # an atom was covered by the old base; the new base no longer covers it
+    ]
+    severity: Literal["info", "warning", "error"] = "info"
+    suggestion: Literal["keep", "withdraw", "replace", "review", "repropose"] = "keep"
+    replacement: str | None = None
+    message: str = ""
+
+
+class RebaseReport(BaseModel):
+    from_base: str
+    to_base: str
+    from_dcat: str = ""
+    to_dcat: str = ""
+    by: str = ""
+    note: str = ""
+    at: str = Field(default_factory=now_iso)
+    items: list[RebaseItem] = Field(default_factory=list)
+    summary: str = ""
 
 
 class Project(BaseModel):
@@ -587,6 +663,7 @@ class Project(BaseModel):
     llm: LLMSettings = Field(default_factory=LLMSettings)
     stage_states: dict[str, StageState] = Field(default_factory=dict)
     signoff: SignOff | None = None
+    rebases: list[RebaseReport] = Field(default_factory=list)   # every move onto another base, newest last
 
 
 class ProjectSnapshot(BaseModel):

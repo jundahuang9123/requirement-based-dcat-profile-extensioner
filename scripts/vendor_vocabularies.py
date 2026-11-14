@@ -6,7 +6,10 @@ namespace, local_path, source URL, version/commit, sha256 and licence (as produc
 vocabulary-sourcing step). N-Quads files are flattened to Turtle. Licences marked "verify:"
 in the input manifest are carried over unchanged: check them before redistributing.
 
-Usage: python scripts/vendor_vocabularies.py --source /path/to/vocab [--only dcat dcterms ...]
+Usage: python scripts/vendor_vocabularies.py --source /path/to/vocab [--only dcterms foaf ...]
+
+DCAT is NOT vendored here: every W3C DCAT version is kept under data/dcat/ by
+scripts/build_dcat_versions.py, and a project uses the version its base profile builds on.
 """
 from __future__ import annotations
 
@@ -19,7 +22,7 @@ from rdflib import Dataset, Graph
 
 ROOT = Path(__file__).resolve().parents[1]
 TARGET = ROOT / "backend" / "profile_extensioner" / "data" / "vocab"
-DEFAULT = ["dcat", "dcterms", "foaf", "skos", "prov", "vcard", "adms", "odrl", "spdx", "locn", "time", "dcatap", "eli"]
+DEFAULT = ["dcterms", "foaf", "skos", "prov", "vcard", "adms", "odrl", "spdx", "locn", "time", "dcatap", "eli"]
 FORMATS = {".ttl": "turtle", ".rdf": "xml", ".owl": "xml", ".nq": "nquads", ".jsonld": "json-ld"}
 
 
@@ -33,7 +36,7 @@ def main(argv: list[str] | None = None) -> int:
     out = []
     for entry in manifest["vocabularies"]:
         prefix = entry["prefix"]
-        if prefix not in args.only:
+        if prefix not in args.only or prefix == "dcat":
             continue
         path = Path(entry["local_path"])
         fmt = FORMATS.get(path.suffix.lower(), "turtle")
@@ -57,7 +60,9 @@ def main(argv: list[str] | None = None) -> int:
             "sha256": hashlib.sha256((TARGET / name).read_bytes()).hexdigest(),
         })
         print(f"{prefix:8s} {len(graph):6d} triples  {entry.get('licence') or entry.get('license', '')}"[:150])
-    (TARGET / "MANIFEST.json").write_text(json.dumps({"vocabularies": out}, indent=1), encoding="utf-8")
+    note = ("DCAT is not vendored here: every W3C DCAT version (2014, 2, 3) is vendored under data/dcat/ "
+            "(scripts/build_dcat_versions.py) and a project uses the version its base profile builds on.")
+    (TARGET / "MANIFEST.json").write_text(json.dumps({"vocabularies": out, "note": note}, indent=1), encoding="utf-8")
     return 0
 
 

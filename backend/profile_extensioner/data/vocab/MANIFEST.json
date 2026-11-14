@@ -1,19 +1,6 @@
 {
  "vocabularies": [
   {
-   "prefix": "dcat",
-   "namespace": "http://www.w3.org/ns/dcat#",
-   "file": "dcat.ttl",
-   "format": "turtle",
-   "title": "",
-   "source_url": "https://raw.githubusercontent.com/w3c/dxwg/2bc58b97b6f6bbd8fe6a0fde781c193788484448/dcat/rdf/dcat3.ttl",
-   "version": "2bc58b97b6f6bbd8fe6a0fde781c193788484448",
-   "source_sha256": "96f82c6c9b8476d7458ed5219b1a89643e4b9b7f55d1d3b5a911e3a60fb2dcd0",
-   "licence": "CC-BY-4.0 (file) / W3C Document License (https://www.w3.org/Consortium/Legal/copyright-documents) (repo)",
-   "triples": 1695,
-   "sha256": "13c53b8432f2991ce542524a4c5e2b2f14a9832fb8001d6c8855effda762e954"
-  },
-  {
    "prefix": "dcterms",
    "namespace": "http://purl.org/dc/terms/",
    "file": "dcterms.ttl",
@@ -169,5 +156,6 @@
    "triples": 711,
    "sha256": "f4fe7f203ca1965d7b2c7eba57ccddc144eb4072c2244c964f5cb72b246d4d77"
   }
- ]
+ ],
+ "note": "DCAT is not vendored here: every W3C DCAT version (2014, 2, 3) is vendored under data/dcat/ (scripts/build_dcat_versions.py) and a project uses the version its base profile builds on."
 }

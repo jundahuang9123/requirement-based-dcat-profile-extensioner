@@ -17,8 +17,8 @@ from ..knowledge import KnowledgeBase
 from .retrieve import query_tokens
 from .verbalise import base_element_line, facets_text, verbalise_change
 
-PROPOSE_VERSION = "propose-v1"
-REPAIR_VERSION = "repair-v1"
+PROPOSE_VERSION = "propose-v2"   # v2: DCAT state of the base
+REPAIR_VERSION = "repair-v2"
 JUDGE_VERSION = "judge-v1"
 
 PROPOSE_SYSTEM = """\
@@ -38,7 +38,10 @@ information?
 covered_by_base; cite the property in covered_by; return no change.
    - Yes, but weaker than the atom demands: return one refine_property change that tightens exactly what the \
 atom demands and nothing else.
-5. Otherwise look at CANDIDATE TERMS and reuse an existing property that carries the information (reuse_property).
+5. Otherwise look at CANDIDATE TERMS and reuse an existing property that carries the information (reuse_property). \
+Prefer a property marked "DCAT lists it for this class": it belongs to the DCAT version the base builds on. A term \
+marked "LATER DCAT" exists only in a newer DCAT version than the base's: use it only when nothing else carries the \
+information (a human then decides), and never a term marked "DEPRECATED".
 6. Only if no candidate carries the information, mint a term (mint_property, or mint_class when a new kind of \
 thing is needed), written NEW:localName. Say for each plausible candidate why it does not fit.
 7. Derive the constraints from the atom's wording only, and give a reason for every constraint you set.
@@ -113,12 +116,28 @@ def _atom_block(atom: Atom) -> list[str]:
     return lines
 
 
+def dcat_profile_lines(kb: KnowledgeBase) -> list[str]:
+    """The DCAT state of the base, for the PROFILE section."""
+    lines = [kb.dcat.summary(kb.base.info.title)]
+    if kb.dcat.basis.unlisted_dcat_properties == "optional":
+        lines.append(f"By {kb.base.info.title}'s own rule, a DCAT property it does not list for a class is an optional "
+                     f"field of that class.")
+    return lines
+
+
 def _candidate_line(candidate: Candidate, kb: KnowledgeBase) -> str:
     extra = []
     if candidate.in_base_on_class and candidate.base_facets is not None:
         extra.append(f"IN BASE on this class: {facets_text(candidate.base_facets, kb)}")
     elif candidate.base_classes:
         extra.append("used by the base on " + ", ".join(kb.curie(iri) for iri in candidate.base_classes[:3]))
+    if candidate.dcat_listed_on_class:
+        extra.append(f"{kb.dcat.label} lists it for this class")
+    if candidate.dcat_status == "later":
+        since = kb.dcat.introduced_in(candidate.iri) or ""
+        extra.append(f"LATER DCAT: introduced in {kb.dcat.describe_version(since)}, not in {kb.dcat.label}")
+    elif candidate.dcat_status in ("deprecated", "removed"):
+        extra.append(f"DEPRECATED: not a current term of {kb.dcat.label}")
     if candidate.domain:
         extra.append("domain " + ", ".join(kb.curie(iri) for iri in candidate.domain[:2]))
     if candidate.range and not candidate.in_base_on_class:
@@ -151,6 +170,7 @@ def build_propose_prompt(
     sections = [
         _section("PROFILE", [
             f"Base profile: {kb.base.info.title}",
+            *dcat_profile_lines(kb),
             f"Extension: {project.profile_title or project.name}; new terms are written NEW:localName "
             f"(they will be minted as {project.profile_prefix}:localName)",
         ]),
@@ -205,6 +225,7 @@ def build_repair_prompt(
     sections = [
         _section("PROFILE", [
             f"Base profile: {kb.base.info.title}",
+            *dcat_profile_lines(kb),
             f"New terms are written NEW:localName (minted as {project.profile_prefix}:localName)",
         ]),
         *[_section("ATOM", _atom_block(atom)) for atom in atoms],

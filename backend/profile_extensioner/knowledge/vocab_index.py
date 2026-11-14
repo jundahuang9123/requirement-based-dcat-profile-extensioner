@@ -117,6 +117,25 @@ def _english(graph: Graph, subject: URIRef, predicates: Sequence[URIRef]) -> str
     return best
 
 
+def _named_or_union(graph: Graph, values: Iterable) -> set[str]:
+    """Named classes, and the members of an ``owl:unionOf`` class expression (DCAT 3 declares
+    ``dcat:hadRole rdfs:domain [ owl:unionOf ( prov:Attribution dcat:Relationship ) ]``)."""
+    from rdflib import BNode
+    from rdflib.collection import Collection
+
+    found: set[str] = set()
+    for value in values:
+        if isinstance(value, URIRef):
+            found.add(str(value))
+        elif isinstance(value, BNode):
+            for union in graph.objects(value, OWL.unionOf):
+                try:
+                    found |= {str(member) for member in Collection(graph, union) if isinstance(member, URIRef)}
+                except Exception:  # a malformed list: ignore it rather than fail the whole index
+                    continue
+    return found
+
+
 def terms_from_graph(graph: Graph, namespace: str, prefix: str, source: str = "") -> list[Term]:
     """Extract the classes and properties that live in ``namespace`` from a vocabulary graph."""
     kinds: dict[URIRef, tuple[str, str]] = {}
@@ -130,13 +149,18 @@ def terms_from_graph(graph: Graph, namespace: str, prefix: str, source: str = ""
                 previous = kinds.get(subject)
                 if previous is None or previous[0] == "property" and previous[1] == "unknown":
                     kinds[subject] = ("property", flavour)
+    # Inverse properties may be declared by owl:inverseOf alone (DCAT 3: dcat:isDistributionOf).
+    for subject, inverse in graph.subject_objects(OWL.inverseOf):
+        for node in (subject, inverse):
+            if isinstance(node, URIRef):
+                kinds.setdefault(node, ("property", "object"))
     terms: list[Term] = []
     for subject, (kind, flavour) in kinds.items():
         iri = str(subject)
         if not iri.startswith(namespace) or len(iri) <= len(namespace):
             continue
-        domain = {str(o) for o in graph.objects(subject, RDFS.domain) if isinstance(o, URIRef)}
-        range_ = {str(o) for o in graph.objects(subject, RDFS.range) if isinstance(o, URIRef)}
+        domain = _named_or_union(graph, graph.objects(subject, RDFS.domain))
+        range_ = _named_or_union(graph, graph.objects(subject, RDFS.range))
         for predicate in SCHEMA_DOMAIN:
             domain |= {str(o) for o in graph.objects(subject, predicate) if isinstance(o, URIRef)}
         for predicate in SCHEMA_RANGE:

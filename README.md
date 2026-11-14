@@ -35,11 +35,20 @@ requirement atoms ─► Intake ─► Retrieve ─► Propose ─► Verify ─
 * **Reuse first.** Retrieval ranks what the base already defines on the atom's
   class first; reuse an existing term > tighten a base constraint > mint a new
   term, and a minted term must say why no candidate fits (check V4).
-* **Conformance to the base.** Final rules C1-C7 (see
+* **Inside the DCAT the base builds on.** Every W3C DCAT version (2014, 2, 3) and
+  every DCAT-AP release with SHACL (1.1 to 3.0.1) is kept in the repository, and
+  each release is pinned to the DCAT state it names (DCAT-AP 1.1: DCAT 2014; 2.0.0:
+  the DCAT 2 Candidate Recommendation; 3.0.0: the DCAT 3 Proposed Recommendation;
+  ...). Retrieval offers what that DCAT lists for a class; DCAT terms of a later
+  version go to a human (D1); deprecated terms (D2) and inverse properties (D3) are
+  flagged; conformance rule C8 reports the DCAT state. New extensions default to the
+  newest DCAT-AP on the newest DCAT. An extension can be **rebased** onto another
+  release, with a migration review queue. See [docs/dcat-versions.md](docs/dcat-versions.md).
+* **Conformance to the base.** Final rules C1-C8 (see
   [docs/conformance.md](docs/conformance.md)): only legal refinements, no
   contradiction, own namespace for new terms, no invented terms, full trace,
-  valid SHACL, and witness data that pySHACL validates against the **official**
-  DCAT-AP shapes.
+  valid SHACL, witness data that pySHACL validates against the **official**
+  DCAT-AP shapes, and DCAT terms of the base's own DCAT version.
 * **Everything stays on the workbench.** An append-only blackboard records what
   every rule, model call and person did; each model call is stored with its full
   prompts, answer and token counts, and can be replayed from a cache.
@@ -100,19 +109,24 @@ entered, including by pointing an OpenAI-compatible base URL at another host.
 | `backend/profile_extensioner/compile/` | SHACL, minted vocabulary, LinkML, DSV, documentation, trace matrix, ProfileDelta |
 | `backend/profile_extensioner/llm/` | Provider layer, schema-validated client with call records and replay cache, offline provider |
 | `backend/profile_extensioner/store/` | SQLite blackboard |
-| `backend/profile_extensioner/data/base-profiles/` | DCAT-AP 3.0.0 and 3.0.1 (official SHACL, CC BY 4.0, unmodified) |
+| `backend/profile_extensioner/data/base-profiles/` | DCAT-AP 1.1, 1.2, 1.2.1, 2.0.0, 2.0.1, 2.1.0, 2.1.1, 3.0.0, 3.0.1 (official SHACL, CC BY 4.0, unmodified), each pinned to its DCAT state |
+| `backend/profile_extensioner/data/dcat/` | W3C DCAT 2014, 2 and 3: official RDF and specification text (unmodified), the class/property model of each, term history |
 | `scripts/build_base_profile.py` | Rebuilds a base profile from a SEMICeu/DCAT-AP checkout |
+| `scripts/build_dcat_versions.py` | Rebuilds `data/dcat/` from checkouts of w3c/dxwg and w3c/dx-dcat |
+| `scripts/run_reference_case.py` | Runs one imported atom set end to end and writes a summary |
 | `examples/materials-testing-lab/` | Synthetic demo atoms (not benchmark gold) |
-| `docs/` | [design](docs/design.md), [conformance rules](docs/conformance.md), [steps from the literature](docs/literature-steps.md) (99, fact-checked), research reports in `docs/research/` |
+| `docs/` | [design](docs/design.md), [conformance rules](docs/conformance.md), [DCAT versions and DCAT state](docs/dcat-versions.md), [steps from the literature](docs/literature-steps.md) (99, fact-checked), research reports in `docs/research/` |
 
 ## Status and limits
 
 Research prototype. Known limits: lexical retrieval only (no embeddings); the
-vocabulary index holds 13 vendored vocabularies (DCAT, DCTERMS, FOAF, SKOS, PROV,
-vCard, ADMS, ODRL, SPDX, LOCN, OWL-Time, DCAT-AP, ELI: about 900 terms; licences in
-`data/vocab/MANIFEST.json`, some still marked `verify:`) plus every term the base uses;
+vocabulary index holds the DCAT version the base builds on plus 12 vendored
+vocabularies (DCTERMS, FOAF, SKOS, PROV, vCard, ADMS, ODRL, SPDX, LOCN, OWL-Time,
+DCAT-AP, ELI; licences in `data/vocab/MANIFEST.json`, some still marked `verify:`) plus
+every term the base uses; no Data Cube or DQV yet;
 controlled-vocabulary usage levels of DCAT-AP 3.0.1 are not modelled; the
 offline provider is a lexical baseline, not a modelling authority.
 
 DCAT-AP shapes and specification data: © European Union, CC BY 4.0
-(SEMICeu/DCAT-AP). Code: Apache-2.0.
+(SEMICeu/DCAT-AP). W3C DCAT RDF and specification texts: © W3C, W3C Document License
+(see `data/dcat/README.md`). Code: Apache-2.0.

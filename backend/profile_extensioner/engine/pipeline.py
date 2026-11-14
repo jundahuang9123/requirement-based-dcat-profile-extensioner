@@ -31,6 +31,7 @@ from ..contracts import (
     BlackboardEntry,
     CheckResult,
     Decision,
+    RebaseReport,
     ProfileChange,
     Project,
     ProjectSnapshot,
@@ -256,6 +257,10 @@ class Pipeline:
             status, note = "needs_review", f"confidence {change.confidence:.2f} below {config.auto_accept_min_confidence}"
         elif change.provenance.votes_total > 1 and change.provenance.votes_agreeing * 2 <= change.provenance.votes_total:
             status, note = "needs_review", "no majority among the independent proposals"
+        elif any(r.details.get("requires_human") for r in warnings):
+            later = sorted({self.kb.curie(str(r.details.get("term"))) for r in warnings if r.details.get("requires_human")})
+            status, note = "needs_review", (f"uses {', '.join(later)}, which the base's DCAT "
+                                            f"({self.kb.dcat.label}) does not define: a human decides (D1)")
         else:
             status = "auto_accepted"
             note = "all checks passed" + (f"; {len(warnings)} warning(s) to look at" if warnings else "")
@@ -548,6 +553,60 @@ class Pipeline:
                     self.store.save_change(self.pid, change)
         self._mark_released_stale()
         return assessment
+
+    def rebase(self, new_base_id: str, by: str, note: str = "") -> RebaseReport:
+        """Move the extension onto another base (and so, possibly, another DCAT version).
+
+        Findings go to the review queue with a default suggestion; human decisions stay; every
+        change is verified again against the new base, then the profile is recompiled and checked
+        for conformance to the new base."""
+        from ..engine.rebase import analyse_rebase, summarise
+
+        old_base = self.project.base_profile_id
+        if new_base_id == old_base:
+            raise ValueError(f"the extension already builds on {old_base}")
+        new_kb = load_knowledge_base(
+            new_base_id, profile_namespace=self.project.profile_namespace, profile_prefix=self.project.profile_prefix,
+            exclude_namespaces=self.project.config.exclude_namespaces,
+        )   # raises KeyError for an unknown base
+        old_kb = self.kb
+        live = [change for change in self.changes() if change.decision.status != "superseded"]
+        items = analyse_rebase(live, self.store.list_assessments(self.pid), old_kb, new_kb)
+        report = RebaseReport(from_base=old_base, to_base=new_base_id, from_dcat=old_kb.dcat.id, to_dcat=new_kb.dcat.id,
+                              by=f"human:{by}", note=note, items=items, summary=summarise(items, old_kb, new_kb))
+        self._withdraw_release(f"rebased from {old_base} to {new_base_id}")
+
+        def mutate(project: Project) -> None:
+            project.base_profile_id = new_base_id
+            project.rebases.append(report)
+            for stage in STAGE_ORDER:
+                if project.stage_states.get(stage) == "done" and stage not in ("intake", "propose"):
+                    project.stage_states[stage] = "stale"
+        self._update_project(mutate)
+        self.kb = new_kb
+        self.log("review", "rebase", report.summary, author=f"human:{by}", payload=report.model_dump())
+
+        # Verify every change against the new base (machine decisions are re-made by the policy). No
+        # repair runs here: what the move breaks is shown to a human, who can run repair from the workbench.
+        self.run_retrieve()
+        self.run_verify()
+        for item in items:
+            if not item.change_id:
+                continue
+            change = self.store.get_change(self.pid, item.change_id)
+            if change is None or change.decision.status == "superseded":
+                continue
+            change.engine_notes.append(f"rebase {old_base} -> {new_base_id}: {item.message}")
+            if item.suggestion != "keep" and not is_human(change) and change.decision.status != "rejected":
+                change.decision = Decision(status="needs_review", decided_by="rule:rebase",  # type: ignore[arg-type]
+                                           note=f"rebase: {item.message} Suggested: {item.suggestion}"
+                                                + (f" with {self.kb.curie(item.replacement)}" if item.replacement else ""))
+            self.store.save_change(self.pid, change)
+        self.run_consolidate()
+        self.run_compile()
+        self.run_conformance()
+        self._update_project(lambda project: project.stage_states.__setitem__("review", "running"))
+        return report
 
     def change_set_hash(self) -> str:
         included = sorted(

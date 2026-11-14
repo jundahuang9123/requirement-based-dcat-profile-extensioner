@@ -1,15 +1,20 @@
 """Stage ``retrieve``: the reusable terms the proposer may choose from, per atom.
 
 Retrieval bounds term choice: the proposer picks from what is retrieved here
-(or mints, and then has to say why none of these fits). Three sources are
+(or mints, and then has to say why none of these fits). Four sources are
 merged, in this order of trust:
 
 1. elements the BASE profile already defines on the atom's class, scored in the
    wording the base uses for that class (they decide "covered by base" and
    "refine");
-2. properties from the vocabulary index, scored lexically and adjusted by
-   whether their declared domain fits the class;
-3. a few classes, as possible ranges or as classes to bring into the profile.
+2. properties the DCAT version the base builds on lists for the class (in the
+   wording of that DCAT specification) that the base does not profile there;
+   DCAT-AP 3.x states that such a property is an optional field of the class;
+3. properties from the vocabulary index, scored lexically and adjusted by
+   whether their declared domain fits the class; DCAT terms that only a LATER
+   DCAT version defines are ranked down and marked (the verifier's D1 sends
+   them to a human);
+4. a few classes, as possible ranges or as classes to bring into the profile.
 
 Everything is deterministic and explained (``Candidate.why``).
 """
@@ -33,6 +38,9 @@ GENERIC_WORDS = frozenset(tokenize(
 STRUCTURAL_VOCABULARIES = frozenset({"rdf", "rdfs", "owl", "sh", "xsd"})
 
 BASE_ON_CLASS_BOOST = 1.6     # the base already constrains this path on the atom's class
+DCAT_ON_CLASS_BOOST = 1.4     # the base's DCAT lists this path for the atom's class (the base does not profile it)
+LATER_DCAT_FACTOR = 0.5       # a DCAT term only a later DCAT version defines
+REMOVED_DCAT_FACTOR = 0.3     # a DCAT term only an earlier DCAT version defines
 BASE_ELSEWHERE_BOOST = 1.15   # the base uses the term, on another class
 DOMAIN_FIT_BOOST = 1.25       # the vocabulary declares a domain that fits the class
 DOMAIN_MISFIT_FACTOR = 0.4    # the vocabulary declares a domain that does not fit
@@ -59,6 +67,30 @@ def _domain_fit(kb: KnowledgeBase, domain: list[str], resource_class: str | None
     if not domain or not resource_class:
         return None
     return any(kb.is_subclass_of(resource_class, declared) for declared in domain)
+
+
+def dcat_listing_note(kb: KnowledgeBase, resource_class: str, listed_on: str) -> str:
+    """'DCAT 2014 lists it for dcat:Dataset; DCAT-AP 1.1 does not profile it there'."""
+    where = kb.curie(listed_on) + (f" (and so for {kb.curie(resource_class)})" if listed_on != resource_class else "")
+    if kb.dcat.basis.unlisted_dcat_properties == "optional":
+        tail = f"{kb.base.info.title} does not list it, so it is an optional field there"
+    else:
+        tail = f"{kb.base.info.title} does not profile it there"
+    return f"{kb.dcat.label} lists it for {where}; {tail}"
+
+
+def dcat_status_note(kb: KnowledgeBase, iri: str) -> tuple[str, float]:
+    """(reason, score factor) for a DCAT term that is not part of the DCAT version the base builds on."""
+    status = kb.dcat_status(iri)
+    if status == "later":
+        since = kb.dcat.introduced_in(iri) or ""
+        return (f"introduced in {kb.dcat.describe_version(since)}, after {kb.dcat.label} that {kb.base.info.title} "
+                f"builds on: a human decides", LATER_DCAT_FACTOR)
+    if status == "removed":
+        return f"only in DCAT versions before {kb.dcat.label}", REMOVED_DCAT_FACTOR
+    if status == "deprecated":
+        return f"deprecated in {kb.dcat.label}", 1.0
+    return "", 1.0
 
 
 def retrieve_candidates(
@@ -99,7 +131,31 @@ def retrieve_candidates(
                 why=f"base profile defines it on {kb.curie(resource_class)}; matched: {', '.join(matched)}",
             )
 
-    # 2. Properties of the vocabulary index.
+    # 2. Properties the base's DCAT lists for the class, which the base does not profile there.
+    if resource_class:
+        for listed in kb.dcat.properties_for(resource_class):
+            if listed.path in scored or kb.base.element(resource_class, listed.path) is not None:
+                continue
+            score, matched = kb.vocab.score_text(
+                focused, label=listed.label, name=local_name(listed.path),
+                definition=" ".join(part for part in (listed.definition, listed.usage_note) if part),
+            )
+            if score <= 0:
+                continue
+            term = kb.term(listed.path)
+            scored[listed.path] = Candidate(
+                iri=listed.path, curie=kb.curie(listed.path), kind="property",
+                label=listed.label or (term.label if term else ""),
+                definition=listed.definition or (term.definition if term else ""),
+                vocabulary=kb.prefixes.prefix_of(listed.path) or (term.vocabulary if term else ""),
+                domain=list(term.domain) if term else [],
+                range=list(listed.range) or (list(term.range) if term else []),
+                score=round(score * DCAT_ON_CLASS_BOOST, 4), base_classes=kb.base.classes_using(listed.path),
+                dcat_listed_on_class=True, dcat_status=kb.dcat_status(listed.path), matched=list(matched),
+                why=f"{dcat_listing_note(kb, resource_class, listed.listed_on)}; matched: {', '.join(matched)}",
+            )
+
+    # 3. Properties of the vocabulary index.
     def add_property_hits(tokens: list[str], weight: float) -> None:
         for hit in kb.vocab.search(" ".join(tokens), kind="property", limit=top_k * 4):
             term = hit.term
@@ -121,8 +177,21 @@ def retrieve_candidates(
             elif fit is False:
                 score *= DOMAIN_MISFIT_FACTOR
                 reasons.append(f"declared domain is {', '.join(kb.curie(d) for d in term.domain[:2])}")
-            if term.deprecated:
+            if term.deprecated and kb.dcat.status(term.iri) != "deprecated":
                 reasons.append("deprecated")
+            note, factor = dcat_status_note(kb, term.iri)
+            if note:
+                score *= factor
+                reasons.append(note)
+            deprecated = kb.base.deprecation(resource_class, term.iri) if resource_class else None
+            if deprecated and deprecated.get("kind") == "deprecated":
+                score *= REMOVED_DCAT_FACTOR
+                replacement = deprecated.get("replacement")
+                reasons.append(f"deprecated by {kb.base.info.title}" + (f": use {kb.curie(replacement)}" if replacement else ""))
+            listed = kb.dcat.listed_for(resource_class, term.iri) if resource_class else None
+            if listed is not None and kb.base.element(resource_class, term.iri) is None:
+                score *= DCAT_ON_CLASS_BOOST
+                reasons.append(dcat_listing_note(kb, resource_class, listed.listed_on))
             # The base may define the path on this very class in words that did not match the atom.
             on_class = kb.base.element(resource_class, term.iri) if resource_class else None
             if on_class is not None:
@@ -135,12 +204,13 @@ def retrieve_candidates(
                 vocabulary=term.vocabulary, domain=list(term.domain), range=list(term.range),
                 score=round(score, 4), in_base_on_class=on_class is not None, base_classes=used_on,
                 base_facets=on_class.facets if on_class else None, matched=list(hit.matched),
+                dcat_listed_on_class=listed is not None and on_class is None, dcat_status=kb.dcat_status(term.iri),
                 why="; ".join(reasons),
             )
 
     add_property_hits(focused, 1.0)
 
-    # 3. A few classes (possible ranges, or classes to bring into the profile).
+    # 4. A few classes (possible ranges, or classes to bring into the profile).
     classes: list[Candidate] = []
     for hit in kb.vocab.search(" ".join(focused), kind="class", limit=MAX_CLASS_CANDIDATES * 3):
         term = hit.term
@@ -148,11 +218,14 @@ def retrieve_candidates(
             continue
         in_base = kb.base.has_class(term.iri)
         prior = 1.0 if in_base else SPECIALISED_VOCABULARIES.get(term.vocabulary, 1.0)
+        note, factor = dcat_status_note(kb, term.iri)
         classes.append(Candidate(
             iri=term.iri, curie=kb.curie(term.iri), kind="class", label=term.label, definition=term.definition,
-            vocabulary=term.vocabulary, score=round(hit.score * (BASE_ELSEWHERE_BOOST if in_base else prior), 4),
-            base_classes=[term.iri] if in_base else [], matched=list(hit.matched),
-            why=f"matched: {', '.join(hit.matched)}" + ("; class of the base profile" if in_base else ""),
+            vocabulary=term.vocabulary,
+            score=round(hit.score * (BASE_ELSEWHERE_BOOST if in_base else prior) * factor, 4),
+            base_classes=[term.iri] if in_base else [], matched=list(hit.matched), dcat_status=kb.dcat_status(term.iri),
+            why=f"matched: {', '.join(hit.matched)}" + ("; class of the base profile" if in_base else "")
+                + (f"; {note}" if note else ""),
         ))
     classes = sorted(classes, key=lambda candidate: (-candidate.score, candidate.iri))[:MAX_CLASS_CANDIDATES]
 

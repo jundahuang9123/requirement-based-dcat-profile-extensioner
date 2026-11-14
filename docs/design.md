@@ -25,17 +25,23 @@ holding the final review right.
 | All error-level checks pass, the judge finds the change supported (when on), confidence ≥ threshold, a majority of votes agree (when voting) | `auto_accepted`: part of the profile unless a human overrules |
 | An error-level check fails | bounded repair (default 3 rounds); still failing → `needs_review` |
 | Low confidence, no majority, conflict between changes, automatic acceptance switched off | `needs_review` |
+| A DCAT term only a later DCAT version than the base's defines (D1, policy `review`) | `needs_review`: a human decides |
 | A human decides | final: later machine stages never overwrite it |
+| The base is changed (rebase) | human decisions stay; machine changes with a migration finding go to `needs_review`; all are verified again |
 | Release | only by a human sign-off, only with an empty queue and a current, passing conformance report; any later decision withdraws it |
 
 ## Checks
 
 `V1` term exists · `V2` domain/range fit · `V3` legal refinement of the base ·
 `V4` reuse before mint · `V5` internal consistency · `V6` valid SHACL ·
+`D1` DCAT state: terms of the DCAT version the base builds on, used on a class that
+DCAT lists them for · `D2` no deprecated term (pinned DCAT or base) · `D3` inverse
+properties only in addition to the property they invert ·
 `T1` trace (atoms exist, verbatim quote, every constraint justified, obligation
 not stronger than the atoms' modality licenses) · `T2` judge: the atoms support
 the change · `B1` "covered by the base" claims name base elements that are strong
-enough. Final conformance: `C1`–`C7` ([conformance.md](conformance.md)).
+enough. Final conformance: `C1`–`C8` ([conformance.md](conformance.md)). The DCAT
+state and the rebase are described in [dcat-versions.md](dcat-versions.md).
 
 ## Key steps taken from the literature
 

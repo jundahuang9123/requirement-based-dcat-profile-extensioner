@@ -38,13 +38,13 @@ classes:
     properties:
       dcterms:description: mandatory
       dcterms:title: mandatory
-      https://www.w3.org/ns/dcat#contactPoint: recommended
+      dcat:contactPoint: recommended
       dcat:distribution: recommended
       dcat:keyword: recommended
       dcterms:publisher: recommended
       dcat:theme: recommended
       dcterms:conformsTo: optional
-      dcterms:acrualPeriodicity: optional
+      dcterms:accrualPeriodicity: optional
       dcterms:identifier: optional
       dcat:landingPage: optional
       dcterms:language: optional
@@ -73,7 +73,7 @@ classes:
       dcterms:license: recommended
       dcat:byteSize: optional
       dcat:downloadURL: optional
-      dcterms:mediaType: optional
+      dcat:mediaType: optional
       dcterms:issued: optional
       dcterms:rights: optional
       adms:status: optional

@@ -70,6 +70,25 @@ def compile_documentation(view: ProfileView, rows: list[dict[str, str]], conform
         lines += [f"Released by {project.signoff.by} on {project.signoff.at}. {project.signoff.note}".strip(), ""]
     else:
         lines += ["**Draft:** not yet signed off by a human reviewer.", ""]
+    if project.rebases:
+        lines += ["## Base history", ""]
+        lines += [f"- {report.at[:10]}: {report.summary} ({report.by})" for report in project.rebases]
+        lines.append("")
+    lines += ["## DCAT state", "", kb.dcat.summary(kb.base.info.title)]
+    if kb.dcat.basis.unlisted_dcat_properties == "optional":
+        lines.append(f"By its own rule, a DCAT property that {kb.base.info.title} does not list for a class is an "
+                     f"optional field of that class.")
+    for item in kb.dcat.basis.evidence[:2]:
+        lines.append(f"> {item.get('quote', '')} ({item.get('file', '')})")
+    for note in kb.dcat.basis.notes:
+        lines.append(f"Note: {note}")
+    later = sorted({kb.curie(iri) for change in view.changes
+                    for iri in (change.target_class, change.path, change.facets.range_class)
+                    if iri and kb.dcat_status(iri) == "later"})
+    if later:
+        lines.append(f"This extension uses terms of a later DCAT version than {kb.dcat.label}, each accepted by a "
+                     f"human reviewer: {', '.join(later)}.")
+    lines.append("")
     if conformance_summary:
         lines += ["## Conformance to the base", "", conformance_summary, ""]
     for target in view.target_classes():

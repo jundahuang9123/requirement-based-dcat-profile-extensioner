@@ -8,6 +8,11 @@ Checks (ids are stable; reports and the review queue are keyed to them):
     V4  reuse before mint: a minted term states why no candidate fits
     V5  internal consistency of the constraints
     V6  the compiled shapes are valid SHACL            (run after compile, see ``check_shapes_valid``)
+    D1  DCAT state: every DCAT term exists in the DCAT version the base builds on (a term only a later
+        version defines goes to a human, see ``PipelineConfig.later_dcat_terms``), and a DCAT property
+        is used on a class that DCAT lists it for
+    D2  no term that the base's DCAT version, or the base itself (deprecated-URI shapes), deprecates
+    D3  an inverse property (DCAT 3, section 7) is used only in addition to the property it inverts
     T1  trace: the change cites existing atoms, quotes them verbatim, justifies every constraint
         it sets and is not stricter than the atoms' wording licenses
     B1  a "covered by the base" claim really holds     (on assessments, see ``verify_assessment``)
@@ -207,6 +212,78 @@ def check_domain_range(change: ProfileChange, ctx: VerifyContext) -> list[CheckR
 
 
 # ---------------------------------------------------------------------------
+# D1-D3 - the DCAT state the base builds on
+# ---------------------------------------------------------------------------
+
+
+def check_dcat_state(change: ProfileChange, ctx: VerifyContext) -> list[CheckResult]:
+    kb, results = ctx.kb, []
+    dcat = kb.dcat
+    policy = ctx.project.config.later_dcat_terms
+    base_title = kb.base.info.title
+    used: list[str] = []
+    for iri in (change.target_class, change.path, change.facets.range_class, change.super_class, change.sub_property_of):
+        if iri and dcat.is_dcat(iri) and iri not in used:
+            used.append(iri)
+    for iri in used:
+        status = kb.dcat_status(iri)
+        if status == "later":
+            since = dcat.introduced_in(iri) or ""
+            message = (f"{kb.curie(iri)} was introduced in {dcat.describe_version(since)}; {base_title} builds on "
+                       f"{dcat.describe_version()}, which does not define it.")
+            if policy == "forbid":
+                results.append(_fail("D1", message + f" Use a term of {dcat.label}, or mint one.", term=iri,
+                                     problem="later_dcat_term", introduced_in=since))
+            elif policy == "review":
+                results.append(_fail("D1", message + " A human decides whether the extension may use it.",
+                                     severity="warning", term=iri, problem="later_dcat_term", introduced_in=since,
+                                     requires_human=True))
+            else:
+                results.append(_ok("D1", message + " Allowed by the project setting."))
+        elif status == "removed":
+            results.append(_fail("D1", f"{kb.curie(iri)} is defined only by DCAT versions before {dcat.label} "
+                                       f"({', '.join(dcat.defined_in(iri))}).", term=iri, problem="removed_dcat_term"))
+        elif status == "deprecated":
+            replacement = dcat.replacement_for(iri)
+            results.append(_fail("D2", f"{kb.curie(iri)} is deprecated in {dcat.label}"
+                                       + (f"; use {kb.curie(replacement)}." if replacement else "."),
+                                 term=iri, problem="deprecated_dcat_term", replacement=replacement or ""))
+
+    deprecated = kb.base.deprecation(change.target_class, change.path) if change.path else None
+    if deprecated and deprecated.get("kind") == "deprecated":
+        replacement = deprecated.get("replacement")
+        results.append(_fail("D2", f"{base_title} deprecates {kb.curie(change.path)} on {kb.curie(change.target_class)}"
+                                   + (f"; use {kb.curie(replacement)}." if replacement else f": {deprecated.get('message')}"),
+                             term=change.path, problem="deprecated_by_base", replacement=replacement or ""))
+
+    path = change.path
+    if path and not change.is_class_change and kb.dcat_status(path) in ("current", "adopted") \
+            and not kb.is_minted(change.target_class):
+        term = kb.term(path)
+        listing = dcat.classes_listing(path)
+        placed = (kb.base.element(change.target_class, path) is not None
+                  or dcat.listed_for(change.target_class, path) is not None
+                  or any(kb.is_subclass_of(change.target_class, cls) for cls in listing))
+        # A declared rdfs:domain is V2's business; this covers DCAT properties placed by the specification only.
+        if dcat.is_dcat(path) and listing and not placed and not (term and term.domain):
+            results.append(_fail(
+                "D1", f"{dcat.label} lists {kb.curie(path)} for {', '.join(kb.curie(cls) for cls in listing)}, "
+                      f"not for {kb.curie(change.target_class)}.",
+                term=path, problem="dcat_placement", listed_for=listing,
+            ))
+        canonical = dcat.inverse_canonical(path)
+        if canonical:
+            results.append(_fail(
+                "D3", f"{kb.curie(path)} is the inverse of {kb.curie(canonical)}. {dcat.label} (section 7): inverse "
+                      f"properties MAY be used only in addition to the property they invert and MUST NOT replace it.",
+                severity="warning", term=path, problem="inverse_property", canonical=canonical,
+            ))
+    if results:
+        return results
+    return [_ok("D1", f"uses only terms of {dcat.label}" if used else f"no DCAT terms involved ({dcat.label})")]
+
+
+# ---------------------------------------------------------------------------
 # V3 - legal refinement of the base
 # ---------------------------------------------------------------------------
 
@@ -222,8 +299,9 @@ def check_refinement(change: ProfileChange, ctx: VerifyContext) -> list[CheckRes
         base_shape, new_shape, inherit_missing=True, is_subclass=kb.is_subclass_of, compare_severity=False
     )
     deltas = list(comparison.facets)
+    in_base = base_shape is not None or kb.base.element(change.target_class, change.path) is not None
     obligation_delta = compare_obligation(
-        kb.base.obligation(change.target_class, change.path) if base_shape is not None else None,
+        kb.base.obligation(change.target_class, change.path) if in_base else None,
         change.facets.obligation,
     )
     if obligation_delta is not None:
@@ -238,8 +316,18 @@ def check_refinement(change: ProfileChange, ctx: VerifyContext) -> list[CheckRes
         elif status in ("conflict", "incomparable"):
             justification.status = "loosened" if status == "conflict" else "tightened"
 
-    if base_shape is None:
+    if base_shape is None and not in_base:
         return [_ok("V3", "the base does not constrain this property on this class: an addition")]
+    if base_shape is None:
+        # Listed by the base's specification with an obligation, but no official shape: only the obligation compares.
+        if obligation_delta is not None and obligation_delta.status in ("loosened", "conflict"):
+            return [_fail(
+                "V3", f"Not a legal refinement of the base: obligation {obligation_delta.base_value} -> "
+                      f"{obligation_delta.new_value} loosens what the base's specification states.",
+                problem="illegal_refinement", facets=["obligation"],
+            )]
+        return [_ok("V3", "the base's specification lists this property here (no official shape); the obligation is "
+                          "not loosened")]
 
     results = []
     bad = [delta for delta in deltas if delta.status in ("loosened", "conflict")]
@@ -391,7 +479,8 @@ def check_trace(change: ProfileChange, ctx: VerifyContext) -> list[CheckResult]:
 # Running the checks
 # ---------------------------------------------------------------------------
 
-CHECKS = (check_terms_exist, check_domain_range, check_refinement, check_reuse_before_mint, check_consistency, check_trace)
+CHECKS = (check_terms_exist, check_domain_range, check_dcat_state, check_refinement, check_reuse_before_mint,
+          check_consistency, check_trace)
 
 
 def verify_change(change: ProfileChange, ctx: VerifyContext) -> list[CheckResult]:

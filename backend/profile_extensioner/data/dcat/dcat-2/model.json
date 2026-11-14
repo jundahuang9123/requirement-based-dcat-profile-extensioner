@@ -1,0 +1,993 @@
+{
+ "classes": {
+  "http://purl.org/dc/terms/Location": {
+   "definition": "A spatial region or named place.",
+   "label": "Location",
+   "properties": [
+    {
+     "definition": "Associates any resource with the corresponding geometry. [[LOCN]]",
+     "domain": [],
+     "label": "geometry",
+     "path": "http://www.w3.org/ns/locn#geometry",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Literal"
+     ],
+     "range_text": "rdfs:Literal",
+     "usage_note": "The range of this property is intentionally generic, with the purpose of allowing different geometry encodings. E.g., the geometry could be encoded as WKT ( geosparql:asWKT [[GeoSPARQL]])."
+    },
+    {
+     "definition": "The geographic bounding box of a resource.",
+     "domain": [],
+     "label": "bounding box",
+     "path": "http://www.w3.org/ns/dcat#bbox",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Literal"
+     ],
+     "range_text": "rdfs:Literal",
+     "usage_note": "The range of this property is intentionally generic, with the purpose of allowing different geometry encodings. E.g., the geometry could be encoded as WKT ( geosparql:asWKT [[GeoSPARQL]])."
+    },
+    {
+     "definition": "The geographic center (centroid) of a resource.",
+     "domain": [],
+     "label": "centroid",
+     "path": "http://www.w3.org/ns/dcat#centroid",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Literal"
+     ],
+     "range_text": "rdfs:Literal",
+     "usage_note": "The range of this property is intentionally generic, with the purpose of allowing different geometry encodings. E.g., the geometry could be encoded as WKT ( geosparql:asWKT [[GeoSPARQL]])."
+    }
+   ],
+   "subclass_of": [],
+   "usage_note": "For an extensive geometry (i.e., a set of coordinates denoting the vertices of the relevant geographic area), the property locn:geometry [[LOCN]] SHOULD be used. For a geographic bounding box delimiting a spatial area the property dcat:bbox SHOULD be used. For the geographic center of a spatial area, or another characteristic point, the property dcat:centroid SHOULD be used."
+  },
+  "http://purl.org/dc/terms/PeriodOfTime": {
+   "definition": "An interval of time that is named or defined by its start and end.",
+   "label": "Period of Time",
+   "properties": [
+    {
+     "definition": "The start of the period.",
+     "domain": [
+      "http://purl.org/dc/terms/PeriodOfTime"
+     ],
+     "label": "start date",
+     "path": "http://www.w3.org/ns/dcat#startDate",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Literal",
+      "http://www.w3.org/2001/XMLSchema#gYear",
+      "http://www.w3.org/2001/XMLSchema#gYearMonth",
+      "http://www.w3.org/2001/XMLSchema#date",
+      "http://www.w3.org/2001/XMLSchema#dateTime"
+     ],
+     "range_text": "rdfs:Literal encoded using the relevant ISO 8601 Date and Time compliant string [[?DATETIME]] and typed using the appropriate XML Schema datatype [[!XMLSCHEMA11-2]] ( xsd:gYear , xsd:gYearMonth , xsd:date , or xsd:dateTime ).",
+     "usage_note": ""
+    },
+    {
+     "definition": "The end of the period.",
+     "domain": [
+      "http://purl.org/dc/terms/PeriodOfTime"
+     ],
+     "label": "end date",
+     "path": "http://www.w3.org/ns/dcat#endDate",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Literal"
+     ],
+     "range_text": "rdfs:Literal encoded using the relevant ISO 8601 Date and Time compliant string [[?DATETIME]] and typed using the appropriate XML Schema datatype [[!XMLSCHEMA11-2]]",
+     "usage_note": ""
+    },
+    {
+     "definition": "Beginning of a period or interval.",
+     "domain": [],
+     "label": "beginning",
+     "path": "http://www.w3.org/2006/time#hasBeginning",
+     "range": [
+      "http://www.w3.org/2006/time#Instant"
+     ],
+     "range_text": "time:Instant",
+     "usage_note": "Use of the property time:hasBeginning entails that value of the dct:temporal property is a member of the time:TemporalEntity class from [[OWL-TIME]]. In this context this could be taken to imply that dct:PeriodOfTime is equivalent to the sub-class time:ProperInterval"
+    },
+    {
+     "definition": "End of a period or interval.",
+     "domain": [],
+     "label": "end",
+     "path": "http://www.w3.org/2006/time#hasEnd",
+     "range": [
+      "http://www.w3.org/2006/time#Instant"
+     ],
+     "range_text": "time:Instant",
+     "usage_note": "Use of the property time:hasEnd entails that value of the dct:temporal property is a member of the time:TemporalEntity class from [[OWL-TIME]]. In this context this could be taken to imply that dct:PeriodOfTime is equivalent to the sub-class time:ProperInterval"
+    }
+   ],
+   "subclass_of": [],
+   "usage_note": "The start and end of the interval SHOULD be given by using properties dcat:startDate or time:hasBeginning , and dcat:endDate or time:hasEnd , respectively. The interval can also be open - i.e., it can have just a start or just an end."
+  },
+  "http://www.w3.org/2004/02/skos/core#Concept": {
+   "definition": "A category or a theme used to describe datasets in the catalog.",
+   "label": "Concept",
+   "properties": [],
+   "subclass_of": [],
+   "usage_note": "It is recommended to use either skos:inScheme or skos:topConceptOf on every skos:Concept used to classify datasets to link it to the concept scheme it belongs to. This concept scheme is typically associated with the catalog using dcat:themeTaxonomy ."
+  },
+  "http://www.w3.org/2004/02/skos/core#ConceptScheme": {
+   "definition": "A knowledge organization system (KOS) used to represent themes/categories of datasets in the catalog.",
+   "label": "Concept Scheme",
+   "properties": [],
+   "subclass_of": [],
+   "usage_note": ""
+  },
+  "http://www.w3.org/ns/dcat#Catalog": {
+   "definition": "A curated collection of metadata about resources (e.g., datasets and data services in the context of a data catalog)",
+   "label": "Catalog",
+   "properties": [
+    {
+     "definition": "A homepage of the catalog (a public Web document usually available in HTML).",
+     "domain": [],
+     "label": "homepage",
+     "path": "http://xmlns.com/foaf/0.1/homepage",
+     "range": [
+      "http://xmlns.com/foaf/0.1/Document"
+     ],
+     "range_text": "foaf:Document",
+     "usage_note": "foaf:homepage is an inverse functional property (IFP) which means that it MUST be unique and precisely identify the Web-page for the resource. This property indicates the canonical Web-page, which might be helpful in cases where there is more than one Web-page about the resource."
+    },
+    {
+     "definition": "A knowledge organization system (KOS) used to classify catalog's datasets and services.",
+     "domain": [
+      "http://www.w3.org/ns/dcat#Catalog"
+     ],
+     "label": "themes",
+     "path": "http://www.w3.org/ns/dcat#themeTaxonomy",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Resource"
+     ],
+     "range_text": "rdfs:Resource",
+     "usage_note": "It is recommended that the taxonomy is organized in a skos:ConceptScheme , skos:Collection , owl:Ontology or similar, which allows each member to be denoted by an IRI and published as Linked Data."
+    },
+    {
+     "definition": "An item that is listed in the catalog.",
+     "domain": [
+      "http://www.w3.org/ns/dcat#Catalog"
+     ],
+     "label": "has part",
+     "path": "http://purl.org/dc/terms/hasPart",
+     "range": [
+      "http://www.w3.org/ns/dcat#Resource"
+     ],
+     "range_text": "dcat:Resource",
+     "usage_note": "This is the most general predicate for membership of a catalog. Use of a more specific sub-property is recommended when available."
+    },
+    {
+     "definition": "A collection of data that is listed in the catalog.",
+     "domain": [
+      "http://www.w3.org/ns/dcat#Catalog"
+     ],
+     "label": "dataset",
+     "path": "http://www.w3.org/ns/dcat#dataset",
+     "range": [
+      "http://www.w3.org/ns/dcat#Dataset"
+     ],
+     "range_text": "dcat:Dataset",
+     "usage_note": ""
+    },
+    {
+     "definition": "A site or end-point that is listed in the catalog.",
+     "domain": [
+      "http://www.w3.org/ns/dcat#Catalog"
+     ],
+     "label": "service",
+     "path": "http://www.w3.org/ns/dcat#service",
+     "range": [
+      "http://www.w3.org/ns/dcat#DataService"
+     ],
+     "range_text": "dcat:DataService",
+     "usage_note": ""
+    },
+    {
+     "definition": "A catalog whose contents are of interest in the context of this catalog.",
+     "domain": [
+      "http://www.w3.org/ns/dcat#Catalog"
+     ],
+     "label": "catalog",
+     "path": "http://www.w3.org/ns/dcat#catalog",
+     "range": [
+      "http://www.w3.org/ns/dcat#Catalog"
+     ],
+     "range_text": "dcat:Catalog",
+     "usage_note": ""
+    },
+    {
+     "definition": "A record describing the registration of a single dataset or data service that is part of the catalog.",
+     "domain": [
+      "http://www.w3.org/ns/dcat#Catalog"
+     ],
+     "label": "catalog record",
+     "path": "http://www.w3.org/ns/dcat#record",
+     "range": [
+      "http://www.w3.org/ns/dcat#CatalogRecord"
+     ],
+     "range_text": "dcat:CatalogRecord",
+     "usage_note": ""
+    }
+   ],
+   "subclass_of": [
+    "http://www.w3.org/ns/dcat#Dataset"
+   ],
+   "usage_note": "A Web-based data catalog is typically represented as a single instance of this class."
+  },
+  "http://www.w3.org/ns/dcat#CatalogRecord": {
+   "definition": "A record in a catalog, describing the registration of a single dcat:Resource .",
+   "label": "Catalog Record",
+   "properties": [
+    {
+     "definition": "A name given to the record.",
+     "domain": [],
+     "label": "title",
+     "path": "http://purl.org/dc/terms/title",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Literal"
+     ],
+     "range_text": "rdfs:Literal",
+     "usage_note": ""
+    },
+    {
+     "definition": "A free-text account of the record.",
+     "domain": [],
+     "label": "description",
+     "path": "http://purl.org/dc/terms/description",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Literal"
+     ],
+     "range_text": "rdfs:Literal",
+     "usage_note": ""
+    },
+    {
+     "definition": "The date of listing (i.e. formal recording) of the corresponding dataset or service in the catalog.",
+     "domain": [],
+     "label": "listing date",
+     "path": "http://purl.org/dc/terms/issued",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Literal",
+      "http://www.w3.org/2001/XMLSchema#gYear",
+      "http://www.w3.org/2001/XMLSchema#gYearMonth",
+      "http://www.w3.org/2001/XMLSchema#date",
+      "http://www.w3.org/2001/XMLSchema#dateTime"
+     ],
+     "range_text": "rdfs:Literal encoded using the relevant ISO 8601 Date and Time compliant string [[?DATETIME]] and typed using the appropriate XML Schema datatype [[!XMLSCHEMA11-2]] ( xsd:gYear , xsd:gYearMonth , xsd:date , or xsd:dateTime ).",
+     "usage_note": "This indicates the date of listing the dataset in the catalog and not the publication date of the dataset itself."
+    },
+    {
+     "definition": "Most recent date on which the catalog entry was changed, updated or modified.",
+     "domain": [],
+     "label": "update/modification date",
+     "path": "http://purl.org/dc/terms/modified",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Literal",
+      "http://www.w3.org/2001/XMLSchema#gYear",
+      "http://www.w3.org/2001/XMLSchema#gYearMonth",
+      "http://www.w3.org/2001/XMLSchema#date",
+      "http://www.w3.org/2001/XMLSchema#dateTime"
+     ],
+     "range_text": "rdfs:Literal encoded using the relevant ISO 8601 Date and Time compliant string [[?DATETIME]] and typed using the appropriate XML Schema datatype [[!XMLSCHEMA11-2]] ( xsd:gYear , xsd:gYearMonth , xsd:date , or xsd:dateTime ).",
+     "usage_note": "This indicates the date of last change of a catalog entry, i.e. the catalog metadata description of the dataset, and not the date of the dataset itself."
+    },
+    {
+     "definition": "The dcat:Resource (dataset or service) described in the record.",
+     "domain": [],
+     "label": "primary topic",
+     "path": "http://xmlns.com/foaf/0.1/primaryTopic",
+     "range": [],
+     "range_text": "",
+     "usage_note": "foaf:primaryTopic property is functional: each catalog record can have at most one primary topic i.e. describes one dataset or service."
+    },
+    {
+     "definition": "An established standard to which the described resource conforms.",
+     "domain": [],
+     "label": "conforms to",
+     "path": "http://purl.org/dc/terms/conformsTo",
+     "range": [
+      "http://purl.org/dc/terms/Standard"
+     ],
+     "range_text": "dct:Standard (A basis for comparison; a reference point against which other things can be evaluated.)",
+     "usage_note": "This property SHOULD be used to indicate the model, schema, ontology, view or profile that the catalog record metadata conforms to."
+    }
+   ],
+   "subclass_of": [],
+   "usage_note": "This class is optional and not all catalogs will use it. It exists for catalogs where a distinction is made between metadata about a dataset or service and metadata about the entry in the catalog about the dataset or service . For example, the publication date property of the dataset reflects the date when the information was originally made available by the publishing agency, while the publication date of the catalog record is the date when the dataset was added to the catalog. In cases where both dates differ, or where only the latter is known, the publication date SHOULD only be specified for the catalog record. Notice that the W3C PROV Ontology [[?PROV-O]] allows describing further provenance information such as the details of the process and the agent involved in a particular change to a dataset or its registration."
+  },
+  "http://www.w3.org/ns/dcat#DataService": {
+   "definition": "A collection of operations that provides access to one or more datasets or data processing functions.",
+   "label": "Data Service",
+   "properties": [
+    {
+     "definition": "The root location or primary endpoint of the service (a Web-resolvable IRI).",
+     "domain": [
+      "http://www.w3.org/ns/dcat#DataService"
+     ],
+     "label": "endpoint URL",
+     "path": "http://www.w3.org/ns/dcat#endpointURL",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Resource"
+     ],
+     "range_text": "rdfs:Resource",
+     "usage_note": ""
+    },
+    {
+     "definition": "A description of the services available via the end-points, including their operations, parameters etc.",
+     "domain": [
+      "http://www.w3.org/ns/dcat#DataService"
+     ],
+     "label": "endpoint description",
+     "path": "http://www.w3.org/ns/dcat#endpointDescription",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Resource"
+     ],
+     "range_text": "rdfs:Resource",
+     "usage_note": "An endpoint description may be expressed in a machine-readable form, such as an OpenAPI (Swagger) description [[?OpenAPI]], an OGC GetCapabilities response [[?WFS]], [[?ISO-19142]], [[?WMS]], [[?ISO-19128]], a SPARQL Service Description [[?SPARQL11-SERVICE-DESCRIPTION]], an [[?OpenSearch]] or [[?WSDL20]] document, a Hydra API description [[?HYDRA]], else in text or some other informal mode if a formal representation is not possible."
+    },
+    {
+     "definition": "A legal document under which the service is made available.",
+     "domain": [],
+     "label": "license",
+     "path": "http://purl.org/dc/terms/license",
+     "range": [
+      "http://purl.org/dc/terms/LicenseDocument"
+     ],
+     "range_text": "dct:LicenseDocument",
+     "usage_note": ""
+    },
+    {
+     "definition": "Information about who can access the resource or an indication of its security status.",
+     "domain": [],
+     "label": "access rights",
+     "path": "http://purl.org/dc/terms/accessRights",
+     "range": [
+      "http://purl.org/dc/terms/RightsStatement"
+     ],
+     "range_text": "dct:RightsStatement",
+     "usage_note": "Access Rights MAY include information regarding access or restrictions based on privacy, security, or other policies."
+    },
+    {
+     "definition": "A collection of data that this data service can distribute.",
+     "domain": [],
+     "label": "serves dataset",
+     "path": "http://www.w3.org/ns/dcat#servesDataset",
+     "range": [
+      "http://www.w3.org/ns/dcat#Dataset"
+     ],
+     "range_text": "dcat:Dataset",
+     "usage_note": ""
+    }
+   ],
+   "subclass_of": [
+    "http://purl.org/dc/dcmitype/Service"
+   ],
+   "usage_note": "The kind of service can be indicated using the dct:type property. Its value may be taken from a controlled vocabulary such as the INSPIRE spatial data service type code list [[?INSPIRE-SDST]]."
+  },
+  "http://www.w3.org/ns/dcat#Dataset": {
+   "definition": "A collection of data, published or curated by a single agent, and available for access or download in one or more representations.",
+   "label": "Dataset",
+   "properties": [
+    {
+     "definition": "An available distribution of the dataset.",
+     "domain": [
+      "http://www.w3.org/ns/dcat#Dataset"
+     ],
+     "label": "dataset distribution",
+     "path": "http://www.w3.org/ns/dcat#distribution",
+     "range": [
+      "http://www.w3.org/ns/dcat#Distribution"
+     ],
+     "range_text": "dcat:Distribution",
+     "usage_note": ""
+    },
+    {
+     "definition": "The frequency at which dataset is published.",
+     "domain": [],
+     "label": "frequency",
+     "path": "http://purl.org/dc/terms/accrualPeriodicity",
+     "range": [
+      "http://purl.org/dc/terms/Frequency"
+     ],
+     "range_text": "dct:Frequency (A rate at which something recurs)",
+     "usage_note": "The value of dct:accrualPeriodicity gives the rate at which the dataset-as-a-whole is updated. This may be complemented by dcat:temporalResolution to give the time between collected data points in a time series."
+    },
+    {
+     "definition": "The geographical area covered by the dataset.",
+     "domain": [],
+     "label": "spatial/geographical coverage",
+     "path": "http://purl.org/dc/terms/spatial",
+     "range": [
+      "http://purl.org/dc/terms/Location"
+     ],
+     "range_text": "dct:Location (A spatial region or named place)",
+     "usage_note": "The spatial coverage of a dataset may be encoded as an instance of dct:Location , or may be indicated using a URI reference (link) to a resource describing a location. It is recommended that links are to entries in a well maintained gazetteer such as Geonames ."
+    },
+    {
+     "definition": "Minimum spatial separation resolvable in a dataset, measured in meters.",
+     "domain": [],
+     "label": "spatial resolution",
+     "path": "http://www.w3.org/ns/dcat#spatialResolutionInMeters",
+     "range": [
+      "http://www.w3.org/2001/XMLSchema#decimal"
+     ],
+     "range_text": "xsd:decimal",
+     "usage_note": "If the dataset is an image or grid this should correspond to the spacing of items. For other kinds of spatial datasets, this property will usually indicate the smallest distance between items in the dataset."
+    },
+    {
+     "definition": "The temporal period that the dataset covers.",
+     "domain": [],
+     "label": "temporal coverage",
+     "path": "http://purl.org/dc/terms/temporal",
+     "range": [
+      "http://purl.org/dc/terms/PeriodOfTime"
+     ],
+     "range_text": "dct:PeriodOfTime (An interval of time that is named or defined by its start and end dates)",
+     "usage_note": "The temporal coverage of a dataset may be encoded as an instance of dct:PeriodOfTime , or may be indicated using a URI reference (link) to a resource describing a time period or interval."
+    },
+    {
+     "definition": "Minimum time period resolvable in the dataset.",
+     "domain": [],
+     "label": "temporal resolution",
+     "path": "http://www.w3.org/ns/dcat#temporalResolution",
+     "range": [
+      "http://www.w3.org/2001/XMLSchema#duration"
+     ],
+     "range_text": "xsd:duration",
+     "usage_note": "If the dataset is a time-series this should correspond to the spacing of items in the series. For other kinds of dataset, this property will usually indicate the smallest time difference between items in the dataset."
+    },
+    {
+     "definition": "An activity that generated, or provides the business context for, the creation of the dataset.",
+     "domain": [
+      "http://www.w3.org/ns/prov#Entity"
+     ],
+     "label": "was generated by",
+     "path": "http://www.w3.org/ns/prov#wasGeneratedBy",
+     "range": [
+      "http://www.w3.org/ns/prov#Activity"
+     ],
+     "range_text": "prov:Activity An activity is something that occurs over a period of time and acts upon or with entities; it may include consuming, processing, transforming, modifying, relocating, using, or generating entities.",
+     "usage_note": "Use prov:qualifiedGeneration to attach additional details about the relationship between the dataset and the activity, e.g. the exact time that the dataset was produced during the lifetime of a project"
+    }
+   ],
+   "subclass_of": [
+    "http://www.w3.org/ns/dcat#Resource"
+   ],
+   "usage_note": "This class describes the actual dataset as published by the dataset provider. In cases where a distinction between the actual dataset and its entry in the catalog is necessary (because metadata such as modification date might differ), the catalog record class can be used for the latter."
+  },
+  "http://www.w3.org/ns/dcat#Distribution": {
+   "definition": "A specific representation of a dataset. A dataset might be available in multiple serializations that may differ in various ways, including natural language, media-type or format, schematic organization, temporal and spatial resolution, level of detail or profiles (which might specify any or all of the above).",
+   "label": "Distribution",
+   "properties": [
+    {
+     "definition": "A name given to the distribution.",
+     "domain": [],
+     "label": "title",
+     "path": "http://purl.org/dc/terms/title",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Literal"
+     ],
+     "range_text": "rdfs:Literal",
+     "usage_note": ""
+    },
+    {
+     "definition": "A free-text account of the distribution.",
+     "domain": [],
+     "label": "description",
+     "path": "http://purl.org/dc/terms/description",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Literal"
+     ],
+     "range_text": "rdfs:Literal",
+     "usage_note": ""
+    },
+    {
+     "definition": "Date of formal issuance (e.g., publication) of the distribution.",
+     "domain": [],
+     "label": "release date",
+     "path": "http://purl.org/dc/terms/issued",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Literal",
+      "http://www.w3.org/2001/XMLSchema#gYear",
+      "http://www.w3.org/2001/XMLSchema#gYearMonth",
+      "http://www.w3.org/2001/XMLSchema#date",
+      "http://www.w3.org/2001/XMLSchema#dateTime"
+     ],
+     "range_text": "rdfs:Literal encoded using the relevant ISO 8601 Date and Time compliant string [[?DATETIME]] and typed using the appropriate XML Schema datatype [[!XMLSCHEMA11-2]] ( xsd:gYear , xsd:gYearMonth , xsd:date , or xsd:dateTime ).",
+     "usage_note": "This property SHOULD be set using the first known date of issuance."
+    },
+    {
+     "definition": "Most recent date on which the distribution was changed, updated or modified.",
+     "domain": [],
+     "label": "update/modification date",
+     "path": "http://purl.org/dc/terms/modified",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Literal",
+      "http://www.w3.org/2001/XMLSchema#gYear",
+      "http://www.w3.org/2001/XMLSchema#gYearMonth",
+      "http://www.w3.org/2001/XMLSchema#date",
+      "http://www.w3.org/2001/XMLSchema#dateTime"
+     ],
+     "range_text": "rdfs:Literal encoded using the relevant ISO 8601 Date and Time compliant string [[?DATETIME]] and typed using the appropriate XML Schema datatype [[!XMLSCHEMA11-2]] ( xsd:gYear , xsd:gYearMonth , xsd:date , or xsd:dateTime ).",
+     "usage_note": ""
+    },
+    {
+     "definition": "A legal document under which the distribution is made available.",
+     "domain": [],
+     "label": "license",
+     "path": "http://purl.org/dc/terms/license",
+     "range": [
+      "http://purl.org/dc/terms/LicenseDocument"
+     ],
+     "range_text": "dct:LicenseDocument",
+     "usage_note": "Information about licenses and rights SHOULD be provided on the level of Distribution. Information about licenses and rights MAY be provided for a Dataset in addition to but not instead of the information provided for the Distributions of that Dataset. Providing license or rights information for a Dataset that is different from information provided for a Distribution of that Dataset SHOULD be avoided as this can create legal conflicts. See also guidance at ."
+    },
+    {
+     "definition": "A rights statement that concerns how the distribution is accessed.",
+     "domain": [],
+     "label": "access rights",
+     "path": "http://purl.org/dc/terms/accessRights",
+     "range": [
+      "http://purl.org/dc/terms/RightsStatement"
+     ],
+     "range_text": "dct:RightsStatement",
+     "usage_note": "Information about licenses and rights MAY be provided for the Distribution. See also guidance at ."
+    },
+    {
+     "definition": "Information about rights held in and over the distribution.",
+     "domain": [],
+     "label": "rights",
+     "path": "http://purl.org/dc/terms/rights",
+     "range": [
+      "http://purl.org/dc/terms/RightsStatement"
+     ],
+     "range_text": "dct:RightsStatement",
+     "usage_note": "dct:license , which is a sub-property of dct:rights , can be used to link a distribution to a license document. However, dct:rights allows linking to a rights statement that can include licensing information as well as other information that supplements the license such as attribution. Information about licenses and rights SHOULD be provided on the level of Distribution. Information about licenses and rights MAY be provided for a Dataset in addition to but not instead of the information provided for the Distributions of that Dataset. Providing license or rights information for a Dataset that is different from information provided for a Distribution of that Dataset SHOULD be avoided as this can create legal conflicts. See also guidance at ."
+    },
+    {
+     "definition": "An ODRL conformant policy expressing the rights associated with the distribution.",
+     "domain": [],
+     "label": "has policy",
+     "path": "http://www.w3.org/ns/odrl/2/hasPolicy",
+     "range": [
+      "http://www.w3.org/ns/odrl/2/Policy"
+     ],
+     "range_text": "odrl:Policy",
+     "usage_note": "Information about rights expressed as an ODRL policy [[ODRL-MODEL]] using the ODRL vocabulary [[ODRL-VOCAB]] MAY be provided for the distribution. See also guidance at ."
+    },
+    {
+     "definition": "A URL of the resource that gives access to a distribution of the dataset. E.g. landing page, feed, SPARQL endpoint.",
+     "domain": [
+      "http://www.w3.org/ns/dcat#Distribution"
+     ],
+     "label": "access URL",
+     "path": "http://www.w3.org/ns/dcat#accessURL",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Resource"
+     ],
+     "range_text": "rdfs:Resource",
+     "usage_note": "dcat:accessURL SHOULD be used for the URL of a service or location that can provide access to this distribution, typically through a Web form, query or API call. dcat:downloadURL is preferred for direct links to downloadable resources. If the distribution(s) are accessible only through a landing page (i.e. direct download URLs are not known), then the landing page URL associated with the dcat:Dataset SHOULD be duplicated as access URL on a distribution (see )."
+    },
+    {
+     "definition": "A data service that gives access to the distribution of the dataset",
+     "domain": [],
+     "label": "access service",
+     "path": "http://www.w3.org/ns/dcat#accessService",
+     "range": [
+      "http://www.w3.org/ns/dcat#DataService"
+     ],
+     "range_text": "dcat:DataService",
+     "usage_note": "dcat:accessService SHOULD be used to link to a description of a dcat:DataService that can provide access to this distribution."
+    },
+    {
+     "definition": "The URL of the downloadable file in a given format. E.g. CSV file or RDF file. The format is indicated by the distribution's dct:format and/or dcat:mediaType",
+     "domain": [
+      "http://www.w3.org/ns/dcat#Distribution"
+     ],
+     "label": "download URL",
+     "path": "http://www.w3.org/ns/dcat#downloadURL",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Resource"
+     ],
+     "range_text": "rdfs:Resource",
+     "usage_note": "dcat:downloadURL SHOULD be used for the URL at which this distribution is available directly, typically through a HTTP Get request."
+    },
+    {
+     "definition": "The size of a distribution in bytes.",
+     "domain": [
+      "http://www.w3.org/ns/dcat#Distribution"
+     ],
+     "label": "byte size",
+     "path": "http://www.w3.org/ns/dcat#byteSize",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Literal",
+      "http://www.w3.org/2001/XMLSchema#decimal"
+     ],
+     "range_text": "rdfs:Literal typed as xsd:decimal .",
+     "usage_note": "The size in bytes can be approximated (as a decimal) when the precise size is not known."
+    },
+    {
+     "definition": "The minimum spatial separation resolvable in a dataset distribution, measured in meters.",
+     "domain": [],
+     "label": "spatial resolution",
+     "path": "http://www.w3.org/ns/dcat#spatialResolutionInMeters",
+     "range": [
+      "http://www.w3.org/2001/XMLSchema#decimal"
+     ],
+     "range_text": "xsd:decimal",
+     "usage_note": "Alternative spatial resolutions might be provided as different dataset distributions"
+    },
+    {
+     "definition": "Minimum time period resolvable in the dataset distribution.",
+     "domain": [],
+     "label": "temporal resolution",
+     "path": "http://www.w3.org/ns/dcat#temporalResolution",
+     "range": [
+      "http://www.w3.org/2001/XMLSchema#duration"
+     ],
+     "range_text": "xsd:duration",
+     "usage_note": "Alternative temporal resolutions might be provided in different dataset distributions"
+    },
+    {
+     "definition": "An established standard to which the distribution conforms.",
+     "domain": [],
+     "label": "conforms to",
+     "path": "http://purl.org/dc/terms/conformsTo",
+     "range": [
+      "http://purl.org/dc/terms/Standard"
+     ],
+     "range_text": "dct:Standard (A basis for comparison; a reference point against which other things can be evaluated.)",
+     "usage_note": "This property SHOULD be used to indicate the model, schema, ontology, view or profile that this representation of a dataset conforms to. This is (generally) a complementary concern to the media-type or format."
+    },
+    {
+     "definition": "The media type of the distribution as defined by IANA [[!IANA-MEDIA-TYPES]].",
+     "domain": [
+      "http://www.w3.org/ns/dcat#Distribution"
+     ],
+     "label": "media type",
+     "path": "http://www.w3.org/ns/dcat#mediaType",
+     "range": [
+      "http://purl.org/dc/terms/MediaType"
+     ],
+     "range_text": "dct:MediaType",
+     "usage_note": "This property SHOULD be used when the media type of the distribution is defined in IANA [[!IANA-MEDIA-TYPES]], otherwise dct:format MAY be used with different values."
+    },
+    {
+     "definition": "The file format of the distribution.",
+     "domain": [],
+     "label": "format",
+     "path": "http://purl.org/dc/terms/format",
+     "range": [
+      "http://purl.org/dc/terms/MediaTypeOrExtent"
+     ],
+     "range_text": "dct:MediaTypeOrExtent",
+     "usage_note": "dcat:mediaType SHOULD be used if the type of the distribution is defined by IANA [[!IANA-MEDIA-TYPES]]."
+    },
+    {
+     "definition": "The compression format of the distribution in which the data is contained in a compressed form, e.g. to reduce the size of the downloadable file.",
+     "domain": [],
+     "label": "compression format",
+     "path": "http://www.w3.org/ns/dcat#compressFormat",
+     "range": [
+      "http://purl.org/dc/terms/MediaType"
+     ],
+     "range_text": "dct:MediaType",
+     "usage_note": "This property to be used when the files in the distribution are compressed, e.g. in a ZIP file. The format SHOULD be expressed using a media type as defined by IANA [[!IANA-MEDIA-TYPES]], if available."
+    },
+    {
+     "definition": "The package format of the distribution in which one or more data files are grouped together, e.g. to enable a set of related files to be downloaded together.",
+     "domain": [],
+     "label": "packaging format",
+     "path": "http://www.w3.org/ns/dcat#packageFormat",
+     "range": [
+      "http://purl.org/dc/terms/MediaType"
+     ],
+     "range_text": "dct:MediaType",
+     "usage_note": "This property to be used when the files in the distribution are packaged, e.g. in a TAR file , a Frictionless Data Package or a Bagit file. The format SHOULD be expressed using a media type as defined by IANA [[!IANA-MEDIA-TYPES]], if available."
+    }
+   ],
+   "subclass_of": [],
+   "usage_note": "This represents a general availability of a dataset. It implies no information about the actual access method of the data, i.e. whether by direct download, API, or through a Web page. The use of dcat:downloadURL property indicates directly downloadable distributions."
+  },
+  "http://www.w3.org/ns/dcat#Relationship": {
+   "definition": "An association class for attaching additional information to a relationship between DCAT Resources",
+   "label": "Relationship",
+   "properties": [
+    {
+     "definition": "The resource related to the source resource.",
+     "domain": [],
+     "label": "relation",
+     "path": "http://purl.org/dc/terms/relation",
+     "range": [],
+     "range_text": "",
+     "usage_note": "In the context of a dcat:Relationship this is expected to point to another dcat:Dataset or other cataloged resource."
+    },
+    {
+     "definition": "The function of an entity or agent with respect to another entity or resource.",
+     "domain": [
+      "http://www.w3.org/ns/prov#Attribution",
+      "http://www.w3.org/ns/dcat#Relationship"
+     ],
+     "label": "had role",
+     "path": "http://www.w3.org/ns/dcat#hadRole",
+     "range": [
+      "http://www.w3.org/ns/dcat#Role"
+     ],
+     "range_text": "dcat:Role",
+     "usage_note": "May be used in a qualified-relation to specify the role of an Entity with respect to another Entity. It is recommended that the value be taken from a controlled vocabulary of entity roles."
+    }
+   ],
+   "subclass_of": [
+    "http://www.w3.org/ns/prov#EntityInfluence"
+   ],
+   "usage_note": "Use to characterize a relationship between datasets, and potentially other resources, where the nature of the relationship is known but is not adequately characterized by the standard [[?DCTERMS]] properties ( dct:hasPart , dct:isPartOf , dct:conformsTo , dct:isFormatOf , dct:hasFormat , dct:isVersionOf , dct:hasVersion , dct:replaces , dct:isReplacedBy , dct:references , dct:isReferencedBy , dct:requires , dct:isRequiredBy ) or [[?PROV-O]] properties ( prov:wasDerivedFrom , prov:wasInfluencedBy , prov:wasQuotedFrom , prov:wasRevisionOf , prov:hadPrimarySource , prov:alternateOf , prov:specializationOf )"
+  },
+  "http://www.w3.org/ns/dcat#Resource": {
+   "definition": "Resource published or curated by a single agent.",
+   "label": "Cataloged Resource",
+   "properties": [
+    {
+     "definition": "Information about who can access the resource or an indication of its security status.",
+     "domain": [],
+     "label": "access rights",
+     "path": "http://purl.org/dc/terms/accessRights",
+     "range": [
+      "http://purl.org/dc/terms/RightsStatement"
+     ],
+     "range_text": "dct:RightsStatement",
+     "usage_note": "Information about licenses and rights MAY be provided for the Resource. See also guidance at ."
+    },
+    {
+     "definition": "An established standard to which the described resource conforms.",
+     "domain": [],
+     "label": "conforms to",
+     "path": "http://purl.org/dc/terms/conformsTo",
+     "range": [
+      "http://purl.org/dc/terms/Standard"
+     ],
+     "range_text": "dct:Standard (\"A basis for comparison; a reference point against which other things can be evaluated.\" [[DCTERMS]])",
+     "usage_note": "This property SHOULD be used to indicate the model, schema, ontology, view or profile that the cataloged resource content conforms to."
+    },
+    {
+     "definition": "Relevant contact information for the cataloged resource. Use of vCard is recommended [[?VCARD-RDF]].",
+     "domain": [],
+     "label": "contact point",
+     "path": "http://www.w3.org/ns/dcat#contactPoint",
+     "range": [
+      "http://www.w3.org/2006/vcard/ns#Kind"
+     ],
+     "range_text": "vcard:Kind",
+     "usage_note": ""
+    },
+    {
+     "definition": "The entity responsible for producing the resource.",
+     "domain": [],
+     "label": "resource creator",
+     "path": "http://purl.org/dc/terms/creator",
+     "range": [
+      "http://xmlns.com/foaf/0.1/Agent"
+     ],
+     "range_text": "foaf:Agent",
+     "usage_note": "Resources of type foaf:Agent are recommended as values for this property."
+    },
+    {
+     "definition": "A free-text account of the item.",
+     "domain": [],
+     "label": "description",
+     "path": "http://purl.org/dc/terms/description",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Literal"
+     ],
+     "range_text": "rdfs:Literal",
+     "usage_note": ""
+    },
+    {
+     "definition": "A name given to the item.",
+     "domain": [],
+     "label": "title",
+     "path": "http://purl.org/dc/terms/title",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Literal"
+     ],
+     "range_text": "rdfs:Literal",
+     "usage_note": ""
+    },
+    {
+     "definition": "Date of formal issuance (e.g., publication) of the item.",
+     "domain": [],
+     "label": "release date",
+     "path": "http://purl.org/dc/terms/issued",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Literal",
+      "http://www.w3.org/2001/XMLSchema#gYear",
+      "http://www.w3.org/2001/XMLSchema#gYearMonth",
+      "http://www.w3.org/2001/XMLSchema#date",
+      "http://www.w3.org/2001/XMLSchema#dateTime"
+     ],
+     "range_text": "rdfs:Literal encoded using the relevant ISO 8601 Date and Time compliant string [[?DATETIME]] and typed using the appropriate XML Schema datatype [[!XMLSCHEMA11-2]] ( xsd:gYear , xsd:gYearMonth , xsd:date , or xsd:dateTime ).",
+     "usage_note": "This property SHOULD be set using the first known date of issuance."
+    },
+    {
+     "definition": "Most recent date on which the item was changed, updated or modified.",
+     "domain": [],
+     "label": "update/modification date",
+     "path": "http://purl.org/dc/terms/modified",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Literal",
+      "http://www.w3.org/2001/XMLSchema#gYear",
+      "http://www.w3.org/2001/XMLSchema#gYearMonth",
+      "http://www.w3.org/2001/XMLSchema#date",
+      "http://www.w3.org/2001/XMLSchema#dateTime"
+     ],
+     "range_text": "rdfs:Literal encoded using the relevant ISO 8601 Date and Time compliant string [[?DATETIME]] and typed using the appropriate XML Schema datatype [[!XMLSCHEMA11-2]] ( xsd:gYear , xsd:gYearMonth , xsd:date , or xsd:dateTime ).",
+     "usage_note": "The value of this property indicates a change to the actual item, not a change to the catalog record. An absent value MAY indicate that the item has never changed after its initial publication, or that the date of last modification is not known, or that the item is continuously updated."
+    },
+    {
+     "definition": "A language of the item. This refers to the natural language used for textual metadata (i.e. titles, descriptions, etc) of a cataloged resource (i.e. dataset or service) or the textual values of a dataset distribution",
+     "domain": [],
+     "label": "language",
+     "path": "http://purl.org/dc/terms/language",
+     "range": [
+      "http://purl.org/dc/terms/LinguisticSystem"
+     ],
+     "range_text": "dct:LinguisticSystem Resources defined by the Library of Congress ( ISO 639-1 , ISO 639-2 ) SHOULD be used. If a ISO 639-1 (two-letter) code is defined for language, then its corresponding IRI SHOULD be used; if no ISO 639-1 code is defined, then IRI corresponding to the ISO 639-2 (three-letter) code SHOULD be used.",
+     "usage_note": "If representations of a dataset are available for each language separately, define an instance of dcat:Distribution for each language and describe the specific language of each distribution using dct:language (i.e. the dataset will have multiple dct:language values and each distribution will have just one as the value of its dct:language property)."
+    },
+    {
+     "definition": "The entity responsible for making the item available.",
+     "domain": [],
+     "label": "publisher",
+     "path": "http://purl.org/dc/terms/publisher",
+     "range": [],
+     "range_text": "",
+     "usage_note": "Resources of type foaf:Agent are recommended as values for this property."
+    },
+    {
+     "definition": "A unique identifier of the item.",
+     "domain": [],
+     "label": "identifier",
+     "path": "http://purl.org/dc/terms/identifier",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Literal"
+     ],
+     "range_text": "rdfs:Literal",
+     "usage_note": "The identifier might be used as part of the URI of the item, but still having it represented explicitly is useful."
+    },
+    {
+     "definition": "A main category of the resource. A resource can have multiple themes.",
+     "domain": [],
+     "label": "theme/category",
+     "path": "http://www.w3.org/ns/dcat#theme",
+     "range": [
+      "http://www.w3.org/2004/02/skos/core#Concept"
+     ],
+     "range_text": "skos:Concept",
+     "usage_note": "The set of skos:Concept s used to categorize the resources are organized in a skos:ConceptScheme describing all the categories and their relations in the catalog."
+    },
+    {
+     "definition": "The nature or genre of the resource.",
+     "domain": [],
+     "label": "type/genre",
+     "path": "http://purl.org/dc/terms/type",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Class"
+     ],
+     "range_text": "rdfs:Class",
+     "usage_note": "To describe the file format, physical medium, or dimensions of the resource, use the dct:format element."
+    },
+    {
+     "definition": "A resource with an unspecified relationship to the cataloged item.",
+     "domain": [],
+     "label": "resource relation",
+     "path": "http://purl.org/dc/terms/relation",
+     "range": [],
+     "range_text": "",
+     "usage_note": "dct:relation SHOULD be used where the nature of the relationship between a cataloged item and related resources is not known. A more specific sub-property SHOULD be used if the nature of the relationship of the link is known. The property dcat:distribution SHOULD be used to link from a dcat:Dataset to a representation of the dataset, described as a dcat:Distribution"
+    },
+    {
+     "definition": "Link to a description of a relationship with another resource",
+     "domain": [
+      "http://www.w3.org/ns/dcat#Resource"
+     ],
+     "label": "qualified relation",
+     "path": "http://www.w3.org/ns/dcat#qualifiedRelation",
+     "range": [
+      "http://www.w3.org/ns/dcat#Relationship"
+     ],
+     "range_text": "dcat:Relationship",
+     "usage_note": "Used to link to another resource where the nature of the relationship is known but does not match one of the standard [[?DCTERMS]] properties ( dct:hasPart , dct:isPartOf , dct:conformsTo , dct:isFormatOf , dct:hasFormat , dct:isVersionOf , dct:hasVersion , dct:replaces , dct:isReplacedBy , dct:references , dct:isReferencedBy , dct:requires , dct:isRequiredBy ) or [[?PROV-O]] properties ( prov:wasDerivedFrom , prov:wasInfluencedBy , prov:wasQuotedFrom , prov:wasRevisionOf , prov:hadPrimarySource , prov:alternateOf , prov:specializationOf )."
+    },
+    {
+     "definition": "A keyword or tag describing the resource.",
+     "domain": [],
+     "label": "keyword/tag",
+     "path": "http://www.w3.org/ns/dcat#keyword",
+     "range": [
+      "http://www.w3.org/2000/01/rdf-schema#Literal"
+     ],
+     "range_text": "rdfs:Literal",
+     "usage_note": ""
+    },
+    {
+     "definition": "A Web page that can be navigated to in a Web browser to gain access to the catalog, a dataset, its distributions and/or additional information.",
+     "domain": [],
+     "label": "landing page",
+     "path": "http://www.w3.org/ns/dcat#landingPage",
+     "range": [
+      "http://xmlns.com/foaf/0.1/Document"
+     ],
+     "range_text": "foaf:Document",
+     "usage_note": "If the distribution(s) are accessible only through a landing page (i.e. direct download URLs are not known), then the landing page link SHOULD be duplicated as dcat:accessURL on a distribution. (see )"
+    },
+    {
+     "definition": "Link to an Agent having some form of responsibility for the resource",
+     "domain": [
+      "http://www.w3.org/ns/prov#Entity"
+     ],
+     "label": "qualified attribution",
+     "path": "http://www.w3.org/ns/prov#qualifiedAttribution",
+     "range": [
+      "http://www.w3.org/ns/prov#Attribution"
+     ],
+     "range_text": "prov:Attribution",
+     "usage_note": "Used to link to an Agent where the nature of the relationship is known but does not match one of the standard [[?DCTERMS]] properties ( dct:creator , dct:publisher ). Use dcat:hadRole on the prov:Attribution to capture the responsibility of the Agent with respect to the Resource. See for usage examples."
+    },
+    {
+     "definition": "A legal document under which the resource is made available.",
+     "domain": [],
+     "label": "license",
+     "path": "http://purl.org/dc/terms/license",
+     "range": [
+      "http://purl.org/dc/terms/LicenseDocument"
+     ],
+     "range_text": "dct:LicenseDocument",
+     "usage_note": "Information about licenses and rights MAY be provided for the Resource. See also guidance at ."
+    },
+    {
+     "definition": "A statement that concerns all rights not addressed with dct:license or dct:accessRights , such as copyright statements.",
+     "domain": [],
+     "label": "rights",
+     "path": "http://purl.org/dc/terms/rights",
+     "range": [
+      "http://purl.org/dc/terms/RightsStatement"
+     ],
+     "range_text": "dct:RightsStatement",
+     "usage_note": "Information about licenses and rights MAY be provided for the Resource. See also guidance at ."
+    },
+    {
+     "definition": "An ODRL conformant policy expressing the rights associated with the resource.",
+     "domain": [],
+     "label": "has policy",
+     "path": "http://www.w3.org/ns/odrl/2/hasPolicy",
+     "range": [
+      "http://www.w3.org/ns/odrl/2/Policy"
+     ],
+     "range_text": "odrl:Policy",
+     "usage_note": "Information about rights expressed as an ODRL policy [[ODRL-MODEL]] using the ODRL vocabulary [[ODRL-VOCAB]] MAY be provided for the resource. See also guidance at ."
+    },
+    {
+     "definition": "A related resource, such as a publication, that references, cites, or otherwise points to the cataloged resource.",
+     "domain": [],
+     "label": "is referenced by",
+     "path": "http://purl.org/dc/terms/isReferencedBy",
+     "range": [],
+     "range_text": "",
+     "usage_note": "This property is used to associate a resource with the resource (of type dcat:Resource ) in question. For other relations to resources not covered with this property, the more generic property dcat:qualifiedRelation can be used. See also ."
+    }
+   ],
+   "subclass_of": [],
+   "usage_note": "dcat:Resource is an extension point that enables the definition of any kind of catalog. Additional sub-classes may be defined in a DCAT profile or other DCAT application for catalogs of other kinds of resources."
+  },
+  "http://www.w3.org/ns/dcat#Role": {
+   "definition": "A role is the function of a resource or agent with respect to another resource, in the context of resource attribution or resource relationships.",
+   "label": "Role",
+   "properties": [],
+   "subclass_of": [
+    "http://www.w3.org/2004/02/skos/core#Concept"
+   ],
+   "usage_note": "Used in a qualified-relation to specify the role of an Entity with respect to another Entity. It is recommended that the values be managed as a controlled vocabulary of entity roles such as [[?ISO-19115-1]] DS_AssociationTypeCode IANA Registry of Link Relations [[?IANA-RELATIONS]] DataCite metadata schema [[?DataCite]] MARC relators"
+  }
+ },
+ "generated_from": "spec.html",
+ "inverse_properties": [],
+ "version": "dcat-2"
+}

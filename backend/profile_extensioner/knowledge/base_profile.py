@@ -19,7 +19,7 @@ from typing import Any
 import yaml
 from rdflib import Graph, URIRef
 
-from ..contracts import BaseClass, BaseElement, BaseProfileInfo, Term
+from ..contracts import BaseClass, BaseElement, BaseProfileInfo, DcatBasis, Term
 from ..iri import Prefixes, local_name, words_of
 from .shacl_reader import ShapeFacets, ShapeIndex, load_graph, read_shapes
 
@@ -73,8 +73,12 @@ class BaseProfile:
         self._subjects = {key.lower(): value for key, value in (subjects or {}).items()}
         self.main_classes = main_classes or []
         self.prefixes = prefixes or Prefixes()
-        self.info.class_count = len(index.classes)
-        self.info.element_count = len(index.elements)
+        # (class, property) pairs and classes the specification lists but the official shapes do not
+        # constrain (DCAT-AP 1.1: 14 pairs, e.g. dcat:keyword on dcat:Dataset, recommended).
+        self._spec_only = {key for key in self._obligations if key not in index.elements}
+        self._spec_classes = ({cls for cls, _ in self._obligations} | set(self._class_obligations)) - set(index.classes)
+        self.info.class_count = len(index.classes) + len(self._spec_classes)
+        self.info.element_count = len(index.elements) + len(self._spec_only)
 
     # -- loading ------------------------------------------------------------
 
@@ -120,6 +124,8 @@ class BaseProfile:
             import json
 
             dsv_index = json.loads((root / config["dsv_index"]).read_text(encoding="utf-8"))
+        release = config.get("release") or {}
+        basis = config.get("dcat_basis") or {}
         info = BaseProfileInfo(
             id=str(config.get("id") or base_profile_id),
             title=str(config.get("title") or base_profile_id),
@@ -128,6 +134,16 @@ class BaseProfile:
             homepage=str(config.get("homepage") or ""),
             licence=str(config.get("licence") or ""),
             shape_files=[str(path.relative_to(root)) for path in shape_files],
+            release_date=str(release.get("date") or ""),
+            release_status=str(release.get("status") or ""),
+            dcat=DcatBasis(
+                dcat=str(basis["dcat"]),
+                cited_as=str(basis.get("cited_as") or ""),
+                dcat_status_at_release=str(basis.get("dcat_status_at_release") or ""),
+                unlisted_dcat_properties=basis.get("unlisted_dcat_properties") or "not_stated",
+                evidence=[{key: str(value) for key, value in item.items()} for item in basis.get("evidence") or []],
+                notes=[str(note) for note in basis.get("notes") or []],
+            ) if basis.get("dcat") else None,
         )
         loaded = cls(
             info, index, shapes,
@@ -139,7 +155,20 @@ class BaseProfile:
             prefixes=prefixes,
         )
         loaded.dsv_index = dsv_index
+        loaded.deprecated = _read_deprecations([root / name for name in (config.get("shapes") or {}).get("deprecated", [])])
         return loaded
+
+    # (class, path) -> {"replacement": IRI or "", "message": text}: the URIs the release deprecates
+    # (DCAT-AP 2.x/3.x deprecateduris.ttl: sh:message "replace dct:hasVersion with dcat:hasVersion").
+    deprecated: dict[tuple[str, str], dict[str, str]] = {}
+
+    def deprecation(self, target_class: str | None, path: str | None) -> dict[str, str] | None:
+        """The base's deprecation of ``path`` on the class (or on any class when ``target_class`` is None)."""
+        if not path:
+            return None
+        if target_class is not None and (target_class, path) in self.deprecated:
+            return self.deprecated[(target_class, path)]
+        return next((info for (cls, used), info in self.deprecated.items() if used == path and target_class is None), None)
 
     dsv_index: dict = {}
 
@@ -156,7 +185,11 @@ class BaseProfile:
     # -- classes ------------------------------------------------------------
 
     def has_class(self, iri: str | None) -> bool:
-        return bool(iri) and iri in self.index.classes
+        return bool(iri) and (iri in self.index.classes or iri in self._spec_classes)
+
+    def is_spec_only(self, target_class: str, path: str) -> bool:
+        """The specification lists (class, path) with an obligation, but no official shape constrains it."""
+        return (target_class, path) in self._spec_only
 
     def class_label(self, iri: str) -> str:
         return self._class_labels.get(iri) or self.index.classes.get(iri, None) and self.index.classes[iri].label or " ".join(
@@ -164,13 +197,14 @@ class BaseProfile:
         ).capitalize()
 
     def classes(self) -> list[BaseClass]:
-        ordered = [iri for iri in self.main_classes if iri in self.index.classes]
-        ordered += sorted(iri for iri in self.index.classes if iri not in ordered)
+        known = set(self.index.classes) | self._spec_classes
+        ordered = [iri for iri in self.main_classes if iri in known]
+        ordered += sorted(iri for iri in known if iri not in ordered)
         return [
             BaseClass(
                 iri=iri,
                 label=self.class_label(iri),
-                definition=self.index.classes[iri].description,
+                definition=self.index.classes[iri].description if iri in self.index.classes else "",
                 obligation=self._class_obligations.get(iri, "unknown"),  # type: ignore[arg-type]
             )
             for iri in ordered
@@ -186,9 +220,9 @@ class BaseProfile:
             candidates.append(word[:-1])
         for candidate in candidates:
             iri = self._subjects.get(candidate)
-            if iri and iri in self.index.classes:
+            if iri and self.has_class(iri):
                 return iri
-        for iri in self.index.classes:   # fall back to the class's own label or local name
+        for iri in list(self.index.classes) + sorted(self._spec_classes):   # fall back to the class's label or local name
             names = {self.class_label(iri).lower(), " ".join(words_of(local_name(iri)))}
             if any(candidate in names for candidate in candidates):
                 return iri
@@ -211,7 +245,16 @@ class BaseProfile:
     def element(self, target_class: str, path: str) -> BaseElement | None:
         facets = self.index.elements.get((target_class, path))
         if facets is None:
-            return None
+            if (target_class, path) not in self._spec_only:
+                return None
+            from ..contracts import Facets
+
+            return BaseElement(
+                target_class=target_class, path=path,
+                facets=Facets(obligation=self.obligation(target_class, path)),  # type: ignore[arg-type]
+                label=" ".join(words_of(local_name(path))),
+                source="specification text (no official SHACL shape)",
+            )
         return BaseElement(
             target_class=target_class,
             path=path,
@@ -223,19 +266,24 @@ class BaseProfile:
         )
 
     def elements(self, target_class: str | None = None) -> list[BaseElement]:
-        keys = sorted(key for key in self.index.elements if target_class is None or key[0] == target_class)
+        keys = sorted(key for key in set(self.index.elements) | self._spec_only
+                      if target_class is None or key[0] == target_class)
         return [element for key in keys if (element := self.element(*key)) is not None]
 
     def classes_using(self, path: str) -> list[str]:
-        return self.index.classes_using(path)
+        found = list(self.index.classes_using(path))
+        found += sorted(cls for cls, used in self._spec_only if used == path and cls not in found)
+        return found
 
     def uses_term(self, iri: str) -> bool:
-        return iri in self.index.classes or any(path == iri for (_, path) in self.index.elements)
+        return (iri in self.index.classes or iri in self._spec_classes
+                or any(path == iri for (_, path) in set(self.index.elements) | self._spec_only))
 
     def namespaces(self) -> set[str]:
         from ..iri import namespace_of
 
-        return {namespace_of(iri) for iri in self.index.classes} | {namespace_of(path) for (_, path) in self.index.elements}
+        return ({namespace_of(iri) for iri in set(self.index.classes) | self._spec_classes}
+                | {namespace_of(path) for (_, path) in set(self.index.elements) | self._spec_only})
 
     # -- as terms for the vocabulary index ------------------------------------
 
@@ -251,6 +299,16 @@ class BaseProfile:
                 iri=iri, kind="class", label=self.class_label(iri), definition=info.description,
                 vocabulary=self.prefixes.prefix_of(iri) or "", source=f"base profile {self.info.id}",
             )
+        for iri in self._spec_classes:
+            terms.setdefault(iri, Term(
+                iri=iri, kind="class", label=self.class_label(iri), vocabulary=self.prefixes.prefix_of(iri) or "",
+                source=f"base profile {self.info.id} (specification text)",
+            ))
+        for _, path in sorted(self._spec_only):
+            terms.setdefault(path, Term(
+                iri=path, kind="property", label=" ".join(words_of(local_name(path))),
+                vocabulary=self.prefixes.prefix_of(path) or "", source=f"base profile {self.info.id} (specification text)",
+            ))
         for (target_class, path), facets in self.index.elements.items():
             term = terms.get(path)
             if term is None:
@@ -274,14 +332,57 @@ class BaseProfile:
         return self._shapes
 
 
+def _read_deprecations(files: list[Path]) -> dict[tuple[str, str], dict[str, str]]:
+    import re
+
+    from rdflib.namespace import SH
+
+    graph = load_graph([path for path in files if path.exists()]) if files else Graph()
+    found: dict[tuple[str, str], dict[str, str]] = {}
+    for shape, target in graph.subject_objects(SH.targetClass):
+        for prop in graph.objects(shape, SH.property):
+            path = graph.value(prop, SH.path)
+            message = str(graph.value(prop, SH.message) or "")
+            if not isinstance(path, URIRef):
+                continue
+            match = re.search(r"replace (?:property )?(\S+) with (\S+)", message)
+            replacement = ""
+            if match:
+                curie = match.group(2).strip(".")
+                prefix, _, local = curie.partition(":")
+                namespaces = {str(p): str(n) for p, n in graph.namespaces()}
+                replacement = f"{namespaces[prefix]}{local}" if prefix in namespaces and local else ""
+            if not match and "inverse property" not in message:
+                continue
+            found[(str(target), str(path))] = {"replacement": replacement, "message": message,
+                                               "kind": "inverse" if not match else "deprecated"}
+    return found
+
+
+def _release_key(info: BaseProfileInfo) -> tuple:
+    version = tuple(int(part) if part.isdigit() else 0 for part in info.version.split("."))
+    return (info.release_date or "", version)
+
+
 def list_base_profiles(data_dir: Path | None = None) -> list[BaseProfileInfo]:
+    """Every vendored base profile, oldest release first; the newest one is marked ``is_latest``."""
     root = (data_dir or DATA_DIR) / "base-profiles"
     if not root.exists():
         return []
-    infos = []
-    for config_path in sorted(root.glob("*/profile.yaml")):
-        infos.append(load_base_profile(config_path.parent.name, data_dir).info)
+    infos = [load_base_profile(path.parent.name, data_dir).info.model_copy() for path in root.glob("*/profile.yaml")]
+    infos.sort(key=_release_key)
+    if infos:
+        latest = infos[-1].id
+        infos = [info.model_copy(update={"is_latest": info.id == latest}) for info in infos]
     return infos
+
+
+def latest_base_profile_id(data_dir: Path | None = None) -> str:
+    """The default base of a new extension: the newest DCAT-AP release (which builds on the newest DCAT)."""
+    infos = list_base_profiles(data_dir)
+    if not infos:
+        raise KeyError("no base profiles are vendored")
+    return infos[-1].id
 
 
 @lru_cache(maxsize=8)

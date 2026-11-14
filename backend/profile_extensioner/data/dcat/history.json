@@ -1,0 +1,647 @@
+{
+ "order": [
+  "dcat-2014",
+  "dcat-2",
+  "dcat-3"
+ ],
+ "terms": {
+  "http://www.w3.org/ns/dcat#Catalog": {
+   "kind": "class",
+   "defined_in": [
+    "dcat-2014",
+    "dcat-2",
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-2014",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#CatalogRecord": {
+   "kind": "class",
+   "defined_in": [
+    "dcat-2014",
+    "dcat-2",
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-2014",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#DataService": {
+   "kind": "class",
+   "defined_in": [
+    "dcat-2",
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-2",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#Dataset": {
+   "kind": "class",
+   "defined_in": [
+    "dcat-2014",
+    "dcat-2",
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-2014",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#DatasetSeries": {
+   "kind": "class",
+   "defined_in": [
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-3",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#Distribution": {
+   "kind": "class",
+   "defined_in": [
+    "dcat-2014",
+    "dcat-2",
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-2014",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#Download": {
+   "kind": "class",
+   "defined_in": [
+    "dcat-2014"
+   ],
+   "deprecated_in": [
+    "dcat-2014"
+   ],
+   "introduced_in": "dcat-2014",
+   "removed_after": "dcat-2014"
+  },
+  "http://www.w3.org/ns/dcat#Feed": {
+   "kind": "class",
+   "defined_in": [
+    "dcat-2014"
+   ],
+   "deprecated_in": [
+    "dcat-2014"
+   ],
+   "introduced_in": "dcat-2014",
+   "removed_after": "dcat-2014"
+  },
+  "http://www.w3.org/ns/dcat#Relationship": {
+   "kind": "class",
+   "defined_in": [
+    "dcat-2",
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-2",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#Resource": {
+   "kind": "class",
+   "defined_in": [
+    "dcat-2",
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-2",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#Role": {
+   "kind": "class",
+   "defined_in": [
+    "dcat-2",
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-2",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#WebService": {
+   "kind": "class",
+   "defined_in": [
+    "dcat-2014"
+   ],
+   "deprecated_in": [
+    "dcat-2014"
+   ],
+   "introduced_in": "dcat-2014",
+   "removed_after": "dcat-2014"
+  },
+  "http://www.w3.org/ns/dcat#accessService": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-2",
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-2",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#accessURL": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-2014",
+    "dcat-2",
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-2014",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#bbox": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-2",
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-2",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#byteSize": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-2014",
+    "dcat-2",
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-2014",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#bytes": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-2014"
+   ],
+   "deprecated_in": [
+    "dcat-2014"
+   ],
+   "introduced_in": "dcat-2014",
+   "removed_after": "dcat-2014"
+  },
+  "http://www.w3.org/ns/dcat#catalog": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-2",
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-2",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#centroid": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-2",
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-2",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#compressFormat": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-2",
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-2",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#contactPoint": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-2014",
+    "dcat-2",
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-2014",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#dataDictionary": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-2014"
+   ],
+   "deprecated_in": [
+    "dcat-2014"
+   ],
+   "introduced_in": "dcat-2014",
+   "removed_after": "dcat-2014"
+  },
+  "http://www.w3.org/ns/dcat#dataQuality": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-2014"
+   ],
+   "deprecated_in": [
+    "dcat-2014"
+   ],
+   "introduced_in": "dcat-2014",
+   "removed_after": "dcat-2014"
+  },
+  "http://www.w3.org/ns/dcat#dataset": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-2014",
+    "dcat-2",
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-2014",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#distribution": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-2014",
+    "dcat-2",
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-2014",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#downloadURL": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-2014",
+    "dcat-2",
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-2014",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#endDate": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-2",
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-2",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#endpointDescription": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-2",
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-2",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#endpointURL": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-2",
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-2",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#first": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-3",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#granularity": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-2014"
+   ],
+   "deprecated_in": [
+    "dcat-2014"
+   ],
+   "introduced_in": "dcat-2014",
+   "removed_after": "dcat-2014"
+  },
+  "http://www.w3.org/ns/dcat#hadRole": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-2",
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-2",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#hasCurrentVersion": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-3",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#hasVersion": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-3",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#inCatalog": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "inverse_of": {
+    "dcat-3": [
+     "http://www.w3.org/ns/dcat#resource"
+    ]
+   },
+   "introduced_in": "dcat-3",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#inSeries": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-3",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#isDistributionOf": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "inverse_of": {
+    "dcat-3": [
+     "http://www.w3.org/ns/dcat#distribution"
+    ]
+   },
+   "introduced_in": "dcat-3",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#isVersionOf": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "inverse_of": {
+    "dcat-3": [
+     "http://www.w3.org/ns/dcat#hasVersion"
+    ]
+   },
+   "introduced_in": "dcat-3",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#keyword": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-2014",
+    "dcat-2",
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-2014",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#landingPage": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-2014",
+    "dcat-2",
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-2014",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#last": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-3",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#mediaType": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-2014",
+    "dcat-2",
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-2014",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#next": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "inverse_of": {
+    "dcat-3": [
+     "http://www.w3.org/ns/dcat#prev"
+    ]
+   },
+   "introduced_in": "dcat-3",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#nextVersion": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "inverse_of": {
+    "dcat-3": [
+     "http://www.w3.org/ns/dcat#previousVersion"
+    ]
+   },
+   "introduced_in": "dcat-3",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#packageFormat": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-2",
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-2",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#prev": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-3",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#previousVersion": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-3",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#qualifiedRelation": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-2",
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-2",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#record": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-2014",
+    "dcat-2",
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-2014",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#resource": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-3",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#seriesMember": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "inverse_of": {
+    "dcat-3": [
+     "http://www.w3.org/ns/dcat#inSeries"
+    ]
+   },
+   "introduced_in": "dcat-3",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#servesDataset": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-2",
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-2",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#service": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-2",
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-2",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#size": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-2014"
+   ],
+   "deprecated_in": [
+    "dcat-2014"
+   ],
+   "introduced_in": "dcat-2014",
+   "removed_after": "dcat-2014"
+  },
+  "http://www.w3.org/ns/dcat#spatialResolutionInMeters": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-2",
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-2",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#startDate": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-2",
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-2",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#temporalResolution": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-2",
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-2",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#theme": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-2014",
+    "dcat-2",
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-2014",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#themeTaxonomy": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-2014",
+    "dcat-2",
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-2014",
+   "removed_after": null
+  },
+  "http://www.w3.org/ns/dcat#version": {
+   "kind": "property",
+   "defined_in": [
+    "dcat-3"
+   ],
+   "deprecated_in": [],
+   "introduced_in": "dcat-3",
+   "removed_after": null
+  }
+ }
+}

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { KeyRound, Play, RefreshCw, ShieldCheck, Upload, Download, Settings2 } from 'lucide-react';
-import { api, compact, STAGES, type BaseProfile, type Entry, type LLMSettings, type PipelineConfig, type Project, type ProviderStatus, type Snapshot } from './api';
+import { api, compact, STAGES, type BaseProfile, type BaseProfileInfo, type Entry, type LLMSettings, type PipelineConfig, type Project, type ProviderStatus, type Snapshot } from './api';
 import { ProfileCanvas } from './Canvas';
 import { Inspector, type Selection } from './Inspector';
 
@@ -16,17 +16,25 @@ function Pill({ value }: { value: string }) {
 
 function NewProject({ onCreated, notify }: { onCreated: (p: Project) => void; notify: (m: string) => void }) {
   const [examples, setExamples] = useState<string[]>([]);
-  const [bases, setBases] = useState<{ id: string; title: string }[]>([]);
-  const [form, setForm] = useState({ name: '', base_profile_id: 'dcat-ap-3.0.1', profile_namespace: 'https://example.org/profile#', profile_prefix: 'ex', example: '', atoms_text: '' });
+  const [bases, setBases] = useState<BaseProfileInfo[]>([]);
+  // '' = the base the atom set declares, otherwise the newest DCAT-AP release (decided by the server)
+  const [form, setForm] = useState({ name: '', base_profile_id: '', profile_namespace: 'https://example.org/profile#', profile_prefix: 'ex', example: '', atoms_text: '' });
   useEffect(() => { api.examples().then(setExamples); api.baseProfiles().then(setBases); }, []);
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
+  const latest = bases.find((b) => b.is_latest);
+  const chosen = bases.find((b) => b.id === form.base_profile_id) ?? latest;
+  const describe = (b: BaseProfileInfo) => `${b.title}${b.release_date ? ` (${b.release_date})` : ''}${b.dcat ? ` · on ${b.dcat.label}` : ''}`;
   return (
     <div className="new-project">
       <h2>New extension project</h2>
       <label>Name <input value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="e.g. Materials-testing lab profile" /></label>
       <label>Base profile
         <select value={form.base_profile_id} onChange={(e) => set('base_profile_id', e.target.value)}>
-          {bases.map((b) => <option key={b.id} value={b.id}>{b.title}</option>)}</select></label>
+          <option value="">{latest ? `as the atoms declare, else the newest: ${describe(latest)}` : 'as the atoms declare, else the newest'}</option>
+          {[...bases].reverse().map((b) => <option key={b.id} value={b.id}>{describe(b)}{b.is_latest ? ' · newest' : ''}</option>)}</select></label>
+      {chosen?.dcat && <p className="muted small">{chosen.title} builds on W3C {chosen.dcat.label}
+        {chosen.dcat.dcat_status_at_release ? ` (status then: ${chosen.dcat.dcat_status_at_release})` : ''}.
+        {chosen.dcat.unlisted_dcat_properties === 'optional' ? ' DCAT properties it does not list for a class are optional fields of that class.' : ''}</p>}
       <div className="row">
         <label>Namespace for new terms <input value={form.profile_namespace} onChange={(e) => set('profile_namespace', e.target.value)} /></label>
         <label>Prefix <input value={form.profile_prefix} onChange={(e) => set('profile_prefix', e.target.value)} /></label>
@@ -39,10 +47,37 @@ function NewProject({ onCreated, notify }: { onCreated: (p: Project) => void; no
         placeholder={'atoms:\n  - id: a1\n    statement: Each distribution must state its licence.\n    subject: distribution\n    modality: must'} />}
       <button type="button" className="primary" disabled={!form.name} onClick={async () => {
         try {
-          const created = await api.createProject({ ...form, example: form.example || undefined, atoms_text: form.atoms_text || undefined });
+          const created = await api.createProject({ ...form, base_profile_id: form.base_profile_id || undefined,
+            example: form.example || undefined, atoms_text: form.atoms_text || undefined });
           onCreated(created);
         } catch (e) { notify(String(e)); }
       }}>Create</button>
+    </div>
+  );
+}
+
+function RebasePanel({ project, reviewer, onDone, notify }: { project: Project; reviewer: string; onDone: () => void; notify: (m: string) => void }) {
+  const [bases, setBases] = useState<BaseProfileInfo[]>([]);
+  const [target, setTarget] = useState('');
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { api.baseProfiles().then((list) => { setBases(list); setTarget(list.find((b) => b.is_latest && b.id !== project.base_profile_id)?.id ?? ''); }); }, [project.base_profile_id]);
+  return (
+    <div className="panel">
+      <h3>Base profile</h3>
+      <p className="muted small">This extension builds on <b>{project.base_profile_id}</b>. Rebasing moves it onto another DCAT-AP release
+        (and so onto that release's DCAT). Every change is verified again; what needs a decision goes to your review queue; your decisions stay.</p>
+      <div className="row">
+        <select value={target} onChange={(e) => setTarget(e.target.value)}>
+          <option value="">choose a base…</option>
+          {[...bases].reverse().filter((b) => b.id !== project.base_profile_id).map((b) =>
+            <option key={b.id} value={b.id}>{b.title} ({b.release_date}) · on {b.dcat?.label}{b.is_latest ? ' · newest' : ''}</option>)}
+        </select>
+        <button type="button" disabled={!target || busy} onClick={async () => {
+          setBusy(true);
+          try { const report = await api.rebase(project.id, target, reviewer); notify(report.summary); onDone(); }
+          catch (e) { notify(String(e)); } finally { setBusy(false); }
+        }}>{busy ? 'Rebasing…' : 'Rebase'}</button>
+      </div>
     </div>
   );
 }
@@ -79,6 +114,10 @@ function ModelPanel({ project, onSaved, notify }: { project: Project; onSaved: (
       <div className="grid2">
         <label><input type="checkbox" checked={config.retrieval} onChange={(e) => setConfig({ ...config, retrieval: e.target.checked })} /> Retrieval</label>
         <label><input type="checkbox" checked={config.attribution_check} onChange={(e) => setConfig({ ...config, attribution_check: e.target.checked })} /> Judge: atom supports change</label>
+        <label title="DCAT terms that only a DCAT version later than the base's own DCAT defines (check D1)">Later DCAT terms
+          <select value={config.later_dcat_terms ?? 'review'} onChange={(e) => setConfig({ ...config, later_dcat_terms: e.target.value as PipelineConfig['later_dcat_terms'] })}>
+            <option value="review">a human decides</option><option value="forbid">not allowed</option><option value="allow">allowed (note only)</option>
+          </select></label>
         <label><input type="checkbox" checked={config.auto_accept} onChange={(e) => setConfig({ ...config, auto_accept: e.target.checked })} /> Model decisions stand unless overruled</label>
         <label><input type="checkbox" checked={config.use_hints} onChange={(e) => setConfig({ ...config, use_hints: e.target.checked })} /> Show upstream term hints</label>
         <label>Top-k <input type="number" value={config.top_k} onChange={(e) => setConfig({ ...config, top_k: Number(e.target.value) })} /></label>
@@ -148,6 +187,8 @@ export default function App() {
           {projects.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
         </select>
         <button type="button" onClick={() => setPanel(panel === 'new' ? 'none' : 'new')}>New project</button>
+        {snapshot && base && <span className="base-chip" title={base.dcat?.summary ?? ''}>
+          {base.info.title}{base.dcat ? <> · <b>{base.dcat.version.label}</b></> : null}</span>}
         {snapshot && <button type="button" onClick={() => setPanel(panel === 'model' ? 'none' : 'model')}><Settings2 size={15} /> Model &amp; pipeline</button>}
         <label className="reviewer">Reviewer <input value={reviewer} onChange={(e) => setReviewer(e.target.value)} /></label>
         {message && <span className="toast">{message}</span>}
@@ -155,6 +196,7 @@ export default function App() {
 
       {panel === 'new' && <NewProject notify={notify} onCreated={(created) => { setPanel('none'); loadProjects(); setProjectId(created.id); }} />}
       {panel === 'model' && snapshot && <ModelPanel project={snapshot.project} notify={notify} onSaved={() => { setPanel('none'); refresh(); }} />}
+      {panel === 'model' && snapshot && <RebasePanel project={snapshot.project} reviewer={reviewer} notify={notify} onDone={() => { setPanel('none'); refresh(); }} />}
 
       {!snapshot ? <p className="empty">Choose or create a project. The bundled example is a fictional materials-testing laboratory.</p> : (<>
         <nav className="stepper">
@@ -219,6 +261,16 @@ export default function App() {
                     <div>{snapshot.verbalised[c.id]}</div>
                   </button>))}
                 {snapshot.conflicts.length > 0 && (<><h4>Conflicts</h4>{snapshot.conflicts.map((x) => <div key={x.id} className="issue issue--error">{x.description}</div>)}</>)}
+                {(snapshot.project.rebases ?? []).length > 0 && (() => {
+                  const last = snapshot.project.rebases![snapshot.project.rebases!.length - 1];
+                  return (<><h4>Rebase {last.from_base} → {last.to_base} ({last.items.length} finding(s))</h4>
+                    <p className="muted small">{last.summary}</p>
+                    {last.items.map((item, i) => (
+                      <button key={i} type="button" className={`issue issue--${item.severity === 'error' ? 'error' : item.severity === 'warning' ? 'warning' : 'info'}`}
+                        onClick={() => item.change_id ? setSelection({ type: 'change', id: item.change_id }) : item.atom_id ? setSelection({ type: 'atom', id: item.atom_id }) : undefined}>
+                        <b>{item.finding.replace(/_/g, ' ')}</b> · suggested: {item.suggestion}{item.replacement ? ` ${compact(item.replacement, p)}` : ''} — {item.message}
+                      </button>))}</>);
+                })()}
                 <h4>Decided ({decided.length})</h4>
                 {decided.map((c) => (
                   <button key={c.id} type="button" className="review-card review-card--decided" onClick={() => setSelection({ type: 'change', id: c.id })}>

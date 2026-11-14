@@ -76,7 +76,7 @@ def test_artifacts_parse_and_carry_the_trace(pipeline):
 def test_conformance_report(pipeline):
     report = pipeline.store.get_conformance("p1")
     assert report.verdict == "conformant"
-    assert {c.id for c in report.checks} == {"C1", "C2", "C3", "C4", "C5", "C6", "C7"}
+    assert {c.id for c in report.checks} == {"C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8"}
     assert report.delta_counts["loosened"] == 0
 
 

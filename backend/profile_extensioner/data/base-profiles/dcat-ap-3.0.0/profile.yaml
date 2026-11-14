@@ -11,12 +11,16 @@ source:
   files:
   - path: releases/3.0.0/shacl/dcat-ap-SHACL.ttl
     sha256: 92f76609d78d257123e75bc6b7155df5cc0a63f14c29fbc12b0ac95c56af2059
+  - path: releases/3.0.0/html/shacl/deprecateduris.ttl
+    sha256: 30a20a51a487c40ab7ae04f5905f02ef28238ec5cb390e37053334d835021948
   - path: releases/3.0.0/index.html
     sha256: faf607042f641ed3c022fc8cb5bb36d450991eca9202107d3aa49dc78a9bbff2
 shapes:
   constraints:
   - shacl/dcat-ap-SHACL.ttl
   ranges: []
+  deprecated:
+  - shacl/deprecateduris.ttl
 obligations: obligations.yaml
 main_classes:
 - dcat:Catalog
@@ -25,3 +29,24 @@ main_classes:
 - dcat:DataService
 - dcat:DatasetSeries
 - dcat:CatalogRecord
+# The W3C DCAT state this release builds on (scripts/build_base_profile.py DCAT_BASIS).
+release:
+  date: '2024-06-14'
+  status: SEMIC Recommendation
+  evidence: 'releases/3.0.0/index.html: ''This application profile has the status SEMIC Recommendation published
+    at 2024-06-14.'''
+dcat_basis:
+  dcat: dcat-3
+  cited_as: '[[vocab-dcat-3]] (W3C DCAT Version 3)'
+  dcat_status_at_release: W3C Proposed Recommendation (2024-06-13); it became a W3C Recommendation on 2024-08-22
+  evidence:
+  - file: releases/3.0.0/index.html
+    quote: The Application Profile specified in this document is based on the specification of the Data Catalog
+      Vocabulary (DCAT) [[vocab-dcat-3]] developed under the responsibility of the [[[DXWG]]] (DXWG) at W3C.
+  - file: releases/3.0.0/index.html
+    quote: Any property that is mentioned in DCAT applicable to a class but not explicitly is listed DCAT-AP is
+      considered an optional field for DCAT-AP for that class.
+  notes:
+  - releases/3.0.0/html/shacl/imports.ttl imports https://www.w3.org/ns/dcat2.ttl (the DCAT 2 RDF), although the
+    text is based on DCAT 3.
+  unlisted_dcat_properties: optional

@@ -26,7 +26,7 @@ from ..contracts import (
 from ..engine.intake import lint_atom, parse_atom_set
 from ..engine.pipeline import Pipeline
 from ..engine.verbalise import verbalise_change
-from ..knowledge import list_base_profiles, load_knowledge_base
+from ..knowledge import DATA_DIR, latest_base_profile_id, list_base_profiles, list_dcat_versions, load_knowledge_base
 from ..llm.base import LLMError
 from ..llm.registry import PROVIDERS, Credentials, build_provider, default_settings, provider_status
 from ..store.blackboard import Store
@@ -76,7 +76,7 @@ def _pipeline(project_id: str) -> Pipeline:
 class ProjectCreate(BaseModel):
     name: str
     description: str = ""
-    base_profile_id: str = "dcat-ap-3.0.1"
+    base_profile_id: str | None = None           # default: the atom set's base, else the newest DCAT-AP release
     profile_title: str = ""
     profile_namespace: str = "https://example.org/profile#"
     profile_prefix: str = "ex"
@@ -104,6 +104,12 @@ class RunRequest(BaseModel):
 
 class DecisionRequest(BaseModel):
     status: str
+    by: str = "reviewer"
+    note: str = ""
+
+
+class RebaseRequest(BaseModel):
+    base_profile_id: str
     by: str = "reviewer"
     note: str = ""
 
@@ -146,14 +152,39 @@ def base_profiles() -> list[dict[str, Any]]:
     return [info.model_dump() for info in list_base_profiles()]
 
 
+@app.get("/api/dcat-versions")
+def dcat_versions() -> list[dict[str, Any]]:
+    """Every vendored W3C DCAT version, oldest first; the newest is ``is_latest``."""
+    return [info.model_dump() for info in list_dcat_versions(DATA_DIR)]
+
+
 @app.get("/api/base-profiles/{base_id}")
 def base_profile(base_id: str) -> dict[str, Any]:
-    kb = load_knowledge_base(base_id, profile_namespace="https://example.org/x#", profile_prefix="x")
+    try:
+        kb = load_knowledge_base(base_id, profile_namespace="https://example.org/x#", profile_prefix="x")
+    except KeyError as exc:
+        raise HTTPException(404, str(exc)) from exc
+    info = next((item for item in list_base_profiles() if item.id == base_id), kb.base.info)
+    dcat = kb.dcat
+    unprofiled = {}
+    for cls in kb.base.classes():
+        listed = [prop for prop in dcat.properties_for(cls.iri) if kb.base.element(cls.iri, prop.path) is None]
+        if listed:
+            unprofiled[cls.iri] = [{"path": prop.path, "curie": kb.curie(prop.path), "label": prop.label,
+                                    "listed_on": prop.listed_on, "definition": prop.definition} for prop in listed]
     return {
-        "info": kb.base.info.model_dump(),
+        "info": info.model_dump(),
         "classes": [c.model_dump() for c in kb.base.classes()],
         "elements": [e.model_dump() for e in kb.base.elements()],
         "prefixes": kb.prefixes.as_dict(),
+        "dcat": {
+            "version": dcat.version.model_dump(),
+            "basis": dcat.basis.model_dump(),
+            "summary": dcat.summary(kb.base.info.title),
+            # DCAT properties of the pinned version that the base does not profile on a class
+            # (DCAT-AP 3.x: optional fields of that class by the base's own rule)
+            "unprofiled_properties": unprofiled,
+        },
     }
 
 
@@ -206,9 +237,9 @@ def create_project(request: ProjectCreate) -> dict[str, Any]:
             atom_set = parse_atom_set(text)
         except ValueError as exc:
             raise HTTPException(400, str(exc)) from exc
-    base_id = request.base_profile_id
-    if atom_set and atom_set.base_profile_ids and not request.atoms_text and not request.base_profile_id:
-        base_id = atom_set.base_profile_ids[0]
+    # The base: as asked; else as the atom set declares it; else the newest DCAT-AP release (on the newest DCAT).
+    base_id = request.base_profile_id or (atom_set.base_profile_ids[0] if atom_set and atom_set.base_profile_ids
+                                          else latest_base_profile_id())
     project = Project(
         id=stable_id("prj", request.name, request.profile_namespace, os.urandom(4).hex()),
         name=request.name, description=request.description or (atom_set.description if atom_set else ""),
@@ -334,6 +365,19 @@ def entries(project_id: str, after: int = 0, subject_id: str | None = None, stag
 @app.get("/api/projects/{project_id}/calls")
 def calls(project_id: str, subject_id: str | None = None) -> list[dict[str, Any]]:
     return [c.model_dump() for c in store.list_llm_calls(project_id, subject_id=subject_id)]
+
+
+@app.post("/api/projects/{project_id}/rebase")
+def rebase(project_id: str, request: RebaseRequest) -> dict[str, Any]:
+    """Move the extension onto another base (DCAT-AP release, and so its DCAT). Human decisions stay;
+    findings that need a decision go to the review queue; the profile is re-verified and re-checked."""
+    try:
+        with _Exclusive(project_id):
+            return _pipeline(project_id).rebase(request.base_profile_id, request.by, request.note).model_dump()
+    except KeyError as exc:
+        raise HTTPException(404, f"Unknown base profile: {exc}") from exc
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
 
 
 @app.post("/api/projects/{project_id}/changes/{change_id}/decision")

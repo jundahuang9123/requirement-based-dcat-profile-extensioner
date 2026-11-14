@@ -10,6 +10,9 @@ Profile level (static), one check per rule:
   C4  no term of a namespace the extension does not own is (re)defined; base terms are reused as they are
   C5  every element of the extension traces to at least one requirement atom
   C6  the compiled shapes are valid SHACL (SHACL-SHACL)
+  C8  the DCAT state: every DCAT term the extension uses is a term of the DCAT version the base
+      builds on (DCAT-AP 1.1: DCAT 2014; DCAT-AP 3.x: DCAT 3); deprecated or removed DCAT terms fail,
+      terms of a later DCAT version (accepted by a human) are a warning
 
 Instance level (empirical):
   C7  witness data: for every class the extension constrains, an instance that satisfies the
@@ -53,7 +56,47 @@ SOURCES = {
     "C5": "this tool: every element traces to a requirement atom",
     "C6": "W3C SHACL, SHACL-SHACL",
     "C7": "derived: data valid under the extension is valid under the base",
+    "C8": "W3C DCAT 3, section 4: a DCAT profile adds constraints to DCAT; the DCAT version is the one the base "
+          "states it builds on (profile.yaml dcat_basis, data/dcat/)",
 }
+
+
+def dcat_state_check(view: ProfileView) -> ConformanceCheck:
+    kb = view.kb
+    dcat = kb.dcat
+    later: list[ConformanceItem] = []
+    outdated: list[ConformanceItem] = []
+    for change in view.changes:
+        used = [change.target_class, change.path, change.facets.range_class, change.super_class, change.sub_property_of]
+        for iri in dict.fromkeys(value for value in used if value):
+            status = kb.dcat_status(iri)
+            if status == "later":
+                since = dcat.introduced_in(iri) or ""
+                later.append(ConformanceItem(
+                    change_id=change.id, target_class=change.target_class, path=iri, status="later",
+                    message=f"{kb.curie(iri)} is a term of {dcat.describe_version(since)} (decided by "
+                            f"{change.decision.decided_by})",
+                ))
+            elif status in ("deprecated", "removed"):
+                outdated.append(ConformanceItem(
+                    change_id=change.id, target_class=change.target_class, path=iri, status=status,
+                    message=f"{kb.curie(iri)} is {status} in {dcat.label}",
+                ))
+    basis = f"{dcat.describe_version()}, the DCAT that {kb.base.info.title} builds on"
+    if not later and not outdated:
+        return ConformanceCheck(id="C8", title="DCAT terms of the base's DCAT version", passed=True,
+                                message=f"Every DCAT term the extension uses is a term of {basis}.", source=SOURCES["C8"])
+    parts = []
+    if outdated:
+        parts.append(f"{len(outdated)} use(s) of a deprecated or removed DCAT term")
+    if later:
+        versions = sorted({item.message.split(" is a term of ")[1].split(" (")[0] for item in later})
+        parts.append(f"{len(later)} use(s) of DCAT terms beyond {dcat.label} (from {', '.join(versions)})")
+    return ConformanceCheck(
+        id="C8", title="DCAT terms of the base's DCAT version", passed=False,
+        severity="error" if outdated else "warning",
+        message=f"{'; '.join(parts)}. The base builds on {basis}.", source=SOURCES["C8"], items=outdated + later,
+    )
 
 
 def _merged_shapes(view: ProfileView) -> Graph:
@@ -217,14 +260,17 @@ def check_conformance(view: ProfileView, shacl_text: str | None = None) -> Confo
         c7 = ConformanceCheck(id="C7", title="Witness data valid under extension and base", passed=False,
                               severity="warning", message=f"Witness validation could not run: {exc}", source=SOURCES["C7"])
     checks.append(c7)
+    checks.append(dcat_state_check(view))
     errors = [c for c in checks if not c.passed and c.severity == "error"]
     warnings = [c for c in checks if not c.passed and c.severity == "warning"]
     verdict = "non_conformant" if errors else "conformant_with_warnings" if warnings else "conformant"
     summary = (
-        f"{'Conforms' if not errors else 'Does NOT conform'} to {view.kb.base.info.title}: "
+        f"{'Conforms' if not errors else 'Does NOT conform'} to {view.kb.base.info.title} "
+        f"(on {view.kb.dcat.label}): "
         f"{counts['added']} element(s) added, {counts['tightened']} tightened, {counts['loosened']} loosened. "
         f"{len(errors)} failing rule(s), {len(warnings)} warning(s)."
     )
     _ = BNode
-    return ConformanceReport(base_profile_id=view.kb.base.info.id, verdict=verdict, summary=summary,  # type: ignore[arg-type]
+    return ConformanceReport(base_profile_id=view.kb.base.info.id, dcat_version=view.kb.dcat.id,  # type: ignore[arg-type]
+                             verdict=verdict, summary=summary,
                              checks=checks, delta_counts=counts, witness_turtle=witness_turtle)

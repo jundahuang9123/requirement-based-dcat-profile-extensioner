@@ -27,7 +27,10 @@ every file).
 ## What the base is
 
 * **Constraints** come from the official SHACL file of the release, unmodified
-  (`shacl/dcat-ap-SHACL.ttl`, plus `ranges.ttl` for 3.0.1).
+  (`shacl/dcat-ap-SHACL.ttl`, plus `ranges.ttl` for 3.0.1; the 1.x and 2.x releases'
+  own shape files, see [dcat-versions.md](dcat-versions.md)).
+* **The DCAT state** is the W3C DCAT version the release states it builds on, as it
+  was on the release date (`profile.yaml` `dcat_basis`, with the quote).
 * **Obligation levels** (mandatory / recommended / optional) come from the
   specification's quick-reference table, because the SHACL file only carries the
   mandatory ones (`sh:minCount`). `scripts/build_base_profile.py` extracts them;
@@ -45,7 +48,9 @@ every file).
 | C6 | The compiled shapes are valid SHACL (SHACL-SHACL via pySHACL `meta_shacl`). | W3C SHACL |
 | C7 | **Witness data:** for every class the extension constrains, an instance satisfying all mandatory and recommended constraints of base + extension is generated and validated with pySHACL against (a) base + extension shapes and (b) the official base shapes alone. Data valid under the extension must be valid under the base. | derived (instance-level reading of RG-01) |
 
-C1-C5 are static; C6-C7 run a SHACL engine. Any failing error-level rule makes the
+| C8 | **DCAT state:** every DCAT term the extension uses is a term of the DCAT version the base states it builds on (DCAT-AP 1.x: DCAT 2014; 2.x: DCAT 2; 3.x: DCAT 3; see [dcat-versions.md](dcat-versions.md)). A deprecated or removed DCAT term is an error; a term of a later DCAT version, accepted by a human, is a warning naming the version. | DCAT 3, section 4: "A DCAT profile is a specification for a data catalog that adds additional constraints to DCAT. A data catalog that conforms to the profile also conforms to DCAT."; the DCAT version is the release's own statement (`profile.yaml` `dcat_basis`) |
+
+C1-C5 and C8 are static; C6-C7 run a SHACL engine. Any failing error-level rule makes the
 verdict `non_conformant` and blocks the human sign-off.
 
 ## Why the published shapes cannot loosen, and why C1 is still needed
