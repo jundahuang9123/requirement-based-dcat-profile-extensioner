@@ -126,6 +126,11 @@ class BaseProfile:
             dsv_index = json.loads((root / config["dsv_index"]).read_text(encoding="utf-8"))
         release = config.get("release") or {}
         basis = config.get("dcat_basis") or {}
+        dcat_info = None
+        if basis.get("dcat"):
+            from .dcat_state import list_dcat_versions
+
+            dcat_info = next((v for v in list_dcat_versions(data_dir or DATA_DIR) if v.id == basis["dcat"]), None)
         info = BaseProfileInfo(
             id=str(config.get("id") or base_profile_id),
             title=str(config.get("title") or base_profile_id),
@@ -138,6 +143,8 @@ class BaseProfile:
             release_status=str(release.get("status") or ""),
             dcat=DcatBasis(
                 dcat=str(basis["dcat"]),
+                label=dcat_info.label if dcat_info else "",
+                tr=dcat_info.tr if dcat_info else "",
                 cited_as=str(basis.get("cited_as") or ""),
                 dcat_status_at_release=str(basis.get("dcat_status_at_release") or ""),
                 unlisted_dcat_properties=basis.get("unlisted_dcat_properties") or "not_stated",
